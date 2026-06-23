@@ -1,0 +1,107 @@
+# MLFlow Tutorial Project
+
+## Purpose
+
+This is a comprehensive, three-level tutorial for MLFlow covering the full platform — from basic tracking through production AI agent evaluation. The primary focus is **LLMs and AI agents** (not traditional ML training). The special emphasis is on **evaluation (Evals) for AI agents** built with LangChain/LangGraph, DeepAgents, Claude Agent SDK, and Codex SDK.
+
+The tutorial is structured in three progressive levels:
+- **Level 1 — Essentials**: Breadth-first. Touch every major MLflow feature (~30 min lessons). Understand the landscape.
+- **Level 2 — Practitioner**: Go deeper with real-world projects (~1-2 hour lessons). Build muscle memory.
+- **Level 3 — Expert**: Production patterns, custom integrations, advanced agent evaluation. Mastery.
+
+The full syllabus lives in `tutorial/tutorial_new_syllabus.md` — always consult it for module structure, lesson topics, deliverables, and time estimates before creating or modifying any lesson.
+
+## Technical Stack
+
+- **Python**: 3.10+
+- **Package manager**: `uv` (every lesson is a standalone `uv` project)
+- **LLM**: Gemini 4 2B quantized via Ollama (`gemma4:e2b`) — local, no API costs
+- **MLFlow**: latest 2.x+
+- **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK, Codex SDK, DeepAgents
+- **Traditional ML** (supporting context only): scikit-learn, XGBoost, PyTorch, Hugging Face Transformers
+- **Vector DB**: Chroma (for RAG examples)
+- **Workflow orchestration**: Temporal.io (optional, Level 2)
+- **Observability**: Grafana (production monitoring, Level 3)
+
+## Project Layout
+
+```
+mlflow-local/                   # Local MLFlow server (backend store + artifact store)
+tutorial/
+  tutorial_new_syllabus.md      # Master syllabus — the source of truth
+  level_1/                      # Level 1: Essentials (breadth)
+    M1_core_platform/
+    M2_models_registry/
+    M3_autologging/
+    M4_evaluation/
+    M5_tracing/
+    M6_genai_features/
+    M7_data_datasets/
+    M8_deployment/
+    M9_projects/
+    M10_auth/
+  level_2/                      # Level 2: Practitioner (depth)
+    M1_advanced_tracking/
+    M2_advanced_models/
+    M3_deep_evaluation/
+    M4_advanced_tracing/
+    M5_agent_observability/
+    M6_prompt_engineering/
+    M7_ai_gateway/
+    M8_deployment/
+    M9_framework_integrations/
+  level_3/                      # Level 3: Expert (mastery)
+    M1_agent_evaluation/
+    M2_custom_integrations/
+    M3_production/
+    M4_advanced_features/
+    M5_capstones/
+```
+
+Each lesson is a self-contained directory:
+```
+N_lesson_name/
+  pyproject.toml        # uv project — declares dependencies
+  main.py               # Working code (the lesson implementation)
+  README.md             # Lesson guide with explanation, steps, expected output
+  .gitignore            # Ignore .venv, __pycache__, mlruns, mlartifacts
+```
+
+## Running the Local MLFlow Server
+
+```bash
+cd mlflow-local
+uv run mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlartifacts --host 127.0.0.1 --port 5000
+```
+
+The MLFlow UI is at http://127.0.0.1:5000.
+
+## Running a Lesson
+
+```bash
+cd tutorial/<level>/<module>/<lesson>
+uv sync
+uv run python main.py
+```
+
+## Key Commands
+
+- `uv init` — scaffold a new lesson project
+- `uv add <package>` — add a dependency
+- `uv run python main.py` — run the lesson code
+- `ollama pull gemma4:e2b` — pull the LLM model
+- `ollama run gemma4:e2b` — test the model interactively
+
+## Reference Sources
+
+See `.claude/rules/references.md` for the full map of external source code, documentation, and code samples to consult when building lessons.
+
+## Rules
+
+Modular instructions are in `.claude/rules/`. Read them — they cover:
+- `tutorial-structure.md` — three-level layout and file conventions
+- `coding-standards.md` — Python style for tutorial code
+- `mlflow-patterns.md` — MLFlow APIs and patterns to use
+- `agent-evaluation.md` — the core focus: agent Evals
+- `references.md` — where to find source code, docs, and code samples
+- `lesson-content.md` — how to write README.md guides

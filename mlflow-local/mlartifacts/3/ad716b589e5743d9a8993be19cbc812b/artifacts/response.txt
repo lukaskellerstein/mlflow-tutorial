@@ -1,0 +1,1 @@
+Quantum computing is a revolutionary method of computation that uses the principles of quantum mechanics, such as superposition and entanglement, to process information in ways that allow it to solve complex problems exponentially faster than classical computers.

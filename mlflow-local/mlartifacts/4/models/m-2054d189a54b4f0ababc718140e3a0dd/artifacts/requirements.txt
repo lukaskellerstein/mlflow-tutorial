@@ -1,0 +1,125 @@
+aiohappyeyeballs==2.6.2
+aiohttp==3.14.1
+aiosignal==1.4.0
+alembic==1.18.4
+annotated-doc==0.0.4
+annotated-types==0.7.0
+anyio==4.14.0
+async-timeout==5.0.1; python_full_version < "3.11"
+attrs==26.1.0
+blinker==1.9.0
+cachetools==7.1.4
+certifi==2026.6.17
+cffi==2.0.0; platform_python_implementation != "PyPy"
+charset-normalizer==3.4.7
+click==8.4.1
+cloudpickle==3.1.2
+colorama==0.4.6; sys_platform == "win32"
+contourpy==1.3.2; python_full_version < "3.11"
+contourpy==1.3.3; python_full_version >= "3.11"
+cryptography==48.0.1
+cycler==0.12.1
+databricks-sdk==0.118.0
+docker==7.1.0
+exceptiongroup==1.3.1; python_full_version < "3.11"
+fastapi==0.138.0
+flask-cors==6.0.5
+flask==3.1.3
+fonttools==4.63.0
+frozenlist==1.8.0
+gitdb==4.0.12
+gitpython==3.1.50
+google-auth==2.55.0
+graphene==3.4.3
+graphql-core==3.2.11
+graphql-relay==3.2.0
+greenlet==3.5.2; platform_machine == "AMD64" or platform_machine == "WIN32" or platform_machine == "aarch64" or platform_machine == "amd64" or platform_machine == "ppc64le" or platform_machine == "win32" or platform_machine == "x86_64"
+gunicorn==26.0.0; sys_platform != "win32"
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+huey==3.0.3
+idna==3.18
+importlib-metadata==9.0.0
+itsdangerous==2.2.0
+jinja2==3.1.6
+joblib==1.5.3
+jsonpatch==1.33
+jsonpointer==3.1.1
+kiwisolver==1.5.0
+langchain-core==1.4.8
+langchain-ollama==1.1.0
+langchain-protocol==0.0.18
+langchain==1.3.10
+langgraph-checkpoint==4.1.1
+langgraph-prebuilt==1.1.0
+langgraph-sdk==0.4.2
+langgraph==1.2.6
+langsmith==0.9.0
+mako==1.3.12
+markupsafe==3.0.3
+matplotlib==3.10.9; python_full_version < "3.11"
+matplotlib==3.11.0; python_full_version >= "3.11"
+mlflow-skinny==3.14.0
+mlflow-tracing==3.14.0
+mlflow==3.14.0
+multidict==6.7.1
+narwhals==2.22.1; python_full_version >= "3.11"
+numpy==2.2.6; python_full_version < "3.11"
+numpy==2.4.6; python_full_version == "3.11.*"
+numpy==2.5.0; python_full_version >= "3.12"
+ollama==0.6.2
+opentelemetry-api==1.42.1
+opentelemetry-proto==1.42.1
+opentelemetry-sdk==1.42.1
+opentelemetry-semantic-conventions==0.63b1
+orjson==3.11.9
+ormsgpack==1.12.2
+packaging==26.2
+pandas==2.3.3
+pillow==12.2.0
+prettytable==3.18.0
+propcache==0.5.2
+protobuf==6.33.6
+pyarrow==24.0.0
+pyasn1-modules==0.4.2
+pyasn1==0.6.3
+pycparser==3.0; implementation_name != "PyPy" and platform_python_implementation != "PyPy"
+pydantic-core==2.46.4
+pydantic==2.13.4
+pyparsing==3.3.2
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.2
+pytz==2026.2
+pywin32==312; sys_platform == "win32"
+pyyaml==6.0.3
+requests-toolbelt==1.0.0
+requests==2.34.2
+scikit-learn==1.7.2; python_full_version < "3.11"
+scikit-learn==1.9.0; python_full_version >= "3.11"
+scipy==1.15.3; python_full_version < "3.11"
+scipy==1.17.1; python_full_version == "3.11.*"
+scipy==1.18.0; python_full_version >= "3.12"
+six==1.17.0
+skops==0.14.0
+smmap==5.0.3
+sqlalchemy==2.0.51
+sqlparse==0.5.5
+starlette==1.3.1
+tenacity==9.1.4
+threadpoolctl==3.6.0
+tomli==2.4.1; python_full_version < "3.11"
+typing-extensions==4.15.0
+typing-inspection==0.4.2
+tzdata==2026.2
+urllib3==2.7.0
+uuid-utils==0.16.2
+uvicorn==0.49.0
+waitress==3.0.2; sys_platform == "win32"
+wcwidth==0.8.1
+websockets==15.0.1
+werkzeug==3.1.8
+xxhash==3.7.0
+yarl==1.24.2
+zipp==4.1.0
+zstandard==0.25.0

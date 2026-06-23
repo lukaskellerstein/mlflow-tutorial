@@ -29,7 +29,8 @@
       "ToolSearch",
       "Write",
       "WebSearch",
-      "WebFetch"
+      "WebFetch",
+      "mcp__playwright-mlflow-tutor"
     ],
     "deny": [
       "Bash(rm -rf /)",
