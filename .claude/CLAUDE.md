@@ -15,11 +15,15 @@ The full syllabus lives in `tutorial/tutorial_new_syllabus.md` — always consul
 
 - **Python**: 3.10+
 - **Package manager**: `uv` (every lesson is a standalone `uv` project)
-- **LLM**: Gemini 4 2B quantized via Ollama (`gemma4:e2b`) — local, no API costs
+- **LLM provider**: Ollama (local, no API costs)
+- **LLM models**:
+  - `gemma4:26b` — large MoE model for complex tasks (evaluation judges, agents)
+  - `gemma4:e2b` — small 2B model for simple/fast tasks (basic examples, testing)
+  - `nomic-embed-text` — embedding model (137M params, 768 dims) for RAG/vector DB
 - **MLFlow**: latest 2.x+
 - **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK, Codex SDK, DeepAgents
 - **Traditional ML** (supporting context only): scikit-learn, XGBoost, PyTorch, Hugging Face Transformers
-- **Vector DB**: Chroma (for RAG examples)
+- **Vector DB**: Qdrant (in-memory for tutorials, Docker for production lessons)
 - **Workflow orchestration**: Temporal.io (optional, Level 2)
 - **Observability**: Grafana (production monitoring, Level 3)
 
@@ -89,8 +93,10 @@ uv run python main.py
 - `uv init` — scaffold a new lesson project
 - `uv add <package>` — add a dependency
 - `uv run python main.py` — run the lesson code
-- `ollama pull gemma4:e2b` — pull the LLM model
-- `ollama run gemma4:e2b` — test the model interactively
+- `ollama pull gemma4:e2b` — pull the small LLM
+- `ollama pull gemma4:26b` — pull the large MoE LLM
+- `ollama pull nomic-embed-text` — pull the embedding model
+- `ollama run gemma4:e2b` — test the small model interactively
 
 ## Reference Sources
 

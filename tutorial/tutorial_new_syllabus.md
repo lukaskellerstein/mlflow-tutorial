@@ -21,10 +21,14 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - **Python**: 3.10+
 - **Package Manager**: `uv` (every lesson is a standalone project)
 - **MLFlow**: Latest (2.x+)
-- **LLM (local)**: Gemini 4 2B quantized via Ollama (`gemma4:e2b`)
+- **LLM provider**: Ollama (local, no API costs)
+- **LLM models**:
+  - `gemma4:26b` — large MoE model for complex tasks (evaluation judges, agents)
+  - `gemma4:e2b` — small 2B model for simple/fast tasks (basic examples, testing)
+  - `nomic-embed-text` — embedding model (137M params, 768 dims) for RAG/vector DB
 - **Agent Frameworks**: LangChain v1.0+, LangGraph, Claude Agent SDK, Codex SDK, DeepAgents
 - **Traditional ML**: scikit-learn, XGBoost, PyTorch
-- **Vector DB**: Chroma (RAG examples)
+- **Vector DB**: Qdrant (in-memory for tutorials, Docker for production lessons)
 - **Workflow Orchestration**: Temporal.io (optional)
 - **Observability**: Grafana (production monitoring)
 
@@ -537,7 +541,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 ### L2-3.2 — RAG System Evaluation
 **Duration:** 1.5 hours
 **Topics:**
-- Building a RAG system with LangChain + Chroma
+- Building a RAG system with LangChain + Qdrant
 - Context-aware metrics: `faithfulness`, `relevance`, `context_recall`
 - Evaluating retrieval quality vs. generation quality separately
 - Comparing chunking strategies (size, overlap, method)

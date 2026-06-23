@@ -30,14 +30,31 @@ mlflow.set_tracking_uri("http://127.0.0.1:5000")
 
 ## Ollama / LLM Setup
 
-Use LangChain's ChatOllama for LLM calls:
+Three models are available locally via Ollama:
 
 ```python
 from langchain_ollama import ChatOllama
+
+# Small model — fast, for simple tasks and basic examples
 llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+
+# Large MoE model — for complex tasks, evaluation judges, agents
+llm = ChatOllama(model="gemma4:26b", temperature=0.7)
+```
+
+For embeddings (RAG / vector DB):
+```python
+from langchain_ollama import OllamaEmbeddings
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
 ```
 
 When using the LLM directly (without LangChain), use the `ollama` Python package.
+
+### Which model to use where
+- **Level 1 lessons**: use `gemma4:e2b` (fast, keeps lessons snappy)
+- **Level 2/3 agent and evaluation lessons**: use `gemma4:26b` (better reasoning)
+- **LLM-as-judge / evaluation judges**: use `gemma4:26b` (judge quality matters)
+- **RAG / embeddings**: use `nomic-embed-text`
 
 ## Error Handling
 
@@ -53,7 +70,7 @@ When using the LLM directly (without LangChain), use the `ollama` Python package
   - LLM lessons: `langchain-ollama`, `langchain-core`, `langchain`
   - LangGraph lessons: `langgraph`, `langchain-ollama`
   - Evaluation lessons: `pandas`, `mlflow[genai]`
-  - RAG lessons: `chromadb`, `langchain-chroma`
+  - RAG lessons: `qdrant-client`, `langchain-qdrant`
   - Traditional ML lessons: `scikit-learn`, `xgboost`
   - PyTorch lessons: `torch`, `pytorch-lightning`
   - HuggingFace lessons: `transformers`, `datasets`
