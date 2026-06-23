@@ -1,5 +1,5 @@
 ---
-globs: ["tutorial/**/*.py", "mlflow-local/**/*.py"]
+globs: ["tutorial/**/*.py"]
 ---
 
 # Python Coding Standards for Tutorial Code

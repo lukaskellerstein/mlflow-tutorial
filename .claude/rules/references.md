@@ -26,26 +26,38 @@ Always consult these sources when building lessons. Do NOT guess at APIs — rea
 ## Temporal.io
 - **Code samples**: `/Users/lkellers/Projects/github/lukaskellerstein/my-workflows/temporal-io/my-python`
   - AI workflows: `.../MY/5_AI/`
-- Used for Module 3.3 (multi-step workflow tracing, optional path)
+- **Docker reference**: `/Users/lkellers/Projects/github/lukaskellerstein/my-workflows/temporal-io/docker` (original setup our `infra/temporal/` is based on)
+- **Local instance**: Runs via Podman Compose in `infra/` — Temporal UI at http://localhost:8080, gRPC at localhost:7233
+- Used for Level 2 M4.2 (workflow tracing)
 
 ## Claude Agent SDK
 - **Code samples**: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
 - **Source code**: `~/Projects/github/anthropics/claude-agent-sdk-python`
   - Read the SDK source to understand the agent lifecycle and available hooks
   - Look for existing MLFlow integration before building custom
-- Used in Bonus B.2 (custom integration patterns)
+- Used in Level 3 M2.1 (custom integration patterns)
 
 ## Codex SDK
 - **Code samples**: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/3_Codex_SDK/typescript`
 - **Source code**: `~/Projects/github/openai/codex/sdk`
   - Note: Codex SDK is TypeScript — the integration lesson may use a Python wrapper or subprocess calls
-- Used in Bonus B.2 (custom integration patterns)
+- Used in Level 3 M2.2 (custom integration patterns)
 
 ## DeepAgents
 - **Source code**: `~/Projects/github/lanchain-ai/deepagents`
   - Multi-agent orchestration framework by LangChain AI
   - Read the source to understand agent patterns and how to instrument with MLFlow
-- Used in Bonus B.2 (custom integration patterns)
+- Used in Level 3 M2.3 (custom integration patterns)
+
+## Infrastructure
+- **Infra setup**: `infra/` directory in this repo
+  - All services run via `podman compose up -d` from `infra/`
+  - MLflow: http://localhost:5000 (PostgreSQL backend, not SQLite)
+  - Temporal: http://localhost:8080 (UI), localhost:7233 (gRPC)
+  - Qdrant: http://localhost:6333 (REST), localhost:6334 (gRPC)
+  - Grafana: http://localhost:3000 (admin/admin)
+  - Prometheus: http://localhost:9090
+  - Ollama: runs natively at localhost:11434 (not in Podman)
 
 ## How to Use References
 

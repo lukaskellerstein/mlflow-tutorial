@@ -1,0 +1,175 @@
+services:
+
+  # ──────────────────────────────────────────────
+  # Shared PostgreSQL (MLflow + Temporal)
+  # ──────────────────────────────────────────────
+  postgres:
+    image: docker.io/library/postgres:${POSTGRES_VERSION}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # MLflow Tracking Server
+  # ──────────────────────────────────────────────
+  mlflow:
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_artifacts:/mlartifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Elasticsearch (Temporal visibility)
+  # ──────────────────────────────────────────────
+  elasticsearch:
+    image: docker.io/elasticsearch:${ELASTICSEARCH_VERSION}
+    environment:
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/var/lib/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health | grep -q '\"status\":\"\\(green\\|yellow\\)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Temporal Server
+  # ──────────────────────────────────────────────
+  temporal:
+    image: docker.io/temporalio/auto-setup:${TEMPORAL_VERSION}
+    environment:
+      - DB=postgres12_pgx
+      - DB_PORT=5432
+      - POSTGRES_USER=${TEMPORAL_DB_USER}
+      - POSTGRES_PWD=${TEMPORAL_DB_PASSWORD}
+      - POSTGRES_SEEDS=postgres
+      - DBNAME=${TEMPORAL_DB_NAME}
+      - VISIBILITY_DBNAME=temporal_visibility
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=true
+      - ES_SEEDS=elasticsearch
+      - ES_VERSION=v7
+    ports:
+      - "7233:7233"
+    volumes:
+      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Temporal Admin Tools
+  # ──────────────────────────────────────────────
+  temporal-admin-tools:
+    image: docker.io/temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION}
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    stdin_open: true
+    tty: true
+    depends_on:
+      - temporal
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Temporal UI
+  # ──────────────────────────────────────────────
+  temporal-ui:
+    image: docker.io/temporalio/ui:${TEMPORAL_UI_VERSION}
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - temporal
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Qdrant (Vector DB)
+  # ──────────────────────────────────────────────
+  qdrant:
+    image: docker.io/qdrant/qdrant:${QDRANT_VERSION}
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Prometheus (Metrics collection)
+  # ──────────────────────────────────────────────
+  prometheus:
+    image: docker.io/prom/prometheus:${PROMETHEUS_VERSION}
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Grafana (Dashboards)
+  # ──────────────────────────────────────────────
+  grafana:
+    image: docker.io/grafana/grafana:${GRAFANA_VERSION}
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - tutorial-network
+
+volumes:
+  postgres_data:
+  mlflow_artifacts:
+  elasticsearch_data:
+  qdrant_data:
+  grafana_data:
+
+networks:
+  tutorial-network:
+    driver: bridge

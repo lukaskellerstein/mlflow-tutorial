@@ -23,14 +23,21 @@ The full syllabus lives in `tutorial/tutorial_new_syllabus.md` — always consul
 - **MLFlow**: latest 2.x+
 - **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK, Codex SDK, DeepAgents
 - **Traditional ML** (supporting context only): scikit-learn, XGBoost, PyTorch, Hugging Face Transformers
-- **Vector DB**: Qdrant (in-memory for tutorials, Docker for production lessons)
-- **Workflow orchestration**: Temporal.io (optional, Level 2)
-- **Observability**: Grafana (production monitoring, Level 3)
+- **Vector DB**: Qdrant (via Podman Compose)
+- **Workflow orchestration**: Temporal.io (via Podman Compose, Level 2)
+- **Observability**: Grafana + Prometheus (via Podman Compose, Level 3)
+- **Container runtime**: Podman (not Docker)
 
 ## Project Layout
 
 ```
-mlflow-local/                   # Local MLFlow server (backend store + artifact store)
+infra/                          # All infrastructure (Podman Compose)
+  compose.yml                   #   Single file to start everything
+  mlflow/                       #   MLflow Dockerfile
+  temporal/                     #   Temporal config
+  grafana/                      #   Grafana provisioning
+  prometheus/                   #   Prometheus config
+  postgres/                     #   PostgreSQL init script
 tutorial/
   tutorial_new_syllabus.md      # Master syllabus — the source of truth
   level_1/                      # Level 1: Essentials (breadth)
@@ -71,14 +78,24 @@ N_lesson_name/
   .gitignore            # Ignore .venv, __pycache__, mlruns, mlartifacts
 ```
 
-## Running the Local MLFlow Server
+## Starting Infrastructure
 
 ```bash
-cd mlflow-local
-uv run mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlartifacts --host 127.0.0.1 --port 5000
+cd infra
+podman compose up -d
 ```
 
-The MLFlow UI is at http://127.0.0.1:5000.
+This starts MLflow, Temporal, Qdrant, Grafana, Prometheus, PostgreSQL, and Elasticsearch.
+
+| Service | URL |
+|---------|-----|
+| MLflow UI | http://localhost:5000 |
+| Temporal UI | http://localhost:8080 |
+| Qdrant | http://localhost:6333/dashboard |
+| Grafana | http://localhost:3000 (admin/admin) |
+| Prometheus | http://localhost:9090 |
+
+Ollama runs natively (not in Podman) for Apple Silicon GPU access.
 
 ## Running a Lesson
 
@@ -90,13 +107,15 @@ uv run python main.py
 
 ## Key Commands
 
+- `podman compose up -d` — start all infrastructure (from `infra/`)
+- `podman compose down` — stop all services (preserves data)
+- `podman compose down -v` — stop and wipe all data
 - `uv init` — scaffold a new lesson project
 - `uv add <package>` — add a dependency
 - `uv run python main.py` — run the lesson code
 - `ollama pull gemma4:e2b` — pull the small LLM
 - `ollama pull gemma4:26b` — pull the large MoE LLM
 - `ollama pull nomic-embed-text` — pull the embedding model
-- `ollama run gemma4:e2b` — test the small model interactively
 
 ## Reference Sources
 
