@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M1-search-query-api"
+version = "0.1.0"
+description = "Search and Query API"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "scikit-learn>=1.0",
+    "pandas>=2.0",
+]

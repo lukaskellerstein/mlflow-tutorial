@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L3-M3-grafana-dashboards"
+version = "0.1.0"
+description = "Grafana Dashboards for MLflow — export LLM metrics to Prometheus and build Grafana dashboards for production monitoring"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain-ollama>=0.2",
+    "langchain-core>=0.3",
+    "prometheus-client>=0.20",
+    "pandas>=2.0",
+    "ollama>=0.4",
+]

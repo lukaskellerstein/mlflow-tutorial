@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L2-M3-human-in-loop"
+version = "0.1.0"
+description = "Human-in-the-Loop Evaluation"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "pandas>=2.0",
+    "ollama>=0.4",
+]

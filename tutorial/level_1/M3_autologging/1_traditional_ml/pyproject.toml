@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M3-traditional-ml-autolog"
+version = "0.1.0"
+description = "Traditional ML Autologging"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "scikit-learn>=1.0",
+    "xgboost>=2.0",
+]

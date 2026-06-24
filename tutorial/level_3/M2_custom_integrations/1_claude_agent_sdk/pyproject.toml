@@ -1,0 +1,12 @@
+[project]
+name = "mlflow-tutorial-L3-M2-claude-agent-sdk"
+version = "0.1.0"
+description = "Claude Agent SDK + MLflow — custom tracing integration patterns for third-party agent frameworks"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain-ollama>=0.2",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+    "ollama>=0.4",
+]

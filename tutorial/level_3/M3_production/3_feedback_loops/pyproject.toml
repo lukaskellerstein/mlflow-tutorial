@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L3-M3-feedback-loops"
+version = "0.1.0"
+description = "Production Feedback Loops -- collecting, analyzing, and acting on user feedback"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain>=0.3",
+    "langchain-ollama>=0.2",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+    "ollama>=0.4",
+]

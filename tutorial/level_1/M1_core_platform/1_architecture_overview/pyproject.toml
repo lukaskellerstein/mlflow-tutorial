@@ -1,0 +1,8 @@
+[project]
+name = "mlflow-tutorial-L1-M1-architecture-overview"
+version = "0.1.0"
+description = "What is MLflow? Architecture Overview"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+]

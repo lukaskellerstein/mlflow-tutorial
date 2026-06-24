@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L2-M2-registry-workflows"
+version = "0.1.0"
+description = "Model Registry Workflows"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "scikit-learn>=1.0",
+    "pandas>=2.0",
+]

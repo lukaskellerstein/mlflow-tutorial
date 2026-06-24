@@ -1,0 +1,9 @@
+[project]
+name = "mlflow-tutorial-L1-M2-model-registry"
+version = "0.1.0"
+description = "Model Registry"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "scikit-learn>=1.0",
+]

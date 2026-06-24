@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L2-M4-langgraph-tracing"
+version = "0.1.0"
+description = "Tracing LangGraph State Machines with MLflow"
+requires-python = ">=3.10"
+
+dependencies = [
+    "mlflow>=2.0",
+    "langgraph>=0.2",
+    "langchain>=0.3",
+    "langchain-ollama>=0.2",
+    "langchain-core>=0.3",
+]

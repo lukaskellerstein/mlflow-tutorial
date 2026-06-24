@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L1-M3-llm-genai-autolog"
+version = "0.1.0"
+description = "LLM and GenAI Autologging"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain>=0.3",
+    "langchain-ollama>=0.2",
+    "langchain-core>=0.3",
+]

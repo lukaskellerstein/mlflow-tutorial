@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L3-M2-codex-sdk"
+version = "0.1.0"
+description = "Codex SDK + MLflow: custom integration for code generation agents"
+requires-python = ">=3.10"
+
+dependencies = [
+    "mlflow>=2.0",
+    "langchain-ollama>=0.2",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+    "ollama>=0.4",
+]

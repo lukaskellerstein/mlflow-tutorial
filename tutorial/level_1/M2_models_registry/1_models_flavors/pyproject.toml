@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M2-models-flavors"
+version = "0.1.0"
+description = "MLflow Models and Flavors"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "scikit-learn>=1.0",
+    "pandas>=2.0",
+]

@@ -1,0 +1,12 @@
+[project]
+name = "mlflow-tutorial-L2-M9-huggingface"
+version = "0.1.0"
+description = "Hugging Face Transformers + MLflow"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "transformers>=4.30",
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "pandas>=2.0",
+]

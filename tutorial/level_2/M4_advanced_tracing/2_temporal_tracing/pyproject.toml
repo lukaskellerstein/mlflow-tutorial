@@ -1,0 +1,12 @@
+[project]
+name = "mlflow-tutorial-L2-M4-temporal-tracing"
+version = "0.1.0"
+description = "Tracing Temporal.io Workflows with MLflow"
+requires-python = ">=3.10"
+
+dependencies = [
+    "mlflow>=2.0",
+    "temporalio>=1.5",
+    "ollama>=0.4",
+    "pandas>=2.0",
+]

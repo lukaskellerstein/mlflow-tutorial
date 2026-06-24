@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L2-M1-mlflow-client"
+version = "0.1.0"
+description = "MlflowClient — Programmatic Access"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "scikit-learn>=1.0",
+    "pandas>=2.0",
+]
