@@ -137,12 +137,17 @@ Done!
   You should see the run with parameters, metrics, and tags.
 ```
 
+### MLflow in the Red Hat AI Ecosystem
+
+OpenShift AI includes a managed MLflow operator (`mlflowoperator` in the DataScienceCluster CR, GA in version 3.4). The managed version handles high availability, TLS, and RBAC automatically. This tutorial teaches MLflow standalone — the tracking code and APIs are identical in both modes; only the deployment and operations differ.
+
 ## Key Takeaways
 
 - MLflow is built on five pillars: Tracking, Models, Model Registry, Evaluation, and Deployment.
 - The **experiment** groups related runs; the **run** is the unit of work that stores params, metrics, artifacts, and tags.
 - The MLflow Python SDK communicates with a tracking server over HTTP -- you just set the URI and start logging.
 - Every lesson in this tutorial follows the same pattern: set the tracking URI, create an experiment, and log results.
+- OpenShift AI includes a managed MLflow operator — the APIs are the same, but deployment is handled by the platform.
 
 ## Next Steps
 

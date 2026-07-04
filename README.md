@@ -2,7 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MLflow 2.x](https://img.shields.io/badge/MLflow-2.x+-0194E2.svg)](https://mlflow.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](#license)
 [![Lessons](https://img.shields.io/badge/lessons-67-orange.svg)](#course-structure)
 
 > A comprehensive, three-level hands-on tutorial for MLFlow — from platform basics through production AI agent evaluation.
@@ -58,7 +58,7 @@ graph TD
 | **Level 2 — Practitioner** | Depth: real-world projects | 9 | 26 | ~25-30 hours |
 | **Level 3 — Expert** | Mastery: production agent evaluation | 5 | 19 | ~25-35 hours |
 
-See [tutorial/tutorial_new_syllabus.md](./tutorial/tutorial_new_syllabus.md) for the full syllabus with lesson descriptions and deliverables.
+See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions and deliverables.
 
 ### Level 1 — Essentials
 
@@ -172,6 +172,7 @@ podman compose down -v     # Stop and wipe all data
 ## Project Structure
 
 ```
+syllabus.md                  # Full syllabus — source of truth
 infra/                       # All infrastructure (Podman Compose)
   compose.yml                #   Single file to start everything
   mlflow/                    #   MLflow Dockerfile
@@ -180,7 +181,6 @@ infra/                       # All infrastructure (Podman Compose)
   prometheus/                #   Prometheus config
   postgres/                  #   PostgreSQL init script
 tutorial/
-  tutorial_new_syllabus.md   # Full syllabus (source of truth)
   level_1/                   # Essentials — breadth across all features
     M1_core_platform/        #   Tracking, search, system metrics
     M2_models_registry/      #   Models, flavors, registry, PyFunc

@@ -198,6 +198,10 @@ In the MLflow UI you will see:
 - A deployment_guide run with a markdown deployment reference
 - Three registered models in the Model Registry
 
+### OpenShift AI Managed MLflow
+
+OpenShift AI includes a managed MLflow operator (`mlflowoperator` in the DataScienceCluster CR). The managed server handles HA, TLS, and RBAC automatically — workbenches connect without manual URI configuration. The tracking and serving APIs are identical to standalone MLflow; all patterns in this lesson apply to both modes.
+
 ## Key Takeaways
 
 - Always log models with signatures and input examples — they enable request validation and self-documenting APIs at serving time.
@@ -205,6 +209,7 @@ In the MLflow UI you will see:
 - Custom PyFunc models let you embed preprocessing, postprocessing, and multi-model ensembles behind a single serving endpoint.
 - `mlflow models build-docker` creates production-ready containers with all dependencies baked in.
 - The `/ping` and `/health` endpoints integrate directly with Kubernetes liveness and readiness probes.
+- OpenShift AI provides managed MLflow with automatic HA, TLS, and RBAC — the code you write is the same.
 
 ## Next Steps
 

@@ -70,6 +70,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Installing MLflow with `uv`
 - Starting the tracking server and UI locally
 - Key concepts: experiments, runs, parameters, metrics, artifacts, tags
+- MLflow in the Red Hat AI ecosystem: OpenShift AI includes a managed MLflow operator (`mlflowoperator` in the DataScienceCluster CR, GA in 3.4). This tutorial teaches MLflow standalone; the managed version works identically but is deployed and lifecycle-managed by the operator.
 
 **Deliverables:**
 - Running MLflow server with UI at http://127.0.0.1:5000
@@ -532,6 +533,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Combining built-in and custom metrics
 - Metric validation and thresholds
 - Evaluation with `extra_metrics` and `custom_artifacts`
+- MLflow + EvalHub integration: EvalHub (Red Hat's evaluation control plane) stores results in MLflow experiments. Understanding MLflow's evaluation data model is foundational for using EvalHub on OpenShift AI (reference: evalhub-tutorial)
 
 **Deliverables:**
 - Custom metric suite for a domain-specific task (e.g., code quality scoring)
@@ -755,6 +757,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Health checks and monitoring
 - Docker-based deployment: `mlflow models build-docker`
 - Cloud deployment patterns: AWS, GCP, Azure
+- OpenShift AI managed MLflow: the `mlflowoperator` DSC component deploys MLflow as a managed service on the cluster. Workbenches connect automatically. The managed server handles HA, TLS, and RBAC — you only write the tracking code (reference: OpenShift AI tutorial L2-M5.1)
 
 **Deliverables:**
 - Dockerized model server with custom configuration

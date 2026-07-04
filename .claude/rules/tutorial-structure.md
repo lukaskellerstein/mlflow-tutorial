@@ -12,7 +12,7 @@ The tutorial is organized in three progressive levels:
 - **`tutorial/level_2/`** — Practitioner (depth): real-world projects, longer lessons (~1-2 hours)
 - **`tutorial/level_3/`** — Expert (mastery): production patterns, agent evaluation, custom integrations
 
-Always consult `tutorial/tutorial_new_syllabus.md` for the full module/lesson breakdown.
+Always consult `syllabus.md` (project root) for the full module/lesson breakdown.
 
 ## Lesson Directory Convention
 
@@ -26,8 +26,8 @@ Every lesson lives in `tutorial/<level>/<module>/<lesson>/` and contains exactly
 ## Directory Structure
 
 ```
+syllabus.md                         # Master syllabus — source of truth (project root)
 tutorial/
-  tutorial_new_syllabus.md          # Master syllabus — source of truth
   level_1/
     M1_core_platform/
       1_architecture_overview/

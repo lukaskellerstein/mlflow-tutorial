@@ -96,7 +96,38 @@ def main() -> None:
     print()
 
     # ------------------------------------------------------------------
-    # 4. Summary
+    # 4. MLflow in the Red Hat AI Ecosystem
+    # ------------------------------------------------------------------
+    print("=" * 60)
+    print("MLflow in the Red Hat AI Ecosystem")
+    print("=" * 60)
+    print("  OpenShift AI includes a managed MLflow operator")
+    print("  (`mlflowoperator` in the DataScienceCluster CR, GA in 3.4).")
+    print()
+    print("  Managed MLflow vs. Standalone:")
+    print("    - Managed: deployed and lifecycle-managed by the operator")
+    print("      on OpenShift. Handles HA, TLS, RBAC automatically.")
+    print("    - Standalone: what this tutorial teaches. You run the")
+    print("      server yourself (via Podman Compose in our case).")
+    print()
+    print("  The MLflow APIs and tracking code are identical in both")
+    print("  modes -- only the deployment and operations differ.")
+    print()
+
+    with mlflow.start_run(run_name="architecture_overview") as run:
+        mlflow.set_tags({
+            "level": "1",
+            "module": "core_platform",
+            "lesson": "architecture_overview",
+            "note": "Red Hat OpenShift AI includes managed MLflow operator (GA in 3.4)",
+        })
+        mlflow.log_param("deployment_mode", "standalone")
+        mlflow.log_metric("openshift_ai_operator_ga_version", 3.4)
+        print(f"  Logged Red Hat ecosystem info to run: {run.info.run_id}")
+    print()
+
+    # ------------------------------------------------------------------
+    # 5. Summary
     # ------------------------------------------------------------------
     print("=" * 60)
     print("Done!")

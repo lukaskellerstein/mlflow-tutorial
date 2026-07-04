@@ -183,6 +183,10 @@ In the MLflow UI, navigate to the experiment "L2/M3_deep_evaluation/1_custom_met
 - Per-row scorer values and rationales in the evaluation table
 - Source metadata distinguishing CODE vs LLM_JUDGE assessments
 
+### MLflow + EvalHub Integration
+
+EvalHub is Red Hat's evaluation control plane that stores results in MLflow experiments. Understanding MLflow's evaluation data model — scorers, Feedback objects, assessment sources, and threshold gates — is foundational for using EvalHub on OpenShift AI. The custom metrics and scorers you build here are directly compatible with EvalHub's evaluation pipelines.
+
 ## Key Takeaways
 
 - The `@scorer` decorator turns any function into an evaluator compatible with `mlflow.genai.evaluate()`
@@ -190,6 +194,7 @@ In the MLflow UI, navigate to the experiment "L2/M3_deep_evaluation/1_custom_met
 - Return `Feedback` objects for rich metadata (rationale, source type) instead of bare values
 - Combine deterministic and LLM-based scorers in a single evaluation for both speed and depth
 - Use `results.metrics` for programmatic threshold checks — the foundation for CI/CD quality gates
+- Red Hat EvalHub builds on this same evaluation data model — custom scorers work directly with EvalHub on OpenShift AI
 
 ## Next Steps
 
