@@ -9,7 +9,7 @@ The tutorial is structured in three progressive levels:
 - **Level 2 — Practitioner**: Go deeper with real-world projects (~1-2 hour lessons). Build muscle memory.
 - **Level 3 — Expert**: Production patterns, custom integrations, advanced agent evaluation. Mastery.
 
-The full syllabus lives in `tutorial/tutorial_new_syllabus.md` — always consult it for module structure, lesson topics, deliverables, and time estimates before creating or modifying any lesson.
+The full syllabus lives in `syllabus.md` (project root) — always consult it for module structure, lesson topics, deliverables, and time estimates before creating or modifying any lesson.
 
 ## Technical Stack
 
@@ -38,8 +38,8 @@ infra/                          # All infrastructure (Podman Compose)
   grafana/                      #   Grafana provisioning
   prometheus/                   #   Prometheus config
   postgres/                     #   PostgreSQL init script
+syllabus.md                     # Master syllabus — the source of truth (project root)
 tutorial/
-  tutorial_new_syllabus.md      # Master syllabus — the source of truth
   level_1/                      # Level 1: Essentials (breadth)
     M1_core_platform/
     M2_models_registry/

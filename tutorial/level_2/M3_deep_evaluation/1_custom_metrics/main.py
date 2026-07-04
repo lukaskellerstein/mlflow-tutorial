@@ -180,7 +180,20 @@ def main() -> None:
             all_passed = False
 
     print(f"\n  {'All quality thresholds met.' if all_passed else 'Some thresholds not met.'}")
+    # Part 5: EvalHub integration note
     print("\n" + "=" * 60)
+    print("Part 5: MLflow + EvalHub (Red Hat) Integration")
+    print("=" * 60)
+    print("  EvalHub is Red Hat's evaluation control plane for OpenShift AI.")
+    print("  It stores evaluation results in MLflow experiments, using the")
+    print("  same data model: scorers, Feedback objects, and assessment sources.")
+    print()
+    print("  The custom scorers built in this lesson are directly compatible")
+    print("  with EvalHub's evaluation pipelines. The threshold-checking")
+    print("  pattern (Part 4) maps to EvalHub's quality gates.")
+    print()
+
+    print("=" * 60)
     print("Done! View results in MLflow UI: http://127.0.0.1:5000")
     print("Experiment: L2/M3_deep_evaluation/1_custom_metrics")
     print("=" * 60)
