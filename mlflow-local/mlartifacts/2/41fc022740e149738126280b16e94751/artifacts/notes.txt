@@ -1,2 +1,0 @@
-This is a sample artifact created during lesson 1.1.
-You can attach any text file — notes, configs, reports.
