@@ -9,7 +9,7 @@ This lesson demonstrates how to build a LangChain ReAct agent using `langchain.a
 
 ## Prerequisites
 
-- Completed: L1-M5.1 (Auto Tracing), L1-M3.2 (LLM/GenAI Autologging)
+- Completed: L1-M2.1 (Autologging), L1-M2.2 (Manual Tracing)
 - MLflow server running at http://127.0.0.1:5000
 - LMStudio running with `google/gemma-4-e4b` model loaded
 

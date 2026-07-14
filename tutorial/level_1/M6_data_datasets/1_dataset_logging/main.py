@@ -1,5 +1,5 @@
 """
-L1-M7.1 -- Dataset Logging and Lineage
+L1-M6.1 -- Dataset Logging and Lineage
 
 Log an LLM evaluation dataset, run inference on the questions,
 and link the dataset to the evaluation run for data lineage.

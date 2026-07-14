@@ -121,41 +121,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M2: Models and Registry
+## L1-M2: Tracing
 
-### L1-M2.1 — MLflow Models and Flavors
-**Duration:** 30 min
-**Topics:**
-- What is an MLflow Model? (the `MLmodel` file, flavors, signatures)
-- Key flavors for LLM work: `pyfunc`, `langchain`, `openai`, `transformers`
-- Model signatures: `ModelSignature`, `infer_signature()`
-- `mlflow.<flavor>.log_model()` and `mlflow.<flavor>.load_model()`
-- Input examples for documentation
-- Logging a LangChain agent (compiled `StateGraph`) as an MLflow model
-
-**Deliverables:**
-- Log a LangChain agent with signature and input example
-- Load it back and run inference
-
----
-
-### L1-M2.2 — Model Registry
-**Duration:** 30 min
-**Topics:**
-- Registering models: `mlflow.register_model()`
-- Model versions and aliases (`champion`, `challenger`)
-- Model descriptions and tags
-- Transitioning models through stages
-- Loading models by name and version/alias
-
-**Deliverables:**
-- Register an LLM model, create versions, set aliases, load by alias
-
----
-
-## L1-M3: Tracing
-
-### L1-M3.1 — Autologging and Auto-Tracing
+### L1-M2.1 — Autologging and Auto-Tracing
 **Duration:** 30 min
 **Topics:**
 - `mlflow.openai.autolog()` — trace OpenAI-compatible calls (LMStudio)
@@ -171,7 +139,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-M3.2 — Manual Tracing
+### L1-M2.2 — Manual Tracing
 **Duration:** 30 min
 **Topics:**
 - `@mlflow.trace` decorator — function-level tracing
@@ -184,7 +152,53 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M4: Evaluation
+## L1-M3: Models
+
+### L1-M3.1 — MLflow Models and Flavors
+**Duration:** 30 min
+**Topics:**
+- What is an MLflow Model? (the `MLmodel` file, flavors, signatures)
+- Key flavors for LLM work: `pyfunc`, `langchain`, `openai`, `transformers`
+- Model signatures: `ModelSignature`, `infer_signature()`
+- `mlflow.<flavor>.log_model()` and `mlflow.<flavor>.load_model()`
+- Input examples for documentation
+- Logging a LangChain agent (compiled `StateGraph`) as an MLflow model
+
+**Deliverables:**
+- Log a LangChain agent with signature and input example
+- Load it back and run inference
+
+---
+
+### L1-M3.2 — Model Registry
+**Duration:** 30 min
+**Topics:**
+- Registering models: `mlflow.register_model()`
+- Model versions and aliases (`champion`, `challenger`)
+- Model descriptions and tags
+- Transitioning models through stages
+- Loading models by name and version/alias
+
+**Deliverables:**
+- Register an LLM model, create versions, set aliases, load by alias
+
+---
+
+### L1-M3.3 — Model Serving Basics
+**Duration:** 30 min
+**Topics:**
+- `mlflow models serve` — local REST API serving
+- Serving endpoints: `/invocations`, `/ping`, `/version`
+- Input formats: JSON, split-orient
+- `mlflow models predict` — batch prediction from CLI
+- Serving a PyFunc-wrapped LLM model
+
+**Deliverables:**
+- Serve an LLM model locally, call it via `curl`, run batch predictions
+
+---
+
+## L1-M4: Evaluations
 
 ### L1-M4.1 — LLM Evaluation Basics
 **Duration:** 30 min
@@ -213,7 +227,33 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M5: GenAI Features
+### L1-M4.3 — GenAI Scorers and Judges
+**Duration:** 30 min
+**Topics:**
+- Built-in scorers overview
+- Custom scorers: `mlflow.genai.scorers`
+- LLM judges: `mlflow.genai.judges` — using an LLM to evaluate another LLM
+- Configuring judge models and criteria
+
+**Deliverables:**
+- Custom scorer + LLM judge evaluating a Q&A system
+
+---
+
+### L1-M4.4 — Datasets and Labeling
+**Duration:** 20 min
+**Topics:**
+- `mlflow.genai.datasets` — creating and managing evaluation datasets
+- Dataset schemas for different task types
+- `mlflow.genai.labeling` — human-in-the-loop labeling workflows
+- Building ground truth datasets
+
+**Deliverables:**
+- Create a GenAI evaluation dataset, add labels, use for evaluation
+
+---
+
+## L1-M5: Prompt Engineering
 
 ### L1-M5.1 — Prompt Registry
 **Duration:** 20 min
@@ -229,29 +269,31 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-M5.2 — GenAI Scorers and Judges
-**Duration:** 30 min
+### L1-M5.2 — Prompt Management at Scale
+**Duration:** 45 min
 **Topics:**
-- Built-in scorers overview
-- Custom scorers: `mlflow.genai.scorers`
-- LLM judges: `mlflow.genai.judges` — using an LLM to evaluate another LLM
-- Configuring judge models and criteria
+- Prompt Registry deep dive
+- Prompt versioning strategies
+- A/B testing prompts with MLflow
+- Prompt templates with complex variables
+- Team collaboration on prompts
+- Prompt performance tracking over time
 
 **Deliverables:**
-- Custom scorer + LLM judge evaluating a Q&A system
+- Prompt A/B test comparing 3 prompt variants with tracked metrics
 
 ---
 
-### L1-M5.3 — Datasets and Labeling
-**Duration:** 20 min
+### L1-M5.3 — Prompt Optimization
+**Duration:** 1 hour
 **Topics:**
-- `mlflow.genai.datasets` — creating and managing evaluation datasets
-- Dataset schemas for different task types
-- `mlflow.genai.labeling` — human-in-the-loop labeling workflows
-- Building ground truth datasets
+- Systematic prompt improvement workflow
+- In-context learning optimization
+- Few-shot example selection
+- Tracking optimization history
 
 **Deliverables:**
-- Create a GenAI evaluation dataset, add labels, use for evaluation
+- Optimized prompt with tracked improvement trajectory
 
 ---
 
@@ -271,39 +313,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M7: Deployment and Serving
+## L1-M7: Authentication and Administration
 
-### L1-M7.1 — Model Serving Basics
-**Duration:** 30 min
-**Topics:**
-- `mlflow models serve` — local REST API serving
-- Serving endpoints: `/invocations`, `/ping`, `/version`
-- Input formats: JSON, split-orient
-- `mlflow models predict` — batch prediction from CLI
-- Serving a PyFunc-wrapped LLM model
-
-**Deliverables:**
-- Serve an LLM model locally, call it via `curl`, run batch predictions
-
----
-
-### L1-M7.2 — AI Gateway Overview
-**Duration:** 20 min
-**Topics:**
-- What is the AI Gateway? (unified LLM endpoint management)
-- Route configuration: providers, rate limits, fallbacks
-- Supported providers: OpenAI, Anthropic, Mistral, Gemini, Bedrock, etc.
-- Cost management and usage tracking
-- When to use Gateway vs. direct API calls
-
-**Deliverables:**
-- Configure a simple gateway route and call it
-
----
-
-## L1-M8: Authentication and Administration
-
-### L1-M8.1 — Authentication and Permissions
+### L1-M7.1 — Authentication and Permissions
 **Duration:** 15 min
 **Topics:**
 - Enabling authentication on the tracking server
@@ -322,14 +334,13 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
 | M1: Tracking | 4 lessons | ~1.5 hours |
-| M2: Models & Registry | 3 lessons | ~1.5 hours |
-| M3: Tracing | 2 lessons | ~1 hour |
-| M4: Evaluation | 2 lessons | ~1 hour |
-| M5: GenAI Features | 3 lessons | ~1 hour |
+| M2: Tracing | 2 lessons | ~1 hour |
+| M3: Models | 3 lessons | ~1.5 hours |
+| M4: Evaluations | 4 lessons | ~2 hours |
+| M5: Prompt Engineering | 3 lessons | ~2 hours |
 | M6: Data & Datasets | 1 lesson | ~20 min |
-| M7: Deployment & Serving | 2 lessons | ~50 min |
-| M8: Auth & Admin | 1 lesson | ~15 min |
-| **Total** | **18 lessons** | **~8-10 hours** |
+| M7: Auth & Admin | 1 lesson | ~15 min |
+| **Total** | **18 lessons** | **~9 hours** |
 
 ---
 ---
@@ -624,40 +635,23 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L2-M6: Prompt Engineering and Optimization
+## L2-M6: AI Gateway Deep Dive
 
-### L2-M6.1 — Prompt Management at Scale
-**Duration:** 45 min
+### L2-M6.1 — AI Gateway Overview
+**Duration:** 20 min
 **Topics:**
-- Prompt Registry deep dive
-- Prompt versioning strategies
-- A/B testing prompts with MLflow
-- Prompt templates with complex variables
-- Team collaboration on prompts
-- Prompt performance tracking over time
+- What is the AI Gateway? (unified LLM endpoint management)
+- Route configuration: providers, rate limits, fallbacks
+- Supported providers: OpenAI, Anthropic, Mistral, Gemini, Bedrock, etc.
+- Cost management and usage tracking
+- When to use Gateway vs. direct API calls
 
 **Deliverables:**
-- Prompt A/B test comparing 3 prompt variants with tracked metrics
+- Configure a simple gateway route and call it
 
 ---
 
-### L2-M6.2 — Prompt Optimization
-**Duration:** 1 hour
-**Topics:**
-- `mlflow.genai.optimize` — automated prompt tuning
-- In-context learning optimization
-- Few-shot example selection
-- Systematic prompt improvement workflow
-- Tracking optimization history
-
-**Deliverables:**
-- Optimized prompt with tracked improvement trajectory
-
----
-
-## L2-M7: AI Gateway Deep Dive
-
-### L2-M7.1 — Gateway Configuration and Routing
+### L2-M6.2 — Gateway Configuration and Routing
 **Duration:** 1 hour
 **Topics:**
 - Route configuration: models, rate limits, API keys
@@ -672,9 +666,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L2-M8: Deployment Patterns
+## L2-M7: Deployment Patterns
 
-### L2-M8.1 — LLM Serving Deep Dive
+### L2-M7.1 — LLM Serving Deep Dive
 **Duration:** 1 hour
 **Topics:**
 - Serving LLM-backed models (PyFunc-wrapped pipelines, agents)
@@ -689,7 +683,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L2-M8.2 — Batch Prediction Pipelines
+### L2-M7.2 — Batch Prediction Pipelines
 **Duration:** 45 min
 **Topics:**
 - `mlflow models predict` for batch LLM inference
@@ -703,9 +697,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L2-M9: LLM Fine-Tuning
+## L2-M8: LLM Fine-Tuning
 
-### L2-M9.1 — Hugging Face Transformers + MLflow
+### L2-M8.1 — Hugging Face Transformers + MLflow
 **Duration:** 1.5 hours
 **Topics:**
 - `mlflow.transformers.autolog()` — auto-logging for fine-tuning
@@ -729,11 +723,10 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 | M3: Deep Evaluation | 4 lessons | ~4 hours |
 | M4: Advanced Tracing | 4 lessons | ~4.5 hours |
 | M5: Agent Observability | 3 lessons | ~6 hours |
-| M6: Prompt Engineering | 2 lessons | ~1.75 hours |
-| M7: AI Gateway | 1 lesson | ~1 hour |
-| M8: Deployment | 2 lessons | ~1.75 hours |
-| M9: LLM Fine-Tuning | 1 lesson | ~1.5 hours |
-| **Total** | **24 lessons** | **~22-27 hours** |
+| M6: AI Gateway | 2 lessons | ~1.5 hours |
+| M7: Deployment | 2 lessons | ~1.75 hours |
+| M8: LLM Fine-Tuning | 1 lesson | ~1.5 hours |
+| **Total** | **23 lessons** | **~23-26 hours** |
 
 ---
 ---
@@ -1098,42 +1091,42 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 | Level | Focus | Lessons | Time |
 |-------|-------|---------|------|
-| **Level 1 — Essentials** | Breadth: every feature area | 19 lessons | ~9-11 hours |
-| **Level 2 — Practitioner** | Depth: real-world projects | 24 lessons | ~22-27 hours |
+| **Level 1 — Essentials** | Breadth: every feature area | 18 lessons | ~9 hours |
+| **Level 2 — Practitioner** | Depth: real-world projects | 23 lessons | ~23-26 hours |
 | **Level 3 — Expert** | Mastery: production + agents | 19 lessons + 2 capstones | ~28-38 hours |
-| **Total** | | **62 lessons + 2 capstones** | **~59-76 hours** |
+| **Total** | | **60 lessons + 2 capstones** | **~60-73 hours** |
 
 ---
 
 ## Changes from Previous Syllabus
 
 ### Removed (pure ML, no LLM/agent relevance)
-- **L1-M3.1** Traditional ML Autologging (sklearn, XGBoost, PyTorch autolog)
+- **L1-M2.1** Traditional ML Autologging (sklearn, XGBoost, PyTorch autolog)
 - **L1-M4.1** Traditional ML Evaluation (classifier metrics, confusion matrix, ROC)
 - **L1-M9** MLflow Projects (legacy feature, not relevant to LLM/agent workflows)
-- **L2-M9.1** PyTorch + MLflow (pure ML training)
-- **L2-M9.3** Sentence Transformers + MLflow (embedding model tracking — covered in RAG eval)
+- **L2-M8.1** PyTorch + MLflow (pure ML training)
+- **L2-M8.3** Sentence Transformers + MLflow (embedding model tracking — covered in RAG eval)
 - **L3-M2.2** Codex SDK (not in preferred tech stack)
 
 ### Added
 - **L3-M2.3** SWE-Bench Evaluation Pipeline (standardized coding agent benchmark)
 
 ### Consolidated
-- **L1-M3 (Autologging) + L1-M5 (Tracing)** merged into **L1-M3 Tracing** (autologging IS auto-tracing; keeping them separate was redundant). Modules M6–M9 renumbered to M5–M8.
+- **L1-M2 (Autologging) + L1-M5 (Tracing)** merged into **L1-M2 Tracing** (autologging IS auto-tracing; keeping them separate was redundant). Models moved to M3. Modules M6–M9 renumbered to M5–M8.
 
 ### Kept (reframed for LLM focus)
-- **L2-M9.1** HuggingFace Transformers — reframed for LLM fine-tuning (not generic ML training)
+- **L2-M8.1** HuggingFace Transformers — reframed for LLM fine-tuning (not generic ML training)
 - **L3-M2.1** Claude Agent SDK — custom MLflow tracing integration
 
 ### Reframed (from ML to LLM/agent focus)
-- **L1-M2.1** Models & Flavors: sklearn → LangChain agent logging (`langchain` flavor)
+- **L1-M3.1** Models & Flavors: sklearn → LangChain agent logging (`langchain` flavor)
 - **L2-M1.1** Nested Runs: hyperparameter grid search → LLM configuration sweeps
 - **L2-M1.2** Async Logging: training loop → batch LLM evaluation
 - **L2-M2.1** Signatures: tensor-based → chat/completion/tool-call signatures
 - **L2-M2.2** Custom PyFunc: sklearn ensemble → RAG pipeline wrapping
 - **L2-M3.1** Custom Metrics: generic → LLM-specific (code quality, instruction following)
-- **L2-M8.1** Serving: generic model server → LLM model server
-- **L2-M9.1** HuggingFace: generic training → LLM fine-tuning with base vs. fine-tuned comparison
+- **L2-M7.1** Serving: generic model server → LLM model server
+- **L2-M8.1** HuggingFace: generic training → LLM fine-tuning with base vs. fine-tuned comparison
 - **L3-M4.4** Data Management: feature stores → evaluation dataset management
 - **L3-M5.2** Capstone Benchmark: LangChain/LangGraph/DeepAgents/Claude SDK (removed Codex), added SWE-Bench subset
 
@@ -1158,25 +1151,25 @@ tutorial/
 │   │   ├── 2_tracking_basics/
 │   │   ├── 3_search_query_api/
 │   │   └── 4_system_metrics/
-│   ├── M2_models_registry/
-│   │   ├── 1_models_flavors/
-│   │   └── 2_model_registry/
-│   ├── M3_tracing/
+│   ├── M2_tracing/
 │   │   ├── 1_autologging/
 │   │   └── 2_manual_tracing/
-│   ├── M4_evaluation/
+│   ├── M3_models/
+│   │   ├── 1_models_flavors/
+│   │   ├── 2_model_registry/
+│   │   └── 3_model_serving/
+│   ├── M4_evaluations/
 │   │   ├── 1_llm_eval_basics/
-│   │   └── 2_llm_as_judge/
-│   ├── M5_genai_features/
+│   │   ├── 2_llm_as_judge/
+│   │   ├── 3_scorers_judges/
+│   │   └── 4_datasets_labeling/
+│   ├── M5_prompt_engineering/
 │   │   ├── 1_prompt_registry/
-│   │   ├── 2_scorers_judges/
-│   │   └── 3_datasets_labeling/
+│   │   ├── 2_prompt_management/
+│   │   └── 3_prompt_optimization/
 │   ├── M6_data_datasets/
 │   │   └── 1_dataset_logging/
-│   ├── M7_deployment/
-│   │   ├── 1_model_serving/
-│   │   └── 2_ai_gateway/
-│   └── M8_auth/
+│   └── M7_auth/
 │       └── 1_auth_permissions/
 ├── level_2/
 │   ├── M1_advanced_tracking/
@@ -1202,15 +1195,13 @@ tutorial/
 │   │   ├── 1_langchain_agents/
 │   │   ├── 2_langgraph_agents/
 │   │   └── 3_multiagent_systems/
-│   ├── M6_prompt_engineering/
-│   │   ├── 1_prompt_management/
-│   │   └── 2_prompt_optimization/
-│   ├── M7_ai_gateway/
-│   │   └── 1_gateway_routing/
-│   ├── M8_deployment/
+│   ├── M6_ai_gateway/
+│   │   ├── 1_ai_gateway_overview/
+│   │   └── 2_gateway_routing/
+│   ├── M7_deployment/
 │   │   ├── 1_serving_deep_dive/
 │   │   └── 2_batch_prediction/
-│   └── M9_llm_finetuning/
+│   └── M8_llm_finetuning/
 │       └── 1_huggingface/
 ├── level_3/
 │   ├── M1_agent_evaluation/

@@ -106,4 +106,4 @@ In the MLflow UI, click on the run and go to the **System Metrics** tab to see t
 
 ## Next Steps
 
-You have completed **Module 1: Tracking**. Continue to **L1-M2 Models and Registry** where you will learn to package and version LLM models with MLflow. In Level 2, M1 covers advanced tracking — nested runs, async logging, and the MlflowClient deep dive.
+You have completed **Module 1: Tracking**. Continue to **L1-M2 Tracing** where you will learn how MLflow automatically and manually captures execution traces from LLM calls. In Level 2, M1 covers advanced tracking — nested runs, async logging, and the MlflowClient deep dive.

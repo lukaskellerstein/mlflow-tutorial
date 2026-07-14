@@ -9,7 +9,7 @@ This lesson demonstrates how to wrap a complete RAG (Retrieval-Augmented Generat
 
 ## Prerequisites
 
-- Completed: L1-M2.1 (Models and Flavors — PyFunc basics)
+- Completed: L1-M3.1 (Models and Flavors — PyFunc basics)
 - MLFlow server running at http://127.0.0.1:5000
 - LMStudio running with `google/gemma-4-e4b` and `text-embedding-nomic-embed-text-v1.5` models loaded
 

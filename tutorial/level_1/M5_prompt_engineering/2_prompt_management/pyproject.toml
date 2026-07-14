@@ -1,0 +1,12 @@
+[project]
+name = "mlflow-tutorial-L1-M5-prompt-management"
+version = "0.1.0"
+description = "Prompt Management at Scale — versioning, A/B testing, and team collaboration"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain>=0.3",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+]

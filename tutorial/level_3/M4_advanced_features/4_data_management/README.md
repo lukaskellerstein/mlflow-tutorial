@@ -9,7 +9,7 @@ Production ML systems live and die by their data. This lesson covers advanced da
 
 ## Prerequisites
 
-- Completed: L1-M7.1 (Dataset Logging), L1-M4.1 (Traditional ML Eval)
+- Completed: L1-M6.1 (Dataset Logging), L1-M4.1 (LLM Evaluation Basics)
 - MLFlow server running at http://127.0.0.1:5000
 
 ## Concepts

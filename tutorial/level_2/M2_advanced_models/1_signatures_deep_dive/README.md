@@ -13,7 +13,7 @@ logged MLflow model.
 
 ## Prerequisites
 
-- Completed: L1-M2.1 (Models and Flavors -- basic signature usage)
+- Completed: L1-M3.1 (Models and Flavors -- basic signature usage)
 - MLflow server running at http://127.0.0.1:5000
 - LMStudio running with `google/gemma-4-e4b` model loaded
 

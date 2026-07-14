@@ -65,15 +65,12 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 | Module | Lessons | Topics |
 |--------|---------|--------|
 | M1 Tracking | 4 | First run, tracking basics, search API, system metrics |
-| M2 Models & Registry | 3 | Model flavors, registry, PyFunc |
-| M3 Autologging | 2 | Traditional ML, LLM/GenAI |
-| M4 Evaluation | 3 | ML eval, LLM eval, LLM-as-judge |
-| M5 Tracing | 2 | Auto tracing, manual tracing |
-| M6 GenAI Features | 3 | Prompt registry, scorers/judges, datasets |
-| M7 Data & Datasets | 1 | Dataset logging and lineage |
-| M8 Deployment | 2 | Model serving, AI Gateway |
-| M9 Projects | 1 | MLflow Projects |
-| M10 Auth | 1 | Authentication and permissions |
+| M2 Tracing | 2 | Autologging (auto-tracing), manual tracing |
+| M3 Models | 3 | Model flavors, model registry, model serving |
+| M4 Evaluations | 4 | LLM eval basics, LLM-as-judge, scorers/judges, datasets |
+| M5 Prompt Engineering | 3 | Prompt registry, prompt management, prompt optimization |
+| M6 Data & Datasets | 1 | Dataset logging and lineage |
+| M7 Auth & Admin | 1 | Authentication and permissions |
 
 ### Level 2 — Practitioner
 
@@ -84,10 +81,9 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 | M3 Deep Evaluation | 4 | Custom metrics, RAG eval, GenAI framework, human-in-loop |
 | M4 Advanced Tracing | 4 | LangGraph, Temporal, OpenTelemetry, trace analysis |
 | M5 Agent Observability | 3 | LangChain agents, LangGraph agents, multi-agent systems |
-| M6 Prompt Engineering | 2 | Prompt management, prompt optimization |
-| M7 AI Gateway | 1 | Gateway routing and configuration |
-| M8 Deployment | 2 | Serving deep dive, batch prediction |
-| M9 Framework Integrations | 3 | PyTorch, HuggingFace, Sentence Transformers |
+| M6 AI Gateway | 2 | Gateway overview, routing and configuration |
+| M7 Deployment | 2 | Serving deep dive, batch prediction |
+| M8 LLM Fine-Tuning | 1 | HuggingFace Transformers |
 
 ### Level 3 — Expert
 
@@ -183,23 +179,21 @@ infra/                       # All infrastructure (Podman Compose)
 tutorial/
   level_1/                   # Essentials — breadth across all features
     M1_tracking/             #   First run, tracking basics, search, system metrics
-    M2_models_registry/      #   Models, flavors, registry, PyFunc
-    M3_tracing/              #   Autologging (auto-tracing) and manual tracing
-    M4_evaluation/           #   LLM eval basics, LLM-as-judge
-    M5_genai_features/       #   Prompts, scorers, judges, datasets
+    M2_tracing/              #   Autologging (auto-tracing) and manual tracing
+    M3_models/               #   Models, flavors, registry, model serving
+    M4_evaluations/          #   LLM eval, LLM-as-judge, scorers, datasets
+    M5_prompt_engineering/   #   Prompt registry, management, optimization
     M6_data_datasets/        #   Dataset logging and lineage
-    M7_deployment/           #   Model serving, AI Gateway
-    M8_auth/                 #   Authentication and permissions
+    M7_auth/                 #   Authentication and permissions
   level_2/                   # Practitioner — depth in each area
     M1_advanced_tracking/    #   Nested runs, async, artifacts, client API
     M2_advanced_models/      #   Signatures, custom PyFunc, registry workflows
     M3_deep_evaluation/      #   Custom metrics, RAG eval, GenAI framework
     M4_advanced_tracing/     #   LangGraph, Temporal, OpenTelemetry
     M5_agent_observability/  #   LangChain/LangGraph agents, multi-agent
-    M6_prompt_engineering/   #   Prompt management and optimization
-    M7_ai_gateway/           #   Gateway routing and configuration
-    M8_deployment/           #   Serving deep dive, batch prediction
-    M9_framework_integrations/ # PyTorch, HuggingFace, Sentence Transformers
+    M6_ai_gateway/           #   Gateway overview, routing and configuration
+    M7_deployment/           #   Serving deep dive, batch prediction
+    M8_llm_finetuning/       #   HuggingFace Transformers
   level_3/                   # Expert — mastery and production
     M1_agent_evaluation/     #   Testing, metrics, comparison, optimization
     M2_custom_integrations/  #   Claude SDK, Codex SDK, DeepAgents, autolog

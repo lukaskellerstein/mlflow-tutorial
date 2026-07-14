@@ -1,10 +1,9 @@
 [project]
-name = "mlflow-tutorial-L1-M6-dataset-logging"
+name = "mlflow-tutorial-L2-M7-serving-deep-dive"
 version = "0.1.0"
-description = "Dataset Logging and Lineage"
+description = "LLM Model Serving Deep Dive"
 requires-python = ">=3.10"
 dependencies = [
     "mlflow>=2.0",
     "openai>=1.0",
-    "pandas>=2.0",
 ]

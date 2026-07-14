@@ -1,9 +1,0 @@
-[project]
-name = "mlflow-tutorial-L1-M6-datasets-labeling"
-version = "0.1.0"
-description = "Datasets and Labeling"
-requires-python = ">=3.10"
-dependencies = [
-    "mlflow>=2.0",
-    "pandas>=2.0",
-]
