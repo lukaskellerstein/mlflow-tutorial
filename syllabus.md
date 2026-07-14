@@ -60,64 +60,61 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M1: Core Platform
+## L1-M1: Tracking
 
-### L1-1.1 — What is MLflow? Architecture Overview
-**Duration:** 20 min
+### L1-M1.1 — Your First MLflow Run
+**Duration:** 15 min
 **Topics:**
 - MLflow's 5 pillars: Tracking, Models, Registry, Evaluation, Deployment
-- Architecture: tracking server, backend store (SQLite/Postgres), artifact store (local/S3/GCS)
-- Installing MLflow with `uv`
-- Starting the tracking server and UI locally
+- Architecture: tracking server, backend store (PostgreSQL), artifact store
 - Key concepts: experiments, runs, parameters, metrics, artifacts, tags
-- MLflow in the Red Hat AI ecosystem: OpenShift AI includes a managed MLflow operator (`mlflowoperator` in the DataScienceCluster CR, GA in 3.4). This tutorial teaches MLflow standalone; the managed version works identically but is deployed and lifecycle-managed by the operator.
+- Calling a local LLM via LMStudio (OpenAI-compatible API)
+- Logging LLM configuration as parameters and results as metrics
 
 **Deliverables:**
-- Running MLflow server with UI at http://127.0.0.1:5000
-- Diagram of MLflow architecture (in README)
+- Script that calls an LLM, logs params/metrics/tags, and verifies in the MLflow UI
 
 ---
 
-### L1-1.2 — Experiment Tracking Basics
+### L1-M1.2 — Tracking LLM Experiments
 **Duration:** 30 min
 **Topics:**
-- Creating experiments with `mlflow.set_experiment()`
-- Starting runs with `mlflow.start_run()`
-- Logging parameters (`log_param`, `log_params`)
-- Logging metrics (`log_metric`, `log_metrics`) — single values and step-based
-- Logging artifacts (`log_artifact`, `log_artifacts`) — files, plots, configs
+- Comparing LLM configurations (temperature sweeps) as separate runs
+- Bulk logging with `log_params()` and `log_metrics()`
+- Step-based metric logging (`log_metric(..., step=N)`) across multiple prompts
+- Logging LLM responses as text artifacts (`log_artifact()`)
 - Setting tags (`set_tag`, `set_tags`)
-- Viewing results in MLflow UI
+- Viewing and comparing results in MLflow UI
 
 **Deliverables:**
-- Script that logs a simple scikit-learn experiment with params, metrics, and a plot artifact
+- Script that runs temperature comparisons, logs step-based token metrics, and saves response artifacts
 
 ---
 
-### L1-1.3 — Search and Query API
+### L1-M1.3 — Search and Query API
 **Duration:** 20 min
 **Topics:**
 - `mlflow.search_runs()` — filtering and sorting runs
-- Search syntax: `metrics.accuracy > 0.9 AND params.model = "rf"`
+- Search syntax: `params.temperature = '0.3' AND params.prompt_topic = 'transformers'`
 - `mlflow.search_experiments()`
 - `MlflowClient` for programmatic access
-- Exporting results to pandas DataFrames
+- Exporting results to pandas DataFrames for aggregation
 
 **Deliverables:**
-- Script that creates multiple runs, then queries and compares them programmatically
+- Script that creates multiple LLM runs, then queries and compares them programmatically
 
 ---
 
-### L1-1.4 — System Metrics Logging
+### L1-M1.4 — System Metrics Logging
 **Duration:** 15 min
 **Topics:**
 - Enabling system metrics: `mlflow.enable_system_metrics_logging()`
-- What gets logged: CPU, memory, disk, GPU utilization
-- Viewing system metrics in UI alongside model metrics
-- Use cases: identifying resource bottlenecks during training
+- What gets logged: CPU, memory, disk, network, GPU utilization
+- Viewing system metrics in UI alongside LLM metrics
+- Use cases: identifying resource bottlenecks during LLM inference
 
 **Deliverables:**
-- Training run with system metrics visible in MLflow UI
+- LLM inference run with system metrics visible in MLflow UI
 
 ---
 
@@ -394,7 +391,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
-| M1: Core Platform | 4 lessons | ~1.5 hours |
+| M1: Tracking | 4 lessons | ~1.5 hours |
 | M2: Models & Registry | 3 lessons | ~1.5 hours |
 | M3: Autologging | 2 lessons | ~1 hour |
 | M4: Evaluation | 3 lessons | ~1.5 hours |
@@ -1207,8 +1204,8 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 tutorial/
 ├── tutorial_new_syllabus.md          # This file — the master syllabus
 ├── level_1/
-│   ├── M1_core_platform/
-│   │   ├── 1_architecture_overview/
+│   ├── M1_tracking/
+│   │   ├── 1_first_run/
 │   │   ├── 2_tracking_basics/
 │   │   ├── 3_search_query_api/
 │   │   └── 4_system_metrics/

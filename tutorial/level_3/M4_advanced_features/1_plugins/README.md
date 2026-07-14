@@ -9,7 +9,7 @@ MLflow's plugin system allows you to extend nearly every aspect of the platform 
 
 ## Prerequisites
 
-- Completed: L1-M1 (Core Platform), L2-M1 (Advanced Tracking), L2-M3 (Deep Evaluation)
+- Completed: L1-M1 (Tracking), L2-M1 (Advanced Tracking), L2-M3 (Deep Evaluation)
 - MLflow server running at http://127.0.0.1:5000
 - Ollama running with `gemma4:e2b` model pulled
 

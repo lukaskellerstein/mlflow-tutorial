@@ -64,7 +64,7 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 
 | Module | Lessons | Topics |
 |--------|---------|--------|
-| M1 Core Platform | 4 | Architecture, tracking, search API, system metrics |
+| M1 Tracking | 4 | First run, tracking basics, search API, system metrics |
 | M2 Models & Registry | 3 | Model flavors, registry, PyFunc |
 | M3 Autologging | 2 | Traditional ML, LLM/GenAI |
 | M4 Evaluation | 3 | ML eval, LLM eval, LLM-as-judge |
@@ -133,7 +133,7 @@ podman compose up -d
 ### 4. Run your first lesson
 
 ```bash
-cd tutorial/level_1/M1_core_platform/1_architecture_overview
+cd tutorial/level_1/M1_tracking/1_first_run
 uv sync
 uv run python main.py
 ```
@@ -182,7 +182,7 @@ infra/                       # All infrastructure (Podman Compose)
   postgres/                  #   PostgreSQL init script
 tutorial/
   level_1/                   # Essentials — breadth across all features
-    M1_core_platform/        #   Tracking, search, system metrics
+    M1_tracking/             #   First run, tracking basics, search, system metrics
     M2_models_registry/      #   Models, flavors, registry, PyFunc
     M3_autologging/          #   Traditional ML + LLM autologging
     M4_evaluation/           #   ML eval, LLM eval, LLM-as-judge

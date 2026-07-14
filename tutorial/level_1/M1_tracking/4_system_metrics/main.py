@@ -1,40 +1,53 @@
 """
-L1-1.4 — System Metrics Logging
+L1-M1.4 — System Metrics Logging
 
-This lesson demonstrates how MLflow can automatically collect system-level
+Demonstrates how MLflow can automatically collect system-level
 metrics (CPU, memory, disk, network) during a run. We enable system metrics
-logging, run a computationally intensive task, and then inspect the captured
-metrics.
+logging, run an LLM call, and inspect the captured metrics.
 """
 
 import time
 
 import mlflow
 from mlflow import MlflowClient
-from sklearn.datasets import make_classification
-from sklearn.ensemble import RandomForestClassifier
+from openai import OpenAI
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-TRACKING_URI = "http://127.0.0.1:5000"
-EXPERIMENT_NAME = "L1/M1_core_platform/4_system_metrics"
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+EXPERIMENT_NAME = "L1/M1_tracking/4_system_metrics"
+
+LMSTUDIO_URL = "http://localhost:1234/v1"
+MODEL = "google/gemma-4-e4b"
 
 
-def run_intensive_task() -> dict[str, float]:
-    """Train a large RandomForest to generate CPU and memory load."""
-    X, y = make_classification(
-        n_samples=50_000, n_features=40, n_informative=20, random_state=42
-    )
-    model = RandomForestClassifier(n_estimators=100, max_depth=15, random_state=42)
-    model.fit(X, y)
-    accuracy = model.score(X, y)
-    return {"accuracy": accuracy, "n_samples": len(X), "n_estimators": 100}
+def run_llm_workload(client: OpenAI) -> dict:
+    """Run multiple LLM calls to generate measurable system load."""
+    prompts = [
+        "Write a detailed explanation of how gradient descent works in neural networks.",
+        "Explain the difference between supervised, unsupervised, and reinforcement learning.",
+        "Describe the architecture of a large language model and how it generates text.",
+    ]
+
+    total_tokens = 0
+    for prompt in prompts:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=256,
+        )
+        total_tokens += response.usage.total_tokens
+
+    return {"total_tokens": total_tokens, "num_calls": len(prompts)}
 
 
 def main() -> None:
-    mlflow.set_tracking_uri(TRACKING_URI)
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     mlflow.set_experiment(EXPERIMENT_NAME)
+
+    client = OpenAI(base_url=LMSTUDIO_URL, api_key="lm-studio")
 
     # ------------------------------------------------------------------
     # 1. What are system metrics?
@@ -58,10 +71,7 @@ def main() -> None:
     print("Step 1: Enable system metrics logging")
     print("=" * 60)
 
-    # Enable globally — all subsequent runs will collect system metrics.
     mlflow.enable_system_metrics_logging()
-
-    # Speed up collection: sample every 5 seconds instead of default 10.
     mlflow.set_system_metrics_sampling_interval(5)
     mlflow.set_system_metrics_samples_before_logging(1)
 
@@ -70,24 +80,22 @@ def main() -> None:
     print()
 
     # ------------------------------------------------------------------
-    # 3. Run a compute-heavy task inside a tracked run
+    # 3. Run LLM calls inside a tracked run
     # ------------------------------------------------------------------
     print("=" * 60)
-    print("Step 2: Run a compute-intensive task")
+    print("Step 2: Run LLM calls with system metrics collection")
     print("=" * 60)
 
     with mlflow.start_run(run_name="system_metrics_demo") as run:
         run_id = run.info.run_id
         print(f"  Run ID: {run_id}")
-        print("  Training a large RandomForest (this generates CPU/memory load)...")
+        print("  Making LLM calls (this generates CPU/memory load)...")
 
-        results = run_intensive_task()
-        mlflow.log_params(
-            {"model": "RandomForestClassifier", "n_estimators": results["n_estimators"]}
-        )
-        mlflow.log_metric("accuracy", results["accuracy"])
+        results = run_llm_workload(client)
+        mlflow.log_params({"model": MODEL, "num_calls": results["num_calls"]})
+        mlflow.log_metric("total_tokens", results["total_tokens"])
 
-        print(f"  Accuracy: {results['accuracy']:.4f}")
+        print(f"  Total tokens: {results['total_tokens']}")
         print("  Waiting 12 seconds for system metrics collection...")
         time.sleep(12)
 
@@ -101,10 +109,9 @@ def main() -> None:
     print("Step 3: Inspect collected system metrics")
     print("=" * 60)
 
-    client = MlflowClient(TRACKING_URI)
-    run_data = client.get_run(run_id)
+    mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
+    run_data = mlflow_client.get_run(run_id)
 
-    # System metrics are prefixed with "system/"
     system_metrics = {
         k: v
         for k, v in run_data.data.metrics.items()
@@ -122,7 +129,7 @@ def main() -> None:
     print("=" * 60)
     print("Done!")
     print("=" * 60)
-    print(f"  Open the MLflow UI at {TRACKING_URI}")
+    print(f"  Open the MLflow UI at {MLFLOW_TRACKING_URI}")
     print(f"  Navigate to experiment: {EXPERIMENT_NAME}")
     print("  Click on the run and go to the 'System Metrics' tab to see")
     print("  time-series charts for CPU, memory, disk, and network usage.")

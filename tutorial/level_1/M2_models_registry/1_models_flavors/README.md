@@ -11,7 +11,7 @@ input/output schemas, and how *input examples* make models self-documenting.
 
 ## Prerequisites
 
-- Completed: L1-M1 (Core Platform — tracking basics)
+- Completed: L1-M1 (Tracking)
 - MLflow server running at http://127.0.0.1:5000
 - Ollama is **not** required for this lesson (we use scikit-learn)
 

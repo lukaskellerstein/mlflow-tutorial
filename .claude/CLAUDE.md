@@ -41,7 +41,7 @@ infra/                          # All infrastructure (Podman Compose)
 syllabus.md                     # Master syllabus — the source of truth (project root)
 tutorial/
   level_1/                      # Level 1: Essentials (breadth)
-    M1_core_platform/
+    M1_tracking/
     M2_models_registry/
     M3_autologging/
     M4_evaluation/

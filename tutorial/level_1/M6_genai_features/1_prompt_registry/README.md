@@ -9,7 +9,7 @@ The MLflow Prompt Registry provides centralized, versioned storage for prompt te
 
 ## Prerequisites
 
-- Completed: L1-M1 (Core Platform), L1-M5 (Tracing basics)
+- Completed: L1-M1 (Tracking), L1-M5 (Tracing basics)
 - MLflow server running at http://127.0.0.1:5000
 - Ollama running with `gemma4:e2b` model pulled
 

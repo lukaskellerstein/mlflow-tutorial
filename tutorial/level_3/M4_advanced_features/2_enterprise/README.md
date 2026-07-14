@@ -9,7 +9,7 @@ Enterprise deployments of MLflow require more than just experiment tracking. Tea
 
 ## Prerequisites
 
-- Completed: L1-M1 (core platform), L1-M2 (model registry), L1-M10 (auth)
+- Completed: L1-M1 (Tracking), L1-M2 (model registry), L1-M10 (auth)
 - MLflow server running at http://127.0.0.1:5000
 - Familiarity with `MlflowClient` programmatic API
 

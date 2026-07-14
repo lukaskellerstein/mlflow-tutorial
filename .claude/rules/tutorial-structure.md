@@ -29,8 +29,8 @@ Every lesson lives in `tutorial/<level>/<module>/<lesson>/` and contains exactly
 syllabus.md                         # Master syllabus — source of truth (project root)
 tutorial/
   level_1/
-    M1_core_platform/
-      1_architecture_overview/
+    M1_tracking/
+      1_first_run/
       2_tracking_basics/
       3_search_query_api/
       4_system_metrics/

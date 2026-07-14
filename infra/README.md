@@ -67,7 +67,7 @@ open http://localhost:3000
 ### 4. Run a lesson
 
 ```bash
-cd ../tutorial/level_1/M1_core_platform/1_architecture_overview
+cd ../tutorial/level_1/M1_tracking/1_first_run
 uv sync
 uv run python main.py
 ```

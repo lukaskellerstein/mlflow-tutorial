@@ -9,7 +9,7 @@ When training loops log hundreds or thousands of metrics, synchronous logging ca
 
 ## Prerequisites
 
-- Completed: L1-M1 (Core Platform), L2-1.1 (Nested Runs)
+- Completed: L1-M1 (Tracking), L2-1.1 (Nested Runs)
 - MLflow server running at http://127.0.0.1:5000
 
 ## Concepts

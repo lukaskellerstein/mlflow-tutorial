@@ -9,7 +9,7 @@ MLflow Projects provide a standard format for packaging and reproducing ML exper
 
 ## Prerequisites
 
-- Completed: L1-M1 (Core Platform) lessons
+- Completed: L1-M1 (Tracking) lessons
 - MLFlow server running at http://127.0.0.1:5000
 - Ollama is **not** required for this lesson
 

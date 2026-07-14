@@ -11,7 +11,7 @@ You will learn how to define custom Prometheus metrics, instrument LLM calls, ge
 
 ## Prerequisites
 
-- Completed: L1-M1 (Core Platform), L1-M4 (Evaluation), L3-M3.1 (Production Tracing)
+- Completed: L1-M1 (Tracking), L1-M4 (Evaluation), L3-M3.1 (Production Tracing)
 - MLflow server running at http://127.0.0.1:5000
 - Ollama running with `gemma4:e2b` model pulled
 - Prometheus running at http://localhost:9090 (via `podman compose up -d` from `infra/`)
