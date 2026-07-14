@@ -11,7 +11,7 @@ This lesson builds a multi-agent system using LangGraph's supervisor pattern and
 
 - Completed: L1-M5.1 (Auto Tracing), L2-M5.2 (LangGraph Agents)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -75,7 +75,7 @@ Each agent is a function that receives the state, calls an LLM chain, and return
 
 ```python
 def researcher_node(state: PipelineState) -> dict:
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.7)
     prompt = ChatPromptTemplate.from_messages([...])
     chain = prompt | llm | StrOutputParser()
     notes = chain.invoke({"topic": state["topic"]})
@@ -169,11 +169,11 @@ Analyzing Traces
   Spans (8):
     (root)   LangGraph  [CHAIN]  9300ms
              researcher  [CHAIN]  3200ms
-             ChatOllama  [LLM]   3100ms
+             ChatOpenAI  [LLM]   3100ms
              writer      [CHAIN]  4100ms
-             ChatOllama  [LLM]   4000ms
+             ChatOpenAI  [LLM]   4000ms
              reviewer    [CHAIN]  2000ms
-             ChatOllama  [LLM]   1900ms
+             ChatOpenAI  [LLM]   1900ms
 
 ============================================================
 Logging Multi-Agent Metrics

@@ -12,7 +12,7 @@ Different agent architectures make fundamentally different tradeoffs between qua
 - Completed: L3-1.1 (Agent Testing), L3-1.2 (Quality Metrics)
 - Completed: L2-5.1 (LangChain Agents), L2-5.2 (LangGraph Agents)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -29,7 +29,7 @@ Choosing an agent architecture is rarely about picking "the best" one. Instead, 
 A valid architecture comparison requires:
 
 1. **Same task** -- all architectures answer the same questions
-2. **Same model** -- all use the same LLM (gemma4:e2b) at the same temperature
+2. **Same model** -- all use the same LLM (google/gemma-4-26b-a4b) at the same temperature
 3. **Same tools** -- all have access to identical tool implementations
 4. **Same metrics** -- all are scored with the same evaluation functions
 5. **Same environment** -- all run in the same session, logged to the same MLflow experiment

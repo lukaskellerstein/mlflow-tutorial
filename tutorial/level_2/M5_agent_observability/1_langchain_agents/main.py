@@ -18,7 +18,7 @@ import mlflow
 import mlflow.langchain
 from langchain.agents import create_agent
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 # ---------------------------------------------------------------------------
@@ -73,8 +73,13 @@ TOOLS = [calculator, string_reverser, word_counter]
 
 
 def build_agent():
-    """Create a ReAct agent with ChatOllama and the custom tools."""
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    """Create a ReAct agent with ChatOpenAI and the custom tools."""
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
     agent = create_agent(
         model=llm,
         tools=TOOLS,
@@ -103,7 +108,7 @@ def run_agent_tasks(agent) -> list[dict]:
     with mlflow.start_run(run_name="langchain_agent_tasks"):
         mlflow.set_tags({
             "agent_type": "react",
-            "model": "gemma4:e2b",
+            "model": "google/gemma-4-26b-a4b",
             "num_tools": str(len(TOOLS)),
             "tool_names": ", ".join(t.name for t in TOOLS),
         })
@@ -244,7 +249,7 @@ def main() -> None:
     mlflow.langchain.autolog(log_traces=True)
 
     # Step 2: Build the agent
-    print("Step 2: Building ReAct agent with gemma4:e2b + 3 tools")
+    print("Step 2: Building ReAct agent with google/gemma-4-26b-a4b + 3 tools")
     agent = build_agent()
 
     # Step 3: Run tasks

@@ -11,7 +11,7 @@ When evaluating LLM outputs, you need scoring mechanisms that go beyond simple s
 
 - Completed: L1-6.1 (Prompt Registry)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -68,7 +68,7 @@ Each sub-score ranges from 0 to 1, and the composite is a weighted average.
 
 ### Step 2: Build an LLM Judge
 
-The LLM judge sends a structured prompt to `gemma4:e2b` asking it to score on relevance, completeness, and clarity:
+The LLM judge sends a structured prompt to `google/gemma-4-e4b` asking it to score on relevance, completeness, and clarity:
 
 ```python
 def llm_judge(llm, question, expected, response):

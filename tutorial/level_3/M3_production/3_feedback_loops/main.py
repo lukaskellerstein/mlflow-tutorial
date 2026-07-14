@@ -17,7 +17,7 @@ from typing import Any
 import mlflow
 import pandas as pd
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from mlflow.entities import AssessmentSource, AssessmentSourceType
 
 
@@ -156,7 +156,7 @@ QUESTIONS = [
 
 
 @mlflow.trace(name="qa_response")
-def generate_response(llm: ChatOllama, question: str, system_prompt: str) -> str:
+def generate_response(llm: ChatOpenAI, question: str, system_prompt: str) -> str:
     """Generate a response to a question using the LLM."""
     messages = [SystemMessage(content=system_prompt), HumanMessage(content=question)]
     result = llm.invoke(messages)
@@ -245,7 +245,7 @@ PROMPT_V2 = (
 
 
 def run_iteration(
-    llm: ChatOllama,
+    llm: ChatOpenAI,
     collector: FeedbackCollector,
     system_prompt: str,
     iteration: int,
@@ -258,7 +258,7 @@ def run_iteration(
         mlflow.log_params({
             "iteration": iteration,
             "system_prompt": system_prompt[:250],
-            "model": "gemma4:e2b",
+            "model": "google/gemma-4-26b-a4b",
             "num_questions": len(QUESTIONS),
         })
 
@@ -309,7 +309,12 @@ def main() -> None:
     print("L3-3.3 -- Production Feedback Loops")
     print("=" * 60)
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     collector = FeedbackCollector()
 
     # Enable LangChain auto-tracing so each LLM call gets a trace

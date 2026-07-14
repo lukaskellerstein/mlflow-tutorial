@@ -4,47 +4,29 @@ globs: ["tutorial/level_2/M5_agent_observability/**", "tutorial/level_3/M1_agent
 
 # Agent Evaluation — Core Focus Area
 
-This is the most important part of the tutorial. The goal is to show how to systematically evaluate AI agents using MLFlow, with special emphasis on agents built with diverse frameworks.
+This is the most important part of the tutorial. The goal is to show how to systematically evaluate AI agents using MLFlow, with special emphasis on agents built with diverse frameworks. See `syllabus.md` for which lessons cover agents and where they fit.
 
-## Where Agents Appear in the Curriculum
+## Agent Frameworks
 
-- **Level 2, M5**: Agent Observability — LangChain agents, LangGraph agents, multi-agent systems. Focus on tracing and tracking.
-- **Level 3, M1**: Advanced Agent Evaluation — testing, quality metrics, architecture comparison, optimization, end-to-end pipeline. This is the deepest module.
-- **Level 3, M2**: Custom Integrations — Claude Agent SDK, Codex SDK, DeepAgents, custom autolog. Integrating non-LangChain frameworks with MLflow.
-- **Level 3, M5**: Capstones — full production agent platform and cross-framework benchmark.
-
-## Agent Frameworks Covered
-
-### 1. LangChain Agents (Level 2, M5.1)
-- Use `create_react_agent` from LangChain v1.0+ (NOT deprecated APIs)
+### LangChain Agents
+- Use `create_agent` from `langchain.agents` (LangChain v1.0+, NOT deprecated APIs)
 - Auto-log with `mlflow.langchain.autolog()`
 - Track: tool calls, reasoning steps, iterations, final answers
-- Reference code: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain/10_agent`
 
-### 2. LangGraph Agents (Level 2, M5.2 and M5.3)
+### LangGraph Agents
 - Use `StateGraph`, nodes, edges, conditional edges
+- Use `ToolNode` for tool execution nodes, `Command` for agent handoffs
 - Auto-trace state transitions with `mlflow.langchain.autolog()`
-- Single agents (M5.2) and multi-agent systems (M5.3)
 - Patterns: collaboration, supervision, swarm
-- Reference code (agents): `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph/5_agent`
-- Reference code (multi-agent): `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph/6_agents`
 
-### 3. Claude Agent SDK (Level 3, M2.1)
+### Claude Agent SDK
 - Anthropic's agent framework for building autonomous agents
 - No native MLFlow autolog — build custom tracing integration
-- Reference code: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
-- Source code: `~/Projects/github/anthropics/claude-agent-sdk-python`
 
-### 4. Codex SDK (Level 3, M2.2)
-- OpenAI's code generation agent framework (TypeScript)
-- Custom MLFlow integration needed — wrap calls with manual tracing
-- Reference code: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/3_Codex_SDK/typescript`
-- Source code: `~/Projects/github/openai/codex/sdk`
-
-### 5. DeepAgents (Level 3, M2.3)
+### DeepAgents
 - LangChain-AI's multi-agent orchestration framework
+- Use `create_deep_agent()` with configurable backends and sub-agent delegation
 - Explore existing MLFlow integration or build custom
-- Source code: `~/Projects/github/lanchain-ai/deepagents`
 
 ## What to Evaluate in Agents
 
@@ -81,9 +63,9 @@ This is the most important part of the tutorial. The goal is to show how to syst
 8. **Track everything** — every evaluation run should be logged to MLFlow with full parameters
 9. **Build CI/CD gates** — automated quality thresholds before deployment
 
-## Custom Integration Pattern (for non-LangChain frameworks)
+## Custom Integration Pattern
 
-For frameworks without native MLFlow support (Claude Agent SDK, Codex SDK, DeepAgents), use this pattern:
+For frameworks without native MLFlow support (Claude Agent SDK, DeepAgents), use this pattern:
 
 ```python
 import mlflow
@@ -97,6 +79,4 @@ def run_agent(input_text: str) -> str:
         return result
 ```
 
-Wrap the framework's execution in MLFlow tracing decorators and manual spans to capture the full execution flow.
-
-For Level 3, M2.4 (Custom Autolog), go further and build a reusable autolog implementation that can be published as an MLflow plugin.
+Wrap the framework's execution in MLFlow tracing decorators and manual spans to capture the full execution flow. For custom autolog lessons, go further and build a reusable autolog implementation that can be published as an MLflow plugin.

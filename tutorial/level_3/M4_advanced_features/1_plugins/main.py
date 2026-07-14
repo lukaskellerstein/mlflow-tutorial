@@ -20,7 +20,7 @@ from typing import Any
 import mlflow
 import pandas as pd
 from langchain_core.messages import HumanMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.context.abstract_context import RunContextProvider
 from mlflow.tracking.context.registry import _run_context_provider_registry
@@ -265,7 +265,7 @@ class LLMOutputEvaluator:
         return metrics
 
 
-def part4_model_evaluator(llm: ChatOllama) -> list[dict[str, Any]]:
+def part4_model_evaluator(llm: ChatOpenAI) -> list[dict[str, Any]]:
     """Run the custom evaluator against LLM responses."""
     print("=" * 60)
     print("Part 4: Custom Model Evaluator Plugin")
@@ -284,7 +284,7 @@ def part4_model_evaluator(llm: ChatOllama) -> list[dict[str, Any]]:
 
     with mlflow.start_run(run_name="evaluator-plugin-demo"):
         mlflow.log_param("num_prompts", len(prompts))
-        mlflow.log_param("model", "gemma4:e2b")
+        mlflow.log_param("model", "google/gemma-4-26b-a4b")
 
         print()
         for i, prompt in enumerate(prompts):
@@ -326,7 +326,7 @@ def part4_model_evaluator(llm: ChatOllama) -> list[dict[str, Any]]:
 # ── Part 5: End-to-End Demonstration ──────────────────────────────────── #
 
 
-def part5_combined_demo(llm: ChatOllama) -> None:
+def part5_combined_demo(llm: ChatOpenAI) -> None:
     """Run an LLM task with all custom plugins active."""
     print("=" * 60)
     print("Part 5: Combined Plugin Demonstration")
@@ -340,7 +340,7 @@ def part5_combined_demo(llm: ChatOllama) -> None:
 
     with mlflow.start_run(run_name="combined-plugins-demo") as run:
         mlflow.log_param("task", "explanation")
-        mlflow.log_param("model", "gemma4:e2b")
+        mlflow.log_param("model", "google/gemma-4-26b-a4b")
 
         # The EnvironmentContextProvider auto-injects env tags (Part 2)
         print("\n  [Context Provider] Environment tags auto-injected on run creation.")
@@ -389,7 +389,12 @@ def main() -> None:
     part3_metric_aggregator()
 
     # Parts 4-5 use the LLM
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     part4_model_evaluator(llm)
     part5_combined_demo(llm)
 

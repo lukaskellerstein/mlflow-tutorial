@@ -11,7 +11,7 @@ Design and implement comprehensive quality metrics for evaluating AI agents. Thi
 
 - Completed: L1-M4.2 (LLM Eval Basics), L1-M6.2 (Scorers & Judges), L2-M3.1 (Custom Metrics)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -71,7 +71,7 @@ Six test cases cover single-tool, multi-tool, and no-tool scenarios. Each case s
 
 **tool_selection_scorer**: Computes precision, recall, and F1 of tool choices. Handles edge cases: no tools expected, tools expected but none used, etc.
 
-**reasoning_quality_scorer**: Sends the question and answer to `gemma4:e2b` as a judge, requesting a 0.0-1.0 score for reasoning coherence.
+**reasoning_quality_scorer**: Sends the question and answer to `google/gemma-4-26b-a4b` as a judge, requesting a 0.0-1.0 score for reasoning coherence.
 
 **response_quality_scorer**: Combines three sub-dimensions (length, structure, relevance) into a weighted composite.
 

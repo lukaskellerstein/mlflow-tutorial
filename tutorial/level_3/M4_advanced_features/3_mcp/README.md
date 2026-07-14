@@ -11,7 +11,7 @@ Model Context Protocol (MCP) is a standard that lets AI applications discover an
 
 - Completed: L1-M5 (Tracing), L2-M4 (Advanced Tracing)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -79,7 +79,7 @@ def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
 
 ### Step 3: Build the MCP Client
 
-The `MCPClient` discovers tools from the server, uses an LLM (ChatOllama) to select the right tool for a natural-language query, and calls it:
+The `MCPClient` discovers tools from the server, uses an LLM (ChatOpenAI via LMStudio) to select the right tool for a natural-language query, and calls it:
 
 1. `discover_tools()` — fetches the tool manifests from the server
 2. `select_tool(query)` — asks the LLM to return `{"tool": ..., "arguments": ...}`

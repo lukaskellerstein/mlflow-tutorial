@@ -9,7 +9,7 @@ Demonstrates MLflow's manual tracing APIs:
 
 import mlflow
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 # ------------------------------------------------------------------ #
 # Part 1: @mlflow.trace decorator
@@ -62,7 +62,12 @@ def analyze_texts(texts: list[str]) -> dict:
 
 @mlflow.trace(name="summarize_with_llm")
 def summarize_with_llm(text: str) -> str:
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-e4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     prompt = ChatPromptTemplate.from_messages(
         [("user", "Summarize this in one sentence:\n\n{text}")]
     )

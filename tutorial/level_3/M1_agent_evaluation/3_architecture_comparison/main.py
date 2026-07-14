@@ -8,7 +8,7 @@ with shared tools and evaluation criteria:
   2. ReAct Agent     — langchain.agents.create_agent with tools
   3. Multi-step Pipe — LangGraph StateGraph: classify -> process -> respond
 
-All architectures use ChatOllama(model="gemma4:e2b") and are evaluated
+All architectures use ChatOpenAI(model="google/gemma-4-26b-a4b") and are evaluated
 on the same 5-question benchmark.  Results are logged as nested MLflow
 runs and printed as a comparison table.
 """
@@ -21,7 +21,7 @@ import mlflow.langchain
 import pandas as pd
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langchain.agents import create_agent
@@ -37,7 +37,12 @@ mlflow.langchain.autolog(log_traces=True)
 # ---------------------------------------------------------------------------
 # Shared LLM
 # ---------------------------------------------------------------------------
-llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+llm = ChatOpenAI(
+    model="google/gemma-4-26b-a4b",
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    temperature=0.0,
+)
 
 # ---------------------------------------------------------------------------
 # Shared tools
@@ -310,7 +315,7 @@ def main() -> None:
             "comparison_type": "architecture",
             "num_architectures": str(len(ARCHITECTURES)),
             "num_test_cases": str(len(EVAL_DATASET)),
-            "model": "gemma4:e2b",
+            "model": "google/gemma-4-26b-a4b",
         })
 
         for arch_name, arch_fn in ARCHITECTURES:
@@ -331,7 +336,7 @@ def main() -> None:
 
                 mlflow.log_params({
                     "architecture": arch_name,
-                    "model": "gemma4:e2b",
+                    "model": "google/gemma-4-26b-a4b",
                     "num_cases": len(rows),
                 })
                 mlflow.log_metrics({

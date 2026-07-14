@@ -6,7 +6,6 @@ requires-python = ">=3.10"
 dependencies = [
     "mlflow>=2.0",
     "pandas>=2.0",
-    "ollama>=0.4",
-    "langchain-ollama>=0.2",
+    "langchain-openai>=0.1",
     "langchain-core>=0.3",
 ]

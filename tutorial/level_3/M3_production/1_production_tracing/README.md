@@ -11,7 +11,7 @@ In production, tracing every single LLM request creates unacceptable overhead. T
 
 - Completed: L1-M5 (Tracing basics), L2-M4 (Advanced Tracing)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 

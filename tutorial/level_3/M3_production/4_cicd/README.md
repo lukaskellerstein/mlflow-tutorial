@@ -12,7 +12,7 @@ Deploy AI models with confidence by enforcing automated quality gates in your CI
 - Completed: L3-3.1 (Production Tracing), L3-3.3 (Feedback Loops)
 - Completed: L1-4.2 (LLM Eval Basics), L2-3.1 (Custom Metrics)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -62,7 +62,7 @@ class QualityGate:
 The `EvaluationHarness` runs each test case multiple times (default: 2 runs) to measure both accuracy and consistency. It collects per-case pass rates, latencies, and error counts.
 
 ```python
-harness = EvaluationHarness(model_name="gemma4:e2b", temperature=0.0)
+harness = EvaluationHarness(model_name="google/gemma-4-26b-a4b", temperature=0.0)
 metrics = harness.run(TEST_CASES, runs=2)
 ```
 

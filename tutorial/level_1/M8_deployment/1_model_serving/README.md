@@ -1,28 +1,37 @@
-# L1-8.1 — Model Serving Basics
+# L1-M8.1 -- Model Serving Basics
 
 **Level:** Essentials
-**Duration:** 30 min
+**Duration:** ~30 minutes
 
 ## Overview
 
-MLflow can serve any logged model as a REST API with a single CLI command. This lesson covers how to prepare a model for serving, the available endpoints and input formats, batch prediction, and Docker containerization. You will also compare serving against programmatic (in-process) prediction.
+MLflow can serve any logged model as a REST API with a single CLI command.
+This lesson covers how to wrap an LLM call in a custom `PythonModel`,
+log it with MLflow, test it locally, and serve it as a REST endpoint.
+Any application -- in any language -- can then call your LLM over HTTP.
 
 ## Prerequisites
 
 - Completed: L1-M2 (Models and Registry)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama is **not** required for this lesson (uses scikit-learn)
+- LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts
 
 ### Why Model Serving?
 
-Training a model is only half the story. To use it in an application you need to make it accessible. MLflow provides two main approaches:
+Building an LLM application is only half the story. To integrate it into
+a product you need to make it accessible. MLflow provides several approaches:
 
-1. **Real-time serving** — expose the model as a REST API so any language or service can call it over HTTP.
-2. **Batch prediction** — run the model against a file of inputs from the command line.
+1. **Real-time serving** -- expose the model as a REST API so any language
+   or service can call it over HTTP.
+2. **Batch prediction** -- run the model against a file of inputs from the
+   command line.
+3. **Programmatic loading** -- load the model in Python for scripts and
+   notebooks.
 
-Both approaches work with any MLflow model flavor (sklearn, PyTorch, pyfunc, LangChain, etc.) without writing any serving code.
+All approaches work with any MLflow model flavor (pyfunc, langchain, openai,
+etc.) without writing any serving code.
 
 ### Serving Architecture
 
@@ -31,13 +40,15 @@ Client (curl / app)       MLflow Serving Process
    |                          |
    |  POST /invocations       |
    | -----------------------> |
-   |                          |  Load model from artifact store
-   |                          |  Run model.predict(input)
-   |  JSON predictions        |
+   |                          |  Load PythonModel
+   |                          |  Call model.predict(input)
+   |                          |  (model calls LLM internally)
+   |  JSON response           |
    | <----------------------- |
 ```
 
-The serving process loads the model once at startup and handles prediction requests.
+The serving process loads the model once at startup and handles requests.
+For our LLM model, each prediction request triggers an API call to LMStudio.
 
 ### Endpoints
 
@@ -55,8 +66,8 @@ The `/invocations` endpoint accepts JSON in two formats:
 ```json
 {
   "dataframe_split": {
-    "columns": ["feature_0", "feature_1", "feature_2", "feature_3"],
-    "data": [[5.1, 3.5, 1.4, 0.2]]
+    "columns": ["question"],
+    "data": [["What is MLflow?"]]
   }
 }
 ```
@@ -64,84 +75,74 @@ The `/invocations` endpoint accepts JSON in two formats:
 **instances**:
 ```json
 {
-  "instances": [
-    {"feature_0": 5.1, "feature_1": 3.5, "feature_2": 1.4, "feature_3": 0.2}
-  ]
+  "instances": [{"question": "What is MLflow?"}]
 }
 ```
 
-Both produce the same result. The `dataframe_split` format is more compact for many rows.
-
 ## Step-by-Step
 
-### Step 1: Train and Register a Model
+### Step 1: Create a PythonModel wrapper
 
-We train a RandomForest on the Iris dataset and log it with a **signature** and **input example**. The signature tells the serving layer what input shape and types to expect. The input example gives documentation and testing data.
+We define a class that inherits from `mlflow.pyfunc.PythonModel` and wraps
+an LLM API call. The `predict` method receives a DataFrame and returns
+a list of answers.
 
 ```python
-signature = infer_signature(X_test, clf.predict(X_test))
-mlflow.sklearn.log_model(
-    clf,
-    artifact_path="model",
+class LLMModel(mlflow.pyfunc.PythonModel):
+    def predict(self, context, model_input, params=None):
+        from openai import OpenAI
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        questions = model_input["question"].tolist()
+        answers = []
+        for question in questions:
+            response = client.chat.completions.create(
+                model="google/gemma-4-e4b",
+                messages=[{"role": "user", "content": question}],
+            )
+            answers.append(response.choices[0].message.content)
+        return answers
+```
+
+### Step 2: Log and register the model
+
+We log the model with a signature and input example, and register it for
+easy access.
+
+```python
+mlflow.pyfunc.log_model(
+    name="model",
+    python_model=LLMModel(),
     signature=signature,
     input_example=input_example,
-    registered_model_name="iris-classifier-serving-demo",
+    registered_model_name="L1-llm-serving-demo",
+    pip_requirements=["openai>=1.0", "mlflow>=2.0"],
 )
 ```
 
-### Step 2: Serve the Model
+### Step 3: Test locally
 
-After logging and registering, serve it with one command:
+Before serving, verify the model works by loading it in-process.
 
-```bash
-mlflow models serve -m "models:/iris-classifier-serving-demo/1" --port 5001 --no-conda
+```python
+model = mlflow.pyfunc.load_model(f"runs:/{run_id}/model")
+predictions = model.predict(pd.DataFrame({"question": ["What is AI?"]}))
 ```
 
-This starts a local REST server on port 5001. The `--no-conda` flag skips Conda environment creation (use your current environment instead).
+### Step 4: Serve as REST API
 
-### Step 3: Call the Serving Endpoints
+Start the serving process with one command:
 
-Health check:
 ```bash
-curl http://127.0.0.1:5001/ping
+mlflow models serve -m "models:/L1-llm-serving-demo/1" --port 5001 --no-conda
 ```
 
-Prediction:
+### Step 5: Call the API
+
 ```bash
 curl -X POST http://127.0.0.1:5001/invocations \
   -H "Content-Type: application/json" \
-  -d '{"dataframe_split": {"columns": ["feature_0","feature_1","feature_2","feature_3"], "data": [[5.1,3.5,1.4,0.2]]}}'
+  -d '{"dataframe_split": {"columns": ["question"], "data": [["What is MLflow?"]]}}'
 ```
-
-### Step 4: Programmatic Prediction (Alternative)
-
-For Python scripts and notebooks, you can skip serving entirely and load the model directly:
-
-```python
-model = mlflow.pyfunc.load_model("models:/iris-classifier-serving-demo/1")
-predictions = model.predict(sample_dataframe)
-```
-
-This is simpler but only works within Python.
-
-### Step 5: Batch Prediction
-
-For processing a file of inputs without writing code:
-
-```bash
-mlflow models predict -m "models:/iris-classifier-serving-demo/1" -i input.csv
-```
-
-### Step 6: Docker Containerization
-
-Package the model as a Docker image for deployment anywhere:
-
-```bash
-mlflow models build-docker -m "models:/iris-classifier-serving-demo/1" -n "iris-server"
-docker run -p 5001:8080 iris-server
-```
-
-The container includes the model, its dependencies, and the serving layer. It exposes the same `/invocations`, `/ping`, and `/version` endpoints.
 
 ## Running the Lesson
 
@@ -151,29 +152,39 @@ uv sync
 uv run python main.py
 ```
 
-Note: The script trains, logs, registers the model, and runs programmatic predictions. It prints the CLI commands for serving and batch prediction but does not start a server process. Follow the printed instructions to try serving yourself.
+Note: The script logs the model, tests it locally, and prints serving
+commands. It does not start a server process. Follow the printed instructions
+to try serving yourself.
 
 ## Expected Output
 
 In the terminal you will see:
-- Model training with accuracy around 1.0 (Iris is a simple dataset)
-- The model URI and registered model name
-- CLI commands for serving, curl requests, and batch prediction
-- Programmatic predictions (class labels 0, 1, or 2)
+- The model signature showing "question" input and string output
+- The model logged and registered as `L1-llm-serving-demo`
+- Local test predictions for 3 questions
+- CLI commands for serving, curl requests, batch prediction, and Docker
 
 In the MLflow UI at http://127.0.0.1:5000:
-- Experiment "L1/M8_deployment/1_model_serving" with two runs
-- The first run contains the logged model with signature and input example
-- The second run contains the batch input CSV artifact
+- Experiment "L1/M8_deployment/1_model_serving" with one run
+- The run contains the logged model with signature and input example
 
 ## Key Takeaways
 
-- `mlflow models serve` turns any logged model into a REST API with zero application code.
+- `mlflow.pyfunc.PythonModel` lets you wrap any Python code -- including
+  LLM API calls -- as a servable MLflow model.
+- `mlflow models serve` turns any logged model into a REST API with zero
+  application code.
 - Models need a **signature** and **input example** for reliable serving.
-- The `/invocations` endpoint accepts JSON in `dataframe_split` or `instances` format.
-- `mlflow.pyfunc.load_model()` is the in-process alternative when you don't need HTTP.
-- `mlflow models build-docker` packages the model into a portable container.
+- The `/invocations` endpoint accepts JSON in `dataframe_split` or
+  `instances` format.
+- `pip_requirements` in `log_model()` ensures the serving environment has
+  all needed packages.
+- `mlflow.pyfunc.load_model()` is the in-process alternative when you
+  don't need HTTP serving.
 
 ## Next Steps
 
-Continue to L1-8.2 (AI Gateway Overview) to learn how MLflow can route requests across multiple LLM providers with rate limiting, fallbacks, and unified API access. In Level 2, we will explore advanced serving patterns including custom endpoints and deployment strategies.
+Continue to L1-M8.2 (AI Gateway Overview) to learn how MLflow can route
+requests across multiple LLM providers with rate limiting, fallbacks, and
+unified API access. In Level 2, we will explore advanced serving patterns
+including custom endpoints and deployment strategies.

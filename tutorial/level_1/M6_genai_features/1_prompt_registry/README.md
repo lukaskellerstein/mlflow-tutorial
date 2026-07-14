@@ -11,7 +11,7 @@ The MLflow Prompt Registry provides centralized, versioned storage for prompt te
 
 - Completed: L1-M1 (Tracking), L1-M5 (Tracing basics)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -129,7 +129,7 @@ Step 1: Register a prompt template (version 1)
   Variables:  {'audience', 'topic'}
   ...
 
-Step 7: Use the production prompt with ChatOllama
+Step 7: Use the production prompt with ChatOpenAI
 ============================================================
   LLM response:
   <LLM-generated explanation of recursion for a 10-year-old>

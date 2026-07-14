@@ -21,7 +21,7 @@ import mlflow.langchain
 import pandas as pd
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
 # ---------------------------------------------------------------------------
@@ -252,7 +252,7 @@ def main() -> None:
     all_results: list[dict] = []
 
     with mlflow.start_run(run_name="agent_optimization") as parent:
-        mlflow.set_tags({"optimization_type": "systematic", "model": "gemma4:e2b",
+        mlflow.set_tags({"optimization_type": "systematic", "model": "google/gemma-4-26b-a4b",
                          "num_test_cases": str(len(EVAL_CASES))})
 
         # Part 1: System prompt optimization
@@ -261,11 +261,11 @@ def main() -> None:
         print(f"{'=' * 70}")
         for name, text in SYSTEM_PROMPTS.items():
             agent = create_react_agent(
-                model=ChatOllama(model="gemma4:e2b", temperature=0.0),
+                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key="lm-studio", temperature=0.0),
                 tools=ORIGINAL_TOOLS, prompt=text)
             run_variant(f"prompt_{name}", agent, "system_prompt",
                         {"dimension": "system_prompt", "variant": name,
-                         "model": "gemma4:e2b", "temperature": "0.0"}, all_results)
+                         "model": "google/gemma-4-26b-a4b", "temperature": "0.0"}, all_results)
 
         # Part 2: Temperature tuning (using structured prompt)
         print(f"\n{'=' * 70}")
@@ -274,11 +274,11 @@ def main() -> None:
         best_prompt = SYSTEM_PROMPTS["structured"]
         for temp in [0.0, 0.3, 0.7, 1.0]:
             agent = create_react_agent(
-                model=ChatOllama(model="gemma4:e2b", temperature=temp),
+                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key="lm-studio", temperature=temp),
                 tools=ORIGINAL_TOOLS, prompt=best_prompt)
             run_variant(f"temp_{temp}", agent, "temperature",
                         {"dimension": "temperature", "variant": str(temp),
-                         "model": "gemma4:e2b", "temperature": str(temp)}, all_results)
+                         "model": "google/gemma-4-26b-a4b", "temperature": str(temp)}, all_results)
 
         # Part 3: Tool description optimization
         print(f"\n{'=' * 70}")
@@ -287,11 +287,11 @@ def main() -> None:
         for tlabel, tools in [("tools_original", ORIGINAL_TOOLS),
                                ("tools_improved", IMPROVED_TOOLS)]:
             agent = create_react_agent(
-                model=ChatOllama(model="gemma4:e2b", temperature=0.0),
+                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key="lm-studio", temperature=0.0),
                 tools=tools, prompt=best_prompt)
             run_variant(tlabel, agent, "tool_descriptions",
                         {"dimension": "tool_descriptions", "variant": tlabel,
-                         "model": "gemma4:e2b", "temperature": "0.0"}, all_results)
+                         "model": "google/gemma-4-26b-a4b", "temperature": "0.0"}, all_results)
 
         # Part 4: Optimization summary
         print(f"\n{'=' * 70}")

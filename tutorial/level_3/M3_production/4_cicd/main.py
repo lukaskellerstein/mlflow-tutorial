@@ -17,7 +17,7 @@ from typing import Any
 import mlflow
 import pandas as pd
 from langchain_core.messages import HumanMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 # ---------------------------------------------------------------------------
@@ -79,10 +79,15 @@ TEST_CASES: list[dict[str, str]] = [
 class EvaluationHarness:
     """Runs test cases against an LLM and collects quality metrics."""
 
-    def __init__(self, model_name: str = "gemma4:e2b", temperature: float = 0.0):
+    def __init__(self, model_name: str = "google/gemma-4-26b-a4b", temperature: float = 0.0):
         self.model_name = model_name
         self.temperature = temperature
-        self.llm = ChatOllama(model=model_name, temperature=temperature)
+        self.llm = ChatOpenAI(
+            model=model_name,
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            temperature=temperature,
+        )
 
     def _check_answer(self, response: str, expected: str) -> bool:
         """Check if expected keyword(s) appear in the response."""
@@ -221,7 +226,7 @@ class GateChecker:
 # ---------------------------------------------------------------------------
 def run_cicd_pipeline(
     gate: QualityGate,
-    model_name: str = "gemma4:e2b",
+    model_name: str = "google/gemma-4-26b-a4b",
     pipeline_label: str = "ci-run",
 ) -> tuple[EvalMetrics, list[GateResult]]:
     """Simulate a CI/CD pipeline: evaluate, gate-check, log to MLflow."""

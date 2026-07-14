@@ -9,7 +9,7 @@ multiple LLM configurations to find the best setup.
 import mlflow
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from mlflow.entities import Feedback
 from mlflow.genai.scorers import ResponseLength, scorer
 
@@ -98,14 +98,19 @@ ALL_SCORERS = BUILTIN_SCORERS + [keyword_coverage, answer_conciseness, has_examp
 # -- Part 4: Batch evaluation across configurations ----------------------------
 
 CONFIGS = [
-    {"name": "temp_0.3", "model": "gemma4:e2b", "temperature": 0.3},
-    {"name": "temp_0.9", "model": "gemma4:e2b", "temperature": 0.9},
+    {"name": "temp_0.3", "model": "google/gemma-4-26b-a4b", "temperature": 0.3},
+    {"name": "temp_0.9", "model": "google/gemma-4-26b-a4b", "temperature": 0.9},
 ]
 
 
 def build_predict_fn(model: str, temperature: float):
     """Return a predict function that answers questions with the given config."""
-    llm = ChatOllama(model=model, temperature=temperature)
+    llm = ChatOpenAI(
+        model=model,
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=temperature,
+    )
     chain = (
         ChatPromptTemplate.from_messages([
             ("system", "You are a knowledgeable Python tutor. Answer clearly "

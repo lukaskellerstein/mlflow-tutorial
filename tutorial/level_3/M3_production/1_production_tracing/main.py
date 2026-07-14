@@ -19,7 +19,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 from langchain_core.messages import HumanMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +73,7 @@ def _estimate_tokens(text: str) -> int:
 
 
 def traced_llm_call(
-    llm: ChatOllama,
+    llm: ChatOpenAI,
     prompt: str,
     metadata: dict[str, str],
 ) -> TraceRecord:
@@ -127,7 +127,7 @@ def traced_llm_call(
         )
 
 
-def untraced_llm_call(llm: ChatOllama, prompt: str) -> TraceRecord:
+def untraced_llm_call(llm: ChatOpenAI, prompt: str) -> TraceRecord:
     """Execute an LLM call without tracing (when sampler says skip)."""
     request_id = str(uuid.uuid4())
     start = time.perf_counter()
@@ -206,7 +206,7 @@ PROMPTS = [
 ]
 
 
-def run_part1_sampling(llm: ChatOllama) -> list[TraceRecord]:
+def run_part1_sampling(llm: ChatOpenAI) -> list[TraceRecord]:
     """Part 1: Demonstrate each sampling strategy."""
     print("=" * 60)
     print("Part 1: Trace Sampling Strategies")
@@ -246,7 +246,7 @@ def run_part1_sampling(llm: ChatOllama) -> list[TraceRecord]:
     return all_records
 
 
-def run_part2_metadata(llm: ChatOllama) -> list[TraceRecord]:
+def run_part2_metadata(llm: ChatOpenAI) -> list[TraceRecord]:
     """Part 2: Structured trace metadata for production filtering."""
     print("\n" + "=" * 60)
     print("Part 2: Structured Trace Metadata")
@@ -275,7 +275,7 @@ def run_part2_metadata(llm: ChatOllama) -> list[TraceRecord]:
     return records
 
 
-def run_part3_error_tracing(llm: ChatOllama) -> list[TraceRecord]:
+def run_part3_error_tracing(llm: ChatOpenAI) -> list[TraceRecord]:
     """Part 3: Error tracing with full context."""
     print("\n" + "=" * 60)
     print("Part 3: Error Tracing")
@@ -293,7 +293,12 @@ def run_part3_error_tracing(llm: ChatOllama) -> list[TraceRecord]:
 
     # Simulated error: bad model name
     print("\n  3b. Simulated error (invalid model):")
-    bad_llm = ChatOllama(model="nonexistent_model_xyz", temperature=0.0)
+    bad_llm = ChatOpenAI(
+            model="nonexistent_model_xyz",
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            temperature=0.0,
+        )
     meta = {**metadata_base, "request_id": str(uuid.uuid4()), "user_id": "user_test"}
     rec = traced_llm_call(bad_llm, "This should fail", meta)
     records.append(rec)
@@ -397,7 +402,12 @@ def main() -> None:
     print("L3-3.1 — Production Tracing Strategies")
     print("=" * 60)
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
 
     records_p1 = run_part1_sampling(llm)
     records_p2 = run_part2_metadata(llm)

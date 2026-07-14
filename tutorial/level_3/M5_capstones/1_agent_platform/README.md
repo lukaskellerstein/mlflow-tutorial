@@ -13,7 +13,7 @@ This lesson integrates: experiment tracking (L1-M1), model management (L1-M2), e
 
 - Completed: All Level 1 and Level 2 modules, plus L3-M1 (Agent Evaluation)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Architecture
 
@@ -114,7 +114,7 @@ registry.register(AgentConfig(
 ))
 ```
 
-Each call to `register()` creates a LangGraph ReAct agent using `create_react_agent` with `ChatOllama(model="gemma4:e2b")`.
+Each call to `register()` creates a LangGraph ReAct agent using `create_react_agent` with `ChatOpenAI(model="google/gemma-4-26b-a4b")`.
 
 ### Step 2: Automated Evaluation
 

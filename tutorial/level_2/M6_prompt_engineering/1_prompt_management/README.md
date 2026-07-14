@@ -11,7 +11,7 @@ In production LLM systems, prompts are not static strings buried in code -- they
 
 - Completed: L1-M6.1 (Prompt Registry basics)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -128,7 +128,7 @@ Part 1: Register multiple prompt versions
   Total versions registered: 3
 
 ============================================================
-Part 2: A/B test prompts with ChatOllama
+Part 2: A/B test prompts with ChatOpenAI
 ============================================================
 
   --- Variant: concise (v1) ---

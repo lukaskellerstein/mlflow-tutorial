@@ -4,11 +4,9 @@ globs: ["tutorial/**/*.py"]
 
 # MLFlow Patterns and APIs
 
-## Core APIs by Level
+## API Reference
 
-### Level 1 — Essentials
-
-#### Experiment Tracking (L1-M1)
+### Experiment Tracking
 - `mlflow.set_experiment()` — always set before logging
 - `mlflow.start_run()` — context manager for runs
 - `mlflow.log_param()` / `mlflow.log_params()` — log configuration
@@ -18,99 +16,64 @@ globs: ["tutorial/**/*.py"]
 - `mlflow.search_runs()` — query and filter runs
 - `mlflow.search_experiments()` — query experiments
 - `mlflow.enable_system_metrics_logging()` — CPU/memory/GPU tracking
+- Nested runs with `nested=True`
+- `mlflow.config.enable_async_logging()` — async logging
+- `mlflow.log_image()`, `mlflow.log_table()`, `mlflow.log_figure()` — rich artifacts
+- `MlflowClient` — programmatic CRUD
 
-#### Models and Registry (L1-M2)
-- `mlflow.<flavor>.log_model()` — save models (sklearn, pytorch, pyfunc, langchain, etc.)
+### Models and Registry
+- `mlflow.<flavor>.log_model()` — save models (pyfunc, langchain, openai, transformers, etc.)
 - `mlflow.<flavor>.load_model()` — load for inference
 - `mlflow.models.infer_signature()` — infer input/output schema
+- `ModelSignature` — custom input/output schemas
 - `mlflow.register_model()` — register in model registry
+- Model lifecycle: aliases (`champion`, `challenger`), stage transitions
 - `mlflow.pyfunc.PythonModel` — custom model wrapper
+- `PythonModel.load_context()` — load dependencies
 
-#### Autologging (L1-M3)
+### Autologging
 - `mlflow.autolog()` — universal autolog
-- `mlflow.sklearn.autolog()` — scikit-learn
-- `mlflow.xgboost.autolog()` — XGBoost
 - `mlflow.langchain.autolog()` — LangChain and LangGraph
-- `mlflow.openai.autolog()` — OpenAI
+- `mlflow.openai.autolog()` — OpenAI (also covers LMStudio via OpenAI-compatible API)
 - `mlflow.anthropic.autolog()` — Anthropic/Claude
 - `mlflow.transformers.autolog()` — Hugging Face
 
-#### Evaluation (L1-M4)
+### Evaluation
 - `mlflow.evaluate()` — the main evaluation entry point
   - `model_type`: `"question-answering"`, `"text-summarization"`, `"text"`
   - `evaluators`: `"default"` or custom
   - Pass `data` as pandas DataFrame
 - Built-in LLM metrics: `toxicity`, `flesch_kincaid_grade_level`, `token_count`
 - GenAI metrics: `answer_similarity`, `answer_correctness`, `faithfulness`, `relevance`
-
-#### Tracing (L1-M5)
-- `@mlflow.trace` — decorator for function-level tracing
-- `mlflow.start_span()` — manual span creation (context manager)
-- Auto-tracing via `mlflow.langchain.autolog()`
-
-#### GenAI Features (L1-M6)
-- `mlflow.genai.register_prompt()` — prompt registry
-- `mlflow.genai.scorers` — built-in and custom scorers
-- `mlflow.genai.judges` — LLM-as-judge
-- `mlflow.genai.datasets` — evaluation dataset management
-
-#### Data (L1-M7)
-- `mlflow.data` — dataset logging
-- `mlflow.log_input()` — link datasets to runs
-
-#### Deployment (L1-M8)
-- `mlflow models serve` — local REST API
-- `mlflow models predict` — batch prediction
-- AI Gateway route configuration
-
-### Level 2 — Practitioner
-
-#### Advanced Tracking (L2-M1)
-- Nested runs with `nested=True`
-- `mlflow.config.enable_async_logging()` — async logging
-- `mlflow.log_image()`, `mlflow.log_table()`, `mlflow.log_figure()` — rich artifacts
-- `MlflowClient` — programmatic CRUD
-
-#### Advanced Models (L2-M2)
-- `ModelSignature` — custom input/output schemas
-- `PythonModel.load_context()` — load dependencies
-- Model lifecycle: aliases (`champion`, `challenger`), stage transitions
-
-#### Deep Evaluation (L2-M3)
 - `make_metric()` — custom metric functions
 - RAG metrics: `faithfulness`, `relevance`, `context_recall`
 - `mlflow.genai.evaluation` — full GenAI evaluation framework
 - `mlflow.genai.labeling` — human-in-the-loop
 - `mlflow.log_assessment()` — human feedback
-
-#### Advanced Tracing (L2-M4)
-- LangGraph state transition tracing
-- Temporal.io workflow/activity tracing
-- OpenTelemetry export
-- Trace-based latency/cost analysis
-
-#### Prompt Engineering (L2-M6)
-- Prompt A/B testing workflows
-- `mlflow.genai.optimize` — automated prompt tuning
-
-### Level 3 — Expert
-
-#### Agent Evaluation (L3-M1)
 - `mlflow.genai.agent_tester` — automated agent test generation
 - `mlflow.genai.simulators` — conversation simulation
-- Custom scorer implementation for agent-specific metrics
-- Architecture comparison methodology
 
-#### Custom Integrations (L3-M2)
-- Custom autolog implementations
-- MLflow plugin development
-- Cross-framework tracing
+### Tracing
+- `@mlflow.trace` — decorator for function-level tracing
+- `mlflow.start_span()` — manual span creation (context manager)
+- Auto-tracing via `mlflow.langchain.autolog()`
+- OpenTelemetry export
 
-#### Production (L3-M3)
-- Trace sampling strategies
-- Prometheus/Grafana export
-- CI/CD quality gates
-- Drift detection
+### GenAI Features
+- `mlflow.genai.register_prompt()` — prompt registry
+- `mlflow.genai.scorers` — built-in and custom scorers
+- `mlflow.genai.judges` — LLM-as-judge
+- `mlflow.genai.datasets` — evaluation dataset management
+- `mlflow.genai.optimize` — automated prompt tuning
+
+### Data
+- `mlflow.data` — dataset logging
+- `mlflow.log_input()` — link datasets to runs
+
+### Deployment
+- `mlflow models serve` — local REST API
+- `mlflow models predict` — batch prediction
+- AI Gateway route configuration
 
 ## Patterns to Follow
 

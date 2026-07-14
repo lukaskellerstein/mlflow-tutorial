@@ -5,13 +5,13 @@
 
 ## Overview
 
-PyFunc (`mlflow.pyfunc`) is MLflow's universal model interface. Every MLflow model exposes a `python_function` flavor, which means any model — regardless of framework — can be loaded and called via the same `predict()` API. In this lesson you will build a custom `PythonModel` that wraps a prompt template and an Ollama LLM call, log it to MLflow, load it back, and run inference through the standard interface.
+PyFunc (`mlflow.pyfunc`) is MLflow's universal model interface. Every MLflow model exposes a `python_function` flavor, which means any model — regardless of framework — can be loaded and called via the same `predict()` API. In this lesson you will build a custom `PythonModel` that wraps a prompt template and an LLM call via LMStudio's OpenAI-compatible API, log it to MLflow, load it back, and run inference through the standard interface.
 
 ## Prerequisites
 
 - Completed: L1-M2.1 (Models and Flavors), L1-M2.2 (Model Registry)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running locally with the `gemma4:e2b` model pulled
+- LMStudio running locally with the `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -54,24 +54,25 @@ You can also override `load_context(self, context)` to load heavy resources (mod
 
 ### Step 1: Define a Prompt-Template Model
 
-We create a `PromptTemplateModel` that stores a prompt template string and an Ollama model name. The `predict()` method formats the template with each input row and calls the LLM:
+We create a `PromptTemplateModel` that stores a prompt template string and a model name. The `predict()` method formats the template with each input row and calls the LLM via LMStudio's OpenAI-compatible API:
 
 ```python
 class PromptTemplateModel(mlflow.pyfunc.PythonModel):
-    def __init__(self, template: str, model_name: str = "gemma4:e2b"):
+    def __init__(self, template: str, model_name: str = "google/gemma-4-e4b"):
         self.template = template
         self.model_name = model_name
 
     def predict(self, context, model_input, params=None):
-        import ollama
+        from openai import OpenAI
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
         results = []
         for _, row in model_input.iterrows():
             prompt = self.template.format(**row.to_dict())
-            response = ollama.chat(
+            response = client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": prompt}],
             )
-            results.append(response["message"]["content"])
+            results.append(response.choices[0].message.content)
         return results
 ```
 
@@ -97,7 +98,7 @@ loaded_model = mlflow.pyfunc.load_model(f"runs:/{run_id}/prompt_model")
 predictions = loaded_model.predict(new_input)
 ```
 
-The loaded model is framework-agnostic — the caller does not need to know it wraps Ollama.
+The loaded model is framework-agnostic — the caller does not need to know it wraps an LLM API.
 
 ## Running the Lesson
 
@@ -121,7 +122,7 @@ WHAT IS PYFUNC?
 Step 1: Defining a prompt-template PyFunc model
 ============================================================
   Template : Explain {topic} in one sentence for a {audience}.
-  LLM      : gemma4:e2b
+  LLM      : google/gemma-4-e4b
 
 ============================================================
 Step 2: Logging the PyFunc model to MLflow

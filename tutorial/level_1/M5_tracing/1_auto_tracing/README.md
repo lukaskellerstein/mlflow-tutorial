@@ -11,7 +11,7 @@ Tracing captures the full execution flow of an LLM chain or agent — every prom
 
 - Completed: L1-M1 (Tracking), L1-M3.2 (LLM/GenAI Autologging)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -23,7 +23,7 @@ A **trace** is an end-to-end record of one operation — for example, a single `
 
 A **span** is a single step within a trace. Each component in a LangChain chain (prompt template, LLM, output parser) produces its own span. Spans have:
 
-- **Name**: identifies the component (e.g., `ChatOllama`, `StrOutputParser`)
+- **Name**: identifies the component (e.g., `ChatOpenAI`, `StrOutputParser`)
 - **Type**: the category (`CHAIN`, `LLM`, `RETRIEVER`, etc.)
 - **Inputs/Outputs**: the data that entered and left the component
 - **Timing**: start time, end time, and duration
@@ -52,7 +52,10 @@ prompt = ChatPromptTemplate.from_messages([
     ("system", "You are a helpful assistant. Keep answers to one sentence."),
     ("human", "{question}"),
 ])
-llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+llm = ChatOpenAI(
+    base_url="http://localhost:1234/v1", api_key="lm-studio",
+    model="google/gemma-4-e4b", temperature=0.7,
+)
 chain = prompt | llm | StrOutputParser()
 
 result = chain.invoke({"question": "What is MLflow?"})
@@ -67,7 +70,7 @@ When you invoke multiple chains in sequence, each invocation creates its own tra
 ```
 Root (RunnableSequence)
   ├── ChatPromptTemplate
-  ├── ChatOllama
+  ├── ChatOpenAI
   └── StrOutputParser
 ```
 

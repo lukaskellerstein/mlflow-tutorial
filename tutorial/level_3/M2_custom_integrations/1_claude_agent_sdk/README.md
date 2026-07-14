@@ -14,7 +14,7 @@ The same pattern applies to any agent framework: Claude Agent SDK, Codex SDK, De
 - Completed: L1-5.1 (Auto Tracing), L1-5.2 (Manual Tracing)
 - Completed: L2-M4 (Advanced Tracing) recommended
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 - No Anthropic API key required — this lesson simulates the SDK lifecycle
 
 ## Concepts
@@ -49,7 +49,7 @@ Each phase maps to an MLflow span in our tracing integration.
 
 ### Step 1: Simulate the Agent SDK
 
-We create a `ClaudeAgentSimulator` class that mirrors the real SDK's interface. Under the hood, it uses a local LLM (`gemma4:e2b` via Ollama) to generate responses. This lets us demonstrate the integration pattern without needing an API key.
+We create a `ClaudeAgentSimulator` class that mirrors the real SDK's interface. Under the hood, it uses a local LLM (`google/gemma-4-26b-a4b` via LMStudio) to generate responses. This lets us demonstrate the integration pattern without needing an API key.
 
 ```python
 class ClaudeAgentSimulator:
@@ -136,7 +136,7 @@ L3-2.1 — Claude Agent SDK + MLflow Integration
 Part 1: Simulated Claude Agent (SDK lifecycle)
   System prompt: You are a helpful assistant...
   Available tools: ['calculator', 'lookup', 'summarizer']
-  Model: gemma4:e2b (local via Ollama)
+  Model: google/gemma-4-26b-a4b (local via LMStudio)
 
 Part 2-3: TracedClaudeAgent with MLflow tracing
   Integration pattern:

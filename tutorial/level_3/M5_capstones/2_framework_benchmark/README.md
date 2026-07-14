@@ -13,7 +13,7 @@ This capstone builds a reusable benchmarking system that systematically compares
 - Completed: L3-1.5 (Evaluation Pipeline) -- reusable pipeline patterns
 - Completed: L2-5.1 (LangChain Agents), L2-5.2 (LangGraph Agents)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -28,7 +28,7 @@ In L3-1.3 you compared three architectures in a single script. This capstone ele
 
 A valid benchmark requires controlled conditions. All agents must share:
 
-1. **The same LLM** -- ChatOllama with `gemma4:e2b` at temperature 0.0
+1. **The same LLM** -- ChatOpenAI with `google/gemma-4-26b-a4b` at temperature 0.0
 2. **The same tools** -- identical `lookup` and `calculate` implementations
 3. **The same test cases** -- 6 questions spanning three difficulty categories
 4. **The same scoring functions** -- deterministic correctness and tool-usage metrics

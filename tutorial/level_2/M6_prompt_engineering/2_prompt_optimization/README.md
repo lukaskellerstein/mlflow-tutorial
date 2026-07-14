@@ -11,7 +11,7 @@ Prompt engineering is often an iterative, trial-and-error process. This lesson t
 
 - Completed: L1-M4.2 (LLM Eval Basics), L2-M6.1 (Prompt Management)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -102,7 +102,7 @@ uv run python main.py
 Part 1: Optimization Problem
 ============================================================
   Dataset:  5 Q&A pairs (geography)
-  Model:    gemma4:e2b
+  Model:    google/gemma-4-e4b
   Scoring:  exact_match (50%) + brevity (30%) + confidence (20%)
 
 ============================================================

@@ -11,7 +11,7 @@ Agent quality depends on more than just the LLM — system prompts, temperature 
 
 - Completed: L3-1.3 (Architecture Comparison)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model available
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 

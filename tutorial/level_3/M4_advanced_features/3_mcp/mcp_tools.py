@@ -12,7 +12,7 @@ from typing import Any, Callable
 
 import mlflow
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +154,12 @@ class MCPClient:
 
     def __init__(self, server: ToolServer):
         self.server = server
-        self.llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+        self.llm = ChatOpenAI(
+            model="google/gemma-4-26b-a4b",
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            temperature=0.0,
+        )
         self._tool_manifests: list[dict[str, Any]] = []
 
     @mlflow.trace(name="mcp_client.discover_tools")

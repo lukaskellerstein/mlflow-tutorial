@@ -11,7 +11,7 @@ Demonstrates MLflow's automatic tracing for LangChain:
 import mlflow
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 def part1_simple_chain() -> None:
@@ -24,10 +24,15 @@ def part1_simple_chain() -> None:
         ("system", "You are a helpful assistant. Keep answers to one sentence."),
         ("human", "{question}"),
     ])
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-e4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     chain = prompt | llm | StrOutputParser()
 
-    print("  Chain: ChatPromptTemplate -> ChatOllama -> StrOutputParser")
+    print("  Chain: ChatPromptTemplate -> ChatOpenAI -> StrOutputParser")
     print("  Invoking chain...")
 
     result = chain.invoke({"question": "What is MLflow?"})
@@ -43,7 +48,12 @@ def part2_multi_step_chain() -> None:
     print("Part 2: Multi-Step Chain Tracing")
     print("=" * 60)
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-e4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
 
     # Step 1: Summarize a topic
     summarize_prompt = ChatPromptTemplate.from_messages([

@@ -12,7 +12,7 @@ Build a complete, automated agent evaluation pipeline that goes from dataset cre
 - Completed: L3-M1.1 (Agent Testing), L3-M1.2 (Quality Metrics), L3-M1.4 (Agent Optimization)
 - Completed: L2-M3.1 (Custom Metrics), L2-M5.2 (LangGraph Agent Observability)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -68,7 +68,12 @@ def calculate(expression: str) -> str:
     ...
 
 def build_agent():
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
     return create_react_agent(llm, [search_knowledge, calculate])
 ```
 

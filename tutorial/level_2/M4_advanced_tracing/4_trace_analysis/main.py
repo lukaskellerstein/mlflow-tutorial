@@ -12,14 +12,14 @@ import mlflow
 import pandas as pd
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 # ---------------------------------------------------------------------------
 # Part 1: Generate traces by running several LangChain chains
 # ---------------------------------------------------------------------------
 
-def generate_traces(llm: ChatOllama) -> None:
+def generate_traces(llm: ChatOpenAI) -> None:
     """Run 4 different chains to produce varied traces for analysis."""
     print("=" * 60)
     print("Part 1: Generating traces from LangChain chains")
@@ -194,11 +194,11 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
 
         total_all = token_df["total_tokens"].sum()
         print(f"\n  Total tokens across all traces: {total_all}")
-        print(f"  Note: Ollama models do not have per-token pricing.")
+        print(f"  Note: LMStudio local models do not have per-token pricing.")
         print(f"  For cloud APIs, cost = input_tokens * rate + output_tokens * rate")
     else:
         print("\n  Token usage data not available in traces.")
-        print("  (Ollama may not report token counts via LangChain autolog.)")
+        print("  (LMStudio may not report token counts via LangChain autolog.)")
         print("  For cloud-hosted LLMs (OpenAI, Anthropic), token counts")
         print("  are automatically captured in span attributes.")
 
@@ -314,7 +314,12 @@ def main() -> None:
 
     # Step 1 — Enable autologging and generate traces
     mlflow.langchain.autolog()
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     generate_traces(llm)
 
     # Step 2 — Retrieve traces via search_traces

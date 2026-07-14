@@ -11,7 +11,7 @@ Traces capture the full execution flow of your LLM applications, but their real 
 
 - Completed: L1-M5.1 (Auto Tracing), L1-M5.2 (Manual Tracing)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -31,7 +31,7 @@ Each trace contains:
 - **TraceData** — the actual `spans` list, plus `request` and `response` for the root span
 
 Each span has:
-- `name` — the operation name (e.g., `ChatOllama`, `StrOutputParser`)
+- `name` — the operation name (e.g., `ChatOpenAI`, `StrOutputParser`)
 - `span_type` — the category (e.g., `LLM`, `CHAIN`, `PARSER`)
 - `start_time_ns` / `end_time_ns` — nanosecond timestamps for duration calculation
 - `inputs` / `outputs` — the data flowing through the span
@@ -45,7 +45,7 @@ We run four different LangChain chains to produce a variety of traces with diffe
 
 ```python
 mlflow.langchain.autolog()
-llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.7)
 
 # Simple Q&A, translation, summarization, and a multi-step chain
 simple_chain = simple_prompt | llm | StrOutputParser()
@@ -91,7 +91,7 @@ trace_usage = trace.info.token_usage  # dict with input_tokens, output_tokens, t
 usage = span.get_attribute("mlflow.chat.tokenUsage")
 ```
 
-Note: Ollama models may not report token counts through LangChain autolog. Cloud-hosted LLMs (OpenAI, Anthropic) reliably populate these fields.
+Note: Local models may not report token counts through LangChain autolog. Cloud-hosted LLMs (OpenAI, Anthropic) reliably populate these fields.
 
 ### Step 5: Build and Log an Analysis Report
 
@@ -131,8 +131,8 @@ Part 1: Generating traces from LangChain chains
 Part 2: Latency Analysis
   Top 5 slowest spans:
   Span Name                 Type         Duration (ms)
-  ChatOllama                LLM                 3200.5
-  ChatOllama                LLM                 2800.3
+  ChatOpenAI                LLM                 3200.5
+  ChatOpenAI                LLM                 2800.3
   ...
 
   Average duration by span type:
@@ -142,12 +142,12 @@ Part 2: Latency Analysis
 
 Part 3: Token Usage Analysis
   Token usage data not available in traces.
-  (Ollama may not report token counts via LangChain autolog.)
+  (Local models may not report token counts via LangChain autolog.)
 
 Part 4: Analysis Report
   Trace Analysis Summary:
   Trace ID               Duration  Spans Slowest Span         Tokens
-  tr-abc123...               3200      3 ChatOllama              N/A
+  tr-abc123...               3200      3 ChatOpenAI              N/A
   ...
 
   Logged report artifacts and metrics to MLflow run.

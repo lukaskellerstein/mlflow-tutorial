@@ -1,249 +1,214 @@
 """
-L2-2.3 — Model Registry Workflows
+L2-2.3 -- Model Registry Workflows
 
-Full registry lifecycle: train multiple models on the same dataset,
-register them as versions of a single registered model, evaluate each
-version on held-out test data, promote the best to "champion", and
-demonstrate alias-based model loading for serving.
+Full LLM model registry lifecycle: build two LLM model versions with
+different system prompts, register them, evaluate on test prompts,
+promote the best to champion, and demonstrate alias-based serving.
 """
 
+import time
+
 import mlflow
-import mlflow.sklearn
+import mlflow.pyfunc
 import pandas as pd
+from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
-from sklearn.datasets import load_wine
-from sklearn.ensemble import (
-    GradientBoostingClassifier,
-    RandomForestClassifier,
-)
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from openai import OpenAI
 
-MODEL_NAME = "L2-wine-classifier"
+MODEL_NAME = "L2-llm-assistant"
+LLM_MODEL = "google/gemma-4-e4b"
+
+MODEL_CONFIGS = [
+    {"name": "precise_assistant",
+     "system_prompt": "You are a precise, factual assistant. Give concise, "
+                      "accurate answers with specific details. Avoid speculation."},
+    {"name": "creative_assistant",
+     "system_prompt": "You are a creative, engaging assistant. Use analogies, "
+                      "examples, and vivid language to make answers memorable."},
+]
+
+TEST_PROMPTS = [
+    "What is machine learning?",
+    "Explain the concept of overfitting.",
+    "What is the purpose of cross-validation?",
+    "How does gradient descent work?",
+    "What is transfer learning?",
+]
 
 
-def train_models(
-    X_train, y_train, X_test, y_test
-) -> dict[str, dict]:
-    """Train three classifiers and log each as its own MLflow run."""
-    configs = {
-        "logistic_regression": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", LogisticRegression(max_iter=500, random_state=42)),
-        ]),
-        "random_forest": RandomForestClassifier(
-            n_estimators=150, max_depth=8, random_state=42
-        ),
-        "gradient_boosting": GradientBoostingClassifier(
-            n_estimators=120, max_depth=4, learning_rate=0.1, random_state=42
-        ),
-    }
+class LLMAssistant(mlflow.pyfunc.PythonModel):
+    """An LLM assistant with a configurable system prompt."""
 
-    results: dict[str, dict] = {}
-    for name, clf in configs.items():
-        with mlflow.start_run(run_name=f"train_{name}") as run:
-            clf.fit(X_train, y_train)
-            preds = clf.predict(X_test)
+    def __init__(self, system_prompt: str = "You are a helpful assistant."):
+        self.system_prompt = system_prompt
 
-            acc = accuracy_score(y_test, preds)
-            f1 = f1_score(y_test, preds, average="weighted")
-            prec = precision_score(y_test, preds, average="weighted")
-            rec = recall_score(y_test, preds, average="weighted")
-
-            mlflow.log_param("algorithm", name)
-            # Log key hyperparameters (skip internal/nested keys)
-            params_to_log = {
-                k: str(v)
-                for k, v in clf.get_params(deep=False).items()
-                if k != "random_state"
-            }
-            mlflow.log_params(params_to_log)
-            mlflow.log_metrics(
-                {"accuracy": acc, "f1": f1, "precision": prec, "recall": rec}
+    def predict(self, context, model_input, params=None):
+        from openai import OpenAI
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        temperature = (params or {}).get("temperature", 0.7)
+        questions = (model_input["question"].tolist()
+                     if isinstance(model_input, pd.DataFrame) else [str(model_input)])
+        results = []
+        for question in questions:
+            resp = client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[{"role": "system", "content": self.system_prompt},
+                          {"role": "user", "content": question}],
+                temperature=temperature,
             )
-            mlflow.sklearn.log_model(clf, name="model")
+            results.append(resp.choices[0].message.content)
+        return results
 
-            results[name] = {
-                "run_id": run.info.run_id,
-                "accuracy": acc,
-                "f1": f1,
-                "precision": prec,
-                "recall": rec,
-            }
-            print(f"  {name:25s}  acc={acc:.4f}  f1={f1:.4f}")
 
+def build_and_log_models(llm: OpenAI) -> list[dict]:
+    """Step 1-2: Build two LLM model versions and log them to MLflow."""
+    results = []
+    sample_input = pd.DataFrame({"question": ["What is AI?"]})
+    for config in MODEL_CONFIGS:
+        with mlflow.start_run(run_name=f"build_{config['name']}") as run:
+            model = LLMAssistant(system_prompt=config["system_prompt"])
+            resp = llm.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[{"role": "system", "content": config["system_prompt"]},
+                          {"role": "user", "content": "What is AI?"}],
+                temperature=0.7,
+            )
+            signature = infer_signature(sample_input, [resp.choices[0].message.content])
+            mlflow.log_param("model_style", config["name"])
+            mlflow.log_param("system_prompt", config["system_prompt"])
+            mlflow.pyfunc.log_model(name="model", python_model=model, signature=signature)
+            results.append({"name": config["name"], "run_id": run.info.run_id,
+                            "system_prompt": config["system_prompt"]})
+            print(f"  Logged: {config['name']} (run {run.info.run_id[:8]}...)")
     return results
 
 
-def register_models(results: dict[str, dict]) -> dict[str, str]:
-    """Register each trained model as a new version of MODEL_NAME."""
-    versions: dict[str, str] = {}
-    for name, info in results.items():
-        model_uri = f"runs:/{info['run_id']}/model"
-        mv = mlflow.register_model(model_uri, MODEL_NAME)
-        versions[name] = mv.version
-        print(f"  {name:25s} -> {MODEL_NAME} v{mv.version}")
-    return versions
+def register_models(results: list[dict]) -> list[dict]:
+    """Step 3: Register both models as versions of MODEL_NAME."""
+    for entry in results:
+        mv = mlflow.register_model(f"runs:/{entry['run_id']}/model", MODEL_NAME)
+        entry["version"] = mv.version
+        print(f"  {entry['name']:25s} -> {MODEL_NAME} v{mv.version}")
+    return results
 
 
-def evaluate_versions(
-    client: MlflowClient,
-    versions: dict[str, str],
-    results: dict[str, dict],
-) -> None:
-    """Log evaluation metrics as version tags for easy comparison."""
-    for name, version in versions.items():
-        info = results[name]
-        client.set_model_version_tag(
-            MODEL_NAME, version, "eval_accuracy", f"{info['accuracy']:.4f}"
-        )
-        client.set_model_version_tag(
-            MODEL_NAME, version, "eval_f1", f"{info['f1']:.4f}"
-        )
-        client.set_model_version_tag(
-            MODEL_NAME, version, "eval_precision", f"{info['precision']:.4f}"
-        )
-        client.set_model_version_tag(
-            MODEL_NAME, version, "eval_recall", f"{info['recall']:.4f}"
-        )
-        print(f"  v{version} ({name}): accuracy={info['accuracy']:.4f}  f1={info['f1']:.4f}")
+def evaluate_models(llm: OpenAI, results: list[dict]) -> list[dict]:
+    """Step 4: Evaluate both models on test prompts."""
+    for entry in results:
+        total_len, total_lat = 0, 0.0
+        print(f"\n  Evaluating: {entry['name']}")
+        for prompt in TEST_PROMPTS:
+            start = time.time()
+            resp = llm.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[{"role": "system", "content": entry["system_prompt"]},
+                          {"role": "user", "content": prompt}],
+                temperature=0.7,
+            )
+            elapsed = time.time() - start
+            text = resp.choices[0].message.content
+            total_len += len(text)
+            total_lat += elapsed
+            print(f"    [{elapsed:.1f}s] {prompt[:40]:40s} -> {len(text)} chars")
+
+        n = len(TEST_PROMPTS)
+        avg_len, avg_lat = total_len / n, total_lat / n
+        quality = avg_len / (1.0 + avg_lat)
+        entry.update(avg_response_length=avg_len, avg_latency=avg_lat, quality_score=quality)
+        with mlflow.start_run(run_id=entry["run_id"]):
+            mlflow.log_metrics({"eval_avg_response_length": avg_len,
+                                "eval_avg_latency": avg_lat, "eval_quality_score": quality})
+        print(f"    Summary: avg_length={avg_len:.0f}  "
+              f"avg_latency={avg_lat:.2f}s  quality={quality:.1f}")
+    return results
 
 
-def promote_best(
-    client: MlflowClient,
-    versions: dict[str, str],
-    results: dict[str, dict],
-) -> tuple[str, str]:
-    """Set aliases and descriptions on the best two models."""
-    ranked = sorted(results.keys(), key=lambda n: results[n]["f1"], reverse=True)
-    champion_name, challenger_name = ranked[0], ranked[1]
-    champ_ver = versions[champion_name]
-    chall_ver = versions[challenger_name]
-
-    # Set aliases
-    client.set_registered_model_alias(MODEL_NAME, "champion", champ_ver)
-    client.set_registered_model_alias(MODEL_NAME, "challenger", chall_ver)
-
-    # Set model-level description
+def promote_best(client: MlflowClient, results: list[dict]) -> None:
+    """Step 5: Promote the best model to champion, other to challenger."""
+    ranked = sorted(results, key=lambda r: r["quality_score"], reverse=True)
+    champion, challenger = ranked[0], ranked[1]
+    client.set_registered_model_alias(MODEL_NAME, "champion", champion["version"])
+    client.set_registered_model_alias(MODEL_NAME, "challenger", challenger["version"])
     client.update_registered_model(
-        MODEL_NAME,
-        description=(
-            "Wine quality classifier trained on the UCI Wine dataset. "
-            "Multiple algorithms compared; best promoted to champion."
-        ),
-    )
-
-    # Set version-level descriptions and tags
-    for name, version in versions.items():
-        role = "champion" if name == champion_name else (
-            "challenger" if name == challenger_name else "archived"
-        )
-        desc = (
-            f"{name} | f1={results[name]['f1']:.4f} | "
-            f"accuracy={results[name]['accuracy']:.4f} | role={role}"
-        )
-        client.update_model_version(MODEL_NAME, version, description=desc)
-        client.set_model_version_tag(MODEL_NAME, version, "role", role)
-        client.set_model_version_tag(MODEL_NAME, version, "algorithm", name)
-
-    print(f"  champion   -> v{champ_ver} ({champion_name}, f1={results[champion_name]['f1']:.4f})")
-    print(f"  challenger -> v{chall_ver} ({challenger_name}, f1={results[challenger_name]['f1']:.4f})")
-
-    return champion_name, challenger_name
+        MODEL_NAME, description="LLM assistant with configurable system prompt. "
+        "Multiple prompt styles compared; best promoted to champion.")
+    for entry in results:
+        role = "champion" if entry is champion else "challenger"
+        client.update_model_version(MODEL_NAME, entry["version"], description=(
+            f"{entry['name']} | quality={entry['quality_score']:.1f} | "
+            f"avg_latency={entry['avg_latency']:.2f}s | role={role}"))
+        client.set_model_version_tag(MODEL_NAME, entry["version"], "role", role)
+        client.set_model_version_tag(MODEL_NAME, entry["version"],
+                                     "eval_quality_score", f"{entry['quality_score']:.1f}")
+    print(f"  champion   -> v{champion['version']} "
+          f"({champion['name']}, quality={champion['quality_score']:.1f})")
+    print(f"  challenger -> v{challenger['version']} "
+          f"({challenger['name']}, quality={challenger['quality_score']:.1f})")
 
 
-def serve_champion(X_test, y_test) -> None:
-    """Load the champion model by alias and run predictions."""
+def serve_champion() -> None:
+    """Step 6: Load champion by alias and demonstrate serving."""
     champion_uri = f"models:/{MODEL_NAME}@champion"
     champion_model = mlflow.pyfunc.load_model(champion_uri)
-
-    preds = champion_model.predict(X_test)
-    acc = accuracy_score(y_test, preds)
-
+    test_df = pd.DataFrame({"question": [
+        "What is reinforcement learning?",
+        "Why is data preprocessing important?"]})
+    predictions = champion_model.predict(test_df)
     print(f"  Loaded: {champion_uri}")
-    print(f"  Test accuracy: {acc:.4f}")
-    print(f"  Sample predictions: {[int(p) for p in preds[:8]]}")
+    for i, (q, a) in enumerate(zip(test_df["question"], predictions)):
+        print(f"  Q{i+1}: {q}")
+        print(f"  A{i+1}: {a[:100].replace(chr(10), ' ')}...")
 
 
-def compare_versions(
-    client: MlflowClient,
-    versions: dict[str, str],
-    results: dict[str, dict],
-) -> None:
-    """Build and display a comparison table of all registered versions."""
+def compare_versions(client: MlflowClient, results: list[dict]) -> None:
+    """Print comparison table of all registered versions."""
     rows = []
-    for name, version in versions.items():
-        mv = client.get_model_version(MODEL_NAME, version)
+    for entry in results:
+        mv = client.get_model_version(MODEL_NAME, entry["version"])
         aliases = mv.aliases if hasattr(mv, "aliases") else []
-        rows.append({
-            "Version": f"v{version}",
-            "Algorithm": name,
-            "Accuracy": f"{results[name]['accuracy']:.4f}",
-            "F1": f"{results[name]['f1']:.4f}",
-            "Precision": f"{results[name]['precision']:.4f}",
-            "Recall": f"{results[name]['recall']:.4f}",
-            "Aliases": ", ".join(aliases) if aliases else "-",
-        })
-
-    df = pd.DataFrame(rows)
-    print(df.to_string(index=False))
+        rows.append({"Version": f"v{entry['version']}", "Style": entry["name"],
+                      "Avg Length": f"{entry['avg_response_length']:.0f}",
+                      "Avg Latency": f"{entry['avg_latency']:.2f}s",
+                      "Quality": f"{entry['quality_score']:.1f}",
+                      "Alias": ", ".join(aliases) if aliases else "-"})
+    print(pd.DataFrame(rows).to_string(index=False))
 
 
 def main() -> None:
-    """Execute the full model registry workflow."""
+    """Execute the full LLM model registry workflow."""
     client = MlflowClient()
+    llm = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
-    # Prepare data
-    wine = load_wine()
-    X_train, X_test, y_train, y_test = train_test_split(
-        wine.data, wine.target, test_size=0.2, random_state=42
-    )
-
-    # Step 1: Train
     print("=" * 70)
-    print("Step 1: Train three models on the Wine dataset")
+    print("Step 1-2: Build two LLM model versions and log to MLflow")
     print("=" * 70)
-    results = train_models(X_train, y_train, X_test, y_test)
+    results = build_and_log_models(llm)
     print()
-
-    # Step 2: Register
     print("=" * 70)
-    print("Step 2: Register all models as versions of", MODEL_NAME)
+    print("Step 3: Register both as versions of", MODEL_NAME)
     print("=" * 70)
-    versions = register_models(results)
+    results = register_models(results)
     print()
-
-    # Step 3: Evaluate / tag versions
     print("=" * 70)
-    print("Step 3: Evaluate each version and tag with metrics")
+    print("Step 4: Evaluate both models on test prompts")
     print("=" * 70)
-    evaluate_versions(client, versions, results)
+    results = evaluate_models(llm, results)
     print()
-
-    # Step 4: Promote
     print("=" * 70)
-    print("Step 4: Promote best to champion, runner-up to challenger")
+    print("Step 5: Promote best to champion, runner-up to challenger")
     print("=" * 70)
-    champion_name, challenger_name = promote_best(client, versions, results)
+    promote_best(client, results)
     print()
-
-    # Step 5: Serve
     print("=" * 70)
-    print("Step 5: Load champion model by alias and predict")
+    print("Step 6: Load champion by alias and demonstrate serving")
     print("=" * 70)
-    serve_champion(X_test, y_test)
+    serve_champion()
     print()
-
-    # Step 6: Compare
     print("=" * 70)
-    print("Step 6: Comparison table of all registered versions")
+    print("Lifecycle Summary: All registered versions")
     print("=" * 70)
-    compare_versions(client, versions, results)
+    compare_versions(client, results)
     print()
-
     print("=" * 70)
     print("Done! View the Model Registry in the MLflow UI:")
     print(f"  http://127.0.0.1:5000/#/models/{MODEL_NAME}")

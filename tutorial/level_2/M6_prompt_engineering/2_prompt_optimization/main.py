@@ -12,8 +12,8 @@ import json
 import time
 
 import mlflow
-import ollama
 import pandas as pd
+from openai import OpenAI
 
 # ---------------------------------------------------------------------------
 # Evaluation dataset — Q&A pairs for a geography knowledge task
@@ -95,19 +95,22 @@ def score_answer(predicted: str, expected: str) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 # LLM helper
 # ---------------------------------------------------------------------------
-MODEL_NAME = "gemma4:e2b"
+MODEL_NAME = "google/gemma-4-26b-a4b"
+
+llm_client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
 
 def ask_llm(prompt: str, question: str) -> str:
     """Send a question to the LLM with the given system prompt."""
-    response = ollama.chat(
+    response = llm_client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": question},
         ],
+        temperature=0.7,
     )
-    return response["message"]["content"].strip()
+    return response.choices[0].message.content.strip()
 
 
 # ---------------------------------------------------------------------------

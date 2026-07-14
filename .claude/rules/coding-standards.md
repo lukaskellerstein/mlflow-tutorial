@@ -28,37 +28,76 @@ import mlflow
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
 ```
 
-## Ollama / LLM Setup
+## LMStudio / LLM Setup
 
-Three models are available locally via Ollama:
+Models are served locally via LMStudio with an OpenAI-compatible API.
+
+### Direct usage (preferred for most lessons)
 
 ```python
-from langchain_ollama import ChatOllama
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
 # Small model — fast, for simple tasks and basic examples
-llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+response = client.chat.completions.create(
+    model="google/gemma-4-e4b",
+    messages=[{"role": "user", "content": "Hello"}],
+    temperature=0.7,
+)
 
 # Large MoE model — for complex tasks, evaluation judges, agents
-llm = ChatOllama(model="gemma4:26b", temperature=0.7)
+response = client.chat.completions.create(
+    model="google/gemma-4-26b-a4b",
+    messages=[{"role": "user", "content": "Hello"}],
+    temperature=0.7,
+)
 ```
 
-For embeddings (RAG / vector DB):
+### With LangChain (for agent/chain lessons)
+
 ```python
-from langchain_ollama import OllamaEmbeddings
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
+from langchain_openai import ChatOpenAI
+
+# Small model
+llm = ChatOpenAI(
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    model="google/gemma-4-e4b",
+    temperature=0.7,
+)
+
+# Large MoE model
+llm = ChatOpenAI(
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    model="google/gemma-4-26b-a4b",
+    temperature=0.7,
+)
 ```
 
-When using the LLM directly (without LangChain), use the `ollama` Python package.
+### Embeddings (RAG / vector DB)
+
+```python
+from langchain_openai import OpenAIEmbeddings
+
+embeddings = OpenAIEmbeddings(
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    model="text-embedding-nomic-embed-text-v1.5",
+    check_embedding_ctx_length=False,
+)
+```
 
 ### Which model to use where
-- **Level 1 lessons**: use `gemma4:e2b` (fast, keeps lessons snappy)
-- **Level 2/3 agent and evaluation lessons**: use `gemma4:26b` (better reasoning)
-- **LLM-as-judge / evaluation judges**: use `gemma4:26b` (judge quality matters)
-- **RAG / embeddings**: use `nomic-embed-text`
+- **Level 1 lessons**: use `google/gemma-4-e4b` (fast, keeps lessons snappy)
+- **Level 2/3 agent and evaluation lessons**: use `google/gemma-4-26b-a4b` (better reasoning)
+- **LLM-as-judge / evaluation judges**: use `google/gemma-4-26b-a4b` (judge quality matters)
+- **RAG / embeddings**: use `text-embedding-nomic-embed-text-v1.5`
 
 ## Error Handling
 
-- Wrap Ollama calls with a check that the model is available.
+- Check that LMStudio server is reachable before making LLM calls.
 - Print clear error messages if MLFlow server is not running.
 - Do not silently swallow exceptions — this is educational code.
 
@@ -67,13 +106,13 @@ When using the LLM directly (without LangChain), use the `ollama` Python package
 - Use `uv add` to add dependencies, never `pip install`.
 - Common dependencies by topic:
   - All lessons: `mlflow`
-  - LLM lessons: `langchain-ollama`, `langchain-core`, `langchain`
-  - LangGraph lessons: `langgraph`, `langchain-ollama`
+  - LLM lessons (direct): `openai`
+  - LLM lessons (LangChain): `langchain-openai`, `langchain-core`, `langchain`
+  - LangGraph lessons: `langgraph`, `langchain-openai`
+  - DeepAgents lessons: `deepagents`, `langchain-openai`
   - Evaluation lessons: `pandas`, `mlflow[genai]`
   - RAG lessons: `qdrant-client`, `langchain-qdrant`
-  - Traditional ML lessons: `scikit-learn`, `xgboost`
-  - PyTorch lessons: `torch`, `pytorch-lightning`
-  - HuggingFace lessons: `transformers`, `datasets`
+  - Fine-tuning lessons: `transformers`, `datasets`
   - Production lessons: `fastapi`, `uvicorn`
   - Monitoring lessons: `prometheus-client`
 

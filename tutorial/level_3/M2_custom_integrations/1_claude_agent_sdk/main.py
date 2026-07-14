@@ -5,7 +5,7 @@ Demonstrates how to build a custom MLflow tracing integration for a
 third-party agent SDK (using Claude Agent SDK as the example).
 
 Since the real SDK requires an Anthropic API key, this lesson simulates
-the SDK's agent lifecycle with a local LLM (gemma4:e2b via Ollama) and
+the SDK's agent lifecycle with a local LLM (google/gemma-4-26b-a4b via LMStudio) and
 focuses on the INTEGRATION PATTERN — the same approach works for any
 agent framework that lacks native MLflow support.
 
@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import mlflow
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 
@@ -72,8 +72,13 @@ class ClaudeAgentSimulator:
       - agent.respond()  -> final answer generation
     """
 
-    def __init__(self, model: str = "gemma4:e2b", temperature: float = 0.3):
-        self.llm = ChatOllama(model=model, temperature=temperature)
+    def __init__(self, model: str = "google/gemma-4-26b-a4b", temperature: float = 0.3):
+        self.llm = ChatOpenAI(
+            model=model,
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            temperature=temperature,
+        )
         self.model = model
         self.temperature = temperature
         self.tools = AVAILABLE_TOOLS
@@ -209,7 +214,7 @@ class TracedClaudeAgent:
     ClaudeAgentSimulator calls with actual SDK calls.
     """
 
-    def __init__(self, model: str = "gemma4:e2b", temperature: float = 0.3):
+    def __init__(self, model: str = "google/gemma-4-26b-a4b", temperature: float = 0.3):
         self.agent = ClaudeAgentSimulator(model=model, temperature=temperature)
         self.model = model
         self.temperature = temperature
@@ -383,7 +388,7 @@ def main() -> None:
     print("=" * 60)
     print(f"  System prompt: {AGENT_SYSTEM_PROMPT[:60]}...")
     print(f"  Available tools: {list(AVAILABLE_TOOLS.keys())}")
-    print(f"  Model: gemma4:e2b (local via Ollama)")
+    print(f"  Model: google/gemma-4-26b-a4b (local via LMStudio)")
 
     # --- Part 2-3: Create traced agent ---
     print("\n" + "=" * 60)
@@ -398,7 +403,7 @@ def main() -> None:
     print("       - respond  (generate final answer)")
     print("    3. Log inputs/outputs/attributes on every span")
 
-    agent = TracedClaudeAgent(model="gemma4:e2b", temperature=0.3)
+    agent = TracedClaudeAgent(model="google/gemma-4-26b-a4b", temperature=0.3)
 
     # --- Part 4: Run example queries ---
     print("\n" + "=" * 60)

@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L3-M2-deepagents"
+version = "0.1.0"
+description = "DeepAgents Integration — multi-agent orchestration patterns with MLflow tracing and coordination metrics"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+]

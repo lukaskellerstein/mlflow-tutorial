@@ -6,7 +6,7 @@ configuration for production monitoring.  The script:
 
   1. Defines custom Prometheus metrics (histogram, counters, gauge)
   2. Starts a Prometheus-compatible metrics server on port 8099
-  3. Wraps ChatOllama calls with an instrumented service class that records
+  3. Wraps ChatOpenAI calls with an instrumented service class that records
      latency, token usage, errors, and active-request count
   4. Generates sample traffic (10 varied queries) to populate metrics
   5. Produces a Grafana dashboard JSON and logs it as an MLflow artifact
@@ -22,7 +22,7 @@ import mlflow
 import pandas as pd
 import requests
 from langchain_core.messages import HumanMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from prometheus_client import (
     Counter,
     Gauge,
@@ -70,11 +70,16 @@ LLM_ACTIVE_REQUESTS = Gauge(
 # 2. Instrumented LLM service
 # ---------------------------------------------------------------------------
 class InstrumentedLLMService:
-    """Wraps a ChatOllama model with Prometheus and MLflow instrumentation."""
+    """Wraps a ChatOpenAI model with Prometheus and MLflow instrumentation."""
 
-    def __init__(self, model: str = "gemma4:e2b", temperature: float = 0.7):
+    def __init__(self, model: str = "google/gemma-4-26b-a4b", temperature: float = 0.7):
         self.model_name = model
-        self.llm = ChatOllama(model=model, temperature=temperature)
+        self.llm = ChatOpenAI(
+            model=model,
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            temperature=temperature,
+        )
         self.call_count = 0
 
     def invoke(self, prompt: str) -> dict[str, Any]:
@@ -264,7 +269,7 @@ def main() -> None:
 
     # -- Part 2: Create instrumented LLM service ----------------------------
     print("\n--- Part 2: Creating instrumented LLM service ---")
-    service = InstrumentedLLMService(model="gemma4:e2b", temperature=0.7)
+    service = InstrumentedLLMService(model="google/gemma-4-26b-a4b", temperature=0.7)
     print(f"  Model: {service.model_name}")
 
     # -- Part 3: Generate sample traffic ------------------------------------

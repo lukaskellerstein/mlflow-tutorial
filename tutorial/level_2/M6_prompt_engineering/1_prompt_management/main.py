@@ -2,7 +2,7 @@
 
 import mlflow
 import pandas as pd
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 # ── MLflow setup ──────────────────────────────────────────────
@@ -75,10 +75,15 @@ def ab_test_prompts(versions: list[int]) -> pd.DataFrame:
     """Run A/B test: each prompt version answers the same questions."""
     print()
     print("=" * 60)
-    print("Part 2: A/B test prompts with ChatOllama")
+    print("Part 2: A/B test prompts with ChatOpenAI")
     print("=" * 60)
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     rows: list[dict] = []
 
     for version, variant in zip(versions, VARIANTS):
@@ -99,7 +104,7 @@ def ab_test_prompts(versions: list[int]) -> pd.DataFrame:
             mlflow.log_param("variant", label)
             mlflow.log_param("prompt_version", version)
             mlflow.log_param("prompt_name", PROMPT_NAME)
-            mlflow.log_param("model", "gemma4:e2b")
+            mlflow.log_param("model", "google/gemma-4-26b-a4b")
 
             total_length = 0
             total_words = 0

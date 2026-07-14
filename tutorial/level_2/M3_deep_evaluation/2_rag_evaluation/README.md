@@ -11,7 +11,7 @@ Retrieval-Augmented Generation (RAG) systems combine a retrieval step (finding r
 
 - Completed: L1-M4.2 (LLM Eval Basics), L2-M3.1 (Custom Metrics)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 

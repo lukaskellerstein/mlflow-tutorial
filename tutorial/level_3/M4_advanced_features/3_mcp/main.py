@@ -83,7 +83,7 @@ def main() -> None:
         mlflow.log_params({
             "num_tools": len(manifests),
             "tool_names": json.dumps([m["name"] for m in manifests]),
-            "llm_model": "gemma4:e2b",
+            "llm_model": "google/gemma-4-26b-a4b",
             "num_queries": len(queries),
         })
 

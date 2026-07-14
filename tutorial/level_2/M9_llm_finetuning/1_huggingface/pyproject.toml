@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L2-M9-huggingface"
+version = "0.1.0"
+description = "LLM Fine-Tuning with HuggingFace + MLflow"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "transformers>=4.30",
+    "datasets>=2.0",
+    "torch>=2.0",
+    "accelerate>=0.20",
+    "pandas>=2.0",
+]

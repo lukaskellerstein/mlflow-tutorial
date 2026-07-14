@@ -11,7 +11,7 @@ Automated evaluation is fast and cheap, but it is not always reliable — especi
 
 - Completed: L1-M4.2 (LLM Eval Basics), L1-M4.3 (LLM-as-Judge), L2-M3.1 (Custom Metrics)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 

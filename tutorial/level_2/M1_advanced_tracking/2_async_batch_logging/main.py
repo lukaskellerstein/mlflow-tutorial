@@ -1,134 +1,178 @@
 """
 L2-1.2 — Async and Batch Logging
 
-Demonstrates MLflow's async and batch logging capabilities:
-- Async logging: non-blocking metric logging during training loops
-- Step-based metrics: logging loss/accuracy curves over training steps
+Demonstrates MLflow's async and batch logging for LLM evaluation:
+- Async logging: non-blocking metric logging during batch LLM calls
+- Step-based metrics: logging quality scores and latencies per prompt
 - Batch logging: log_metrics() and log_params() for bulk operations
 - Sync vs async timing comparison
 """
 
-import math
 import time
 
 import mlflow
+from openai import OpenAI
+
+PROMPTS = [
+    "What is machine learning?",
+    "Explain neural networks in simple terms.",
+    "What is the difference between AI and ML?",
+    "How does gradient descent work?",
+    "What is overfitting and how do you prevent it?",
+    "Explain the bias-variance tradeoff.",
+    "What are transformers in deep learning?",
+    "How does backpropagation work?",
+    "What is transfer learning?",
+    "Explain reinforcement learning briefly.",
+    "What is a convolutional neural network?",
+    "How do attention mechanisms work?",
+]
 
 
-def part1_async_step_logging() -> None:
-    """Enable async logging and simulate a training loop with step-based metrics."""
+def call_llm(client: OpenAI, prompt: str) -> tuple[str, float, int]:
+    """Call LLM and return response text, latency in ms, and token count."""
+    start = time.perf_counter()
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7,
+        max_tokens=150,
+    )
+    latency_ms = (time.perf_counter() - start) * 1000
+    text = response.choices[0].message.content or ""
+    token_count = response.usage.completion_tokens if response.usage else len(text.split())
+    return text, latency_ms, token_count
+
+
+def part1_async_step_logging(client: OpenAI) -> None:
+    """Process batch of prompts with async step-based logging."""
     print("=" * 60)
     print("Part 1: Async Logging with Step-Based Metrics")
     print("=" * 60)
 
     mlflow.config.enable_async_logging(True)
     print("  Async logging ENABLED")
-    print("  Simulating a 25-step training loop...\n")
+    print(f"  Processing {len(PROMPTS)} prompts through LLM...\n")
 
-    with mlflow.start_run(run_name="async_training_loop") as run:
-        mlflow.log_param("model_type", "simulated_nn")
-        mlflow.log_param("learning_rate", 0.01)
-        mlflow.log_param("num_steps", 25)
+    with mlflow.start_run(run_name="async_batch_eval") as run:
+        mlflow.log_param("model", "google/gemma-4-e4b")
+        mlflow.log_param("temperature", 0.7)
+        mlflow.log_param("max_tokens", 150)
+        mlflow.log_param("num_prompts", len(PROMPTS))
 
-        for step in range(25):
-            # Simulate decreasing loss and increasing accuracy
-            loss = 2.0 * math.exp(-0.12 * step) + 0.05 * (step % 3)
-            accuracy = 1.0 - 0.9 * math.exp(-0.1 * step)
+        for i, prompt in enumerate(PROMPTS):
+            text, latency_ms, token_count = call_llm(client, prompt)
+            response_length = len(text)
 
             # Step-based logging -- these calls return immediately (async)
-            mlflow.log_metric("train_loss", round(loss, 4), step=step)
-            mlflow.log_metric("train_accuracy", round(accuracy, 4), step=step)
+            mlflow.log_metric("response_length", response_length, step=i)
+            mlflow.log_metric("latency_ms", round(latency_ms, 2), step=i)
+            mlflow.log_metric("token_count", token_count, step=i)
 
-            if step % 5 == 0:
-                print(f"    Step {step:2d}: loss={loss:.4f}  accuracy={accuracy:.4f}")
-
-        # Log final values
-        mlflow.log_metric("final_loss", round(loss, 4))
-        mlflow.log_metric("final_accuracy", round(accuracy, 4))
+            print(f"    [{i:2d}] {prompt[:45]:<45s}  "
+                  f"latency={latency_ms:7.1f}ms  tokens={token_count:3d}  "
+                  f"len={response_length:4d}")
 
     mlflow.config.enable_async_logging(False)
 
     print(f"\n  Run ID: {run.info.run_id}")
-    print("  Async logging produced step-based curves in MLflow UI.")
-    print("  View the charts at: http://127.0.0.1:5000\n")
+    print("  Step-based metrics logged asynchronously for each prompt.")
+    print("  View per-prompt charts at: http://127.0.0.1:5000\n")
 
 
-def part2_batch_logging() -> None:
+def part2_batch_logging(client: OpenAI) -> None:
     """Demonstrate batch logging with log_metrics() and log_params()."""
     print("=" * 60)
     print("Part 2: Batch Logging with log_metrics() and log_params()")
     print("=" * 60)
 
+    # Run a small subset to gather aggregate stats
+    latencies = []
+    token_counts = []
+    response_lengths = []
+
+    print("  Gathering aggregate stats from LLM responses...\n")
+    for prompt in PROMPTS[:6]:
+        text, latency_ms, token_count = call_llm(client, prompt)
+        latencies.append(latency_ms)
+        token_counts.append(token_count)
+        response_lengths.append(len(text))
+
     with mlflow.start_run(run_name="batch_logging_demo") as run:
-        # Log many params at once
+        # Log all LLM config params at once
         params = {
-            "model_type": "gradient_boosting",
-            "n_estimators": "200",
-            "max_depth": "5",
-            "learning_rate": "0.05",
-            "subsample": "0.8",
-            "min_samples_split": "10",
-            "min_samples_leaf": "4",
-            "max_features": "sqrt",
-            "random_state": "42",
+            "model": "google/gemma-4-e4b",
+            "temperature": "0.7",
+            "max_tokens": "150",
+            "provider": "lm-studio",
+            "base_url": "http://localhost:1234/v1",
+            "num_prompts_evaluated": str(len(PROMPTS[:6])),
         }
         mlflow.log_params(params)
         print(f"  Logged {len(params)} params in a single log_params() call")
 
-        # Log many metrics at once
+        # Log aggregate metrics at once
         metrics = {
-            "train_accuracy": 0.9542,
-            "val_accuracy": 0.9310,
-            "test_accuracy": 0.9285,
-            "train_f1": 0.9538,
-            "val_f1": 0.9295,
-            "test_f1": 0.9271,
-            "train_precision": 0.9601,
-            "val_precision": 0.9350,
-            "test_precision": 0.9320,
-            "train_recall": 0.9480,
-            "val_recall": 0.9242,
-            "test_recall": 0.9225,
-            "train_loss": 0.1234,
-            "val_loss": 0.1567,
-            "test_loss": 0.1612,
+            "avg_latency_ms": round(sum(latencies) / len(latencies), 2),
+            "min_latency_ms": round(min(latencies), 2),
+            "max_latency_ms": round(max(latencies), 2),
+            "avg_token_count": round(sum(token_counts) / len(token_counts), 2),
+            "total_tokens": sum(token_counts),
+            "avg_response_length": round(sum(response_lengths) / len(response_lengths), 2),
+            "min_response_length": min(response_lengths),
+            "max_response_length": max(response_lengths),
         }
         mlflow.log_metrics(metrics)
         print(f"  Logged {len(metrics)} metrics in a single log_metrics() call")
+
+        # Print the aggregate results
+        print(f"\n  Aggregate Results:")
+        print(f"    Avg latency:         {metrics['avg_latency_ms']:.2f} ms")
+        print(f"    Avg token count:     {metrics['avg_token_count']:.0f}")
+        print(f"    Avg response length: {metrics['avg_response_length']:.0f} chars")
 
     print(f"\n  Run ID: {run.info.run_id}")
     print("  Batch logging avoids multiple round-trips to the server.\n")
 
 
-def part3_sync_vs_async_timing() -> None:
+def part3_sync_vs_async_timing(client: OpenAI) -> None:
     """Compare sync vs async logging performance."""
     print("=" * 60)
     print("Part 3: Sync vs Async Timing Comparison")
     print("=" * 60)
 
-    num_steps = 30
+    # Pre-generate results so LLM latency does not affect the comparison
+    print("\n  Pre-generating LLM responses for fair comparison...")
+    results = []
+    for prompt in PROMPTS[:6]:
+        text, latency_ms, token_count = call_llm(client, prompt)
+        results.append((len(text), latency_ms, token_count))
+    print(f"  Collected {len(results)} responses. Now comparing logging speed.\n")
 
     # --- Synchronous logging ---
     mlflow.config.enable_async_logging(False)
-    print(f"\n  Synchronous logging ({num_steps} steps)...")
+    print("  Synchronous logging...")
 
     with mlflow.start_run(run_name="sync_timing_test"):
         t_start = time.perf_counter()
-        for step in range(num_steps):
-            mlflow.log_metric("sync_metric_a", step * 0.1, step=step)
-            mlflow.log_metric("sync_metric_b", step * 0.2, step=step)
+        for i, (resp_len, lat, tok) in enumerate(results):
+            mlflow.log_metric("response_length", resp_len, step=i)
+            mlflow.log_metric("latency_ms", round(lat, 2), step=i)
+            mlflow.log_metric("token_count", tok, step=i)
         sync_elapsed = time.perf_counter() - t_start
 
     print(f"    Time: {sync_elapsed:.4f}s")
 
     # --- Asynchronous logging ---
     mlflow.config.enable_async_logging(True)
-    print(f"\n  Asynchronous logging ({num_steps} steps)...")
+    print("\n  Asynchronous logging...")
 
     with mlflow.start_run(run_name="async_timing_test"):
         t_start = time.perf_counter()
-        for step in range(num_steps):
-            mlflow.log_metric("async_metric_a", step * 0.1, step=step)
-            mlflow.log_metric("async_metric_b", step * 0.2, step=step)
+        for i, (resp_len, lat, tok) in enumerate(results):
+            mlflow.log_metric("response_length", resp_len, step=i)
+            mlflow.log_metric("latency_ms", round(lat, 2), step=i)
+            mlflow.log_metric("token_count", tok, step=i)
         async_elapsed = time.perf_counter() - t_start
 
     mlflow.config.enable_async_logging(False)
@@ -152,9 +196,11 @@ if __name__ == "__main__":
     mlflow.set_tracking_uri("http://127.0.0.1:5000")
     mlflow.set_experiment("L2/M1_advanced_tracking/2_async_batch_logging")
 
-    part1_async_step_logging()
-    part2_batch_logging()
-    part3_sync_vs_async_timing()
+    client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
+    part1_async_step_logging(client)
+    part2_batch_logging(client)
+    part3_sync_vs_async_timing(client)
 
     print("=" * 60)
     print("Done! View all runs in the MLflow UI:")

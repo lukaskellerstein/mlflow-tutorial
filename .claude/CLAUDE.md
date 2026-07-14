@@ -2,81 +2,33 @@
 
 ## Purpose
 
-This is a comprehensive, three-level tutorial for MLFlow covering the full platform — from basic tracking through production AI agent evaluation. The primary focus is **LLMs and AI agents** (not traditional ML training). The special emphasis is on **evaluation (Evals) for AI agents** built with LangChain/LangGraph, DeepAgents, Claude Agent SDK, and Codex SDK.
+A comprehensive, three-level tutorial for MLFlow. The primary focus is **LLMs and AI agents** (not traditional ML training). Special emphasis on **evaluation (Evals) for AI agents** built with LangChain/LangGraph, DeepAgents, and Claude Agent SDK.
 
-The tutorial is structured in three progressive levels:
-- **Level 1 — Essentials**: Breadth-first. Touch every major MLflow feature (~30 min lessons). Understand the landscape.
-- **Level 2 — Practitioner**: Go deeper with real-world projects (~1-2 hour lessons). Build muscle memory.
-- **Level 3 — Expert**: Production patterns, custom integrations, advanced agent evaluation. Mastery.
+The three levels:
+- **Level 1 — Essentials**: Breadth-first. Every major MLflow feature (~30 min lessons).
+- **Level 2 — Practitioner**: Real-world projects (~1-2 hour lessons).
+- **Level 3 — Expert**: Production patterns, custom integrations, advanced agent evaluation.
 
-The full syllabus lives in `syllabus.md` (project root) — always consult it for module structure, lesson topics, deliverables, and time estimates before creating or modifying any lesson.
+## Source of Truth
+
+The full syllabus — module structure, lesson topics, deliverables, time estimates — lives in **`syllabus.md`** (project root). Always consult it before creating or modifying any lesson.
 
 ## Technical Stack
 
 - **Python**: 3.10+
 - **Package manager**: `uv` (every lesson is a standalone `uv` project)
-- **LLM provider**: Ollama (local, no API costs)
+- **LLM provider**: LMStudio (local, no API costs, OpenAI-compatible API)
+- **LLM server**: `http://localhost:1234` with OpenAI-compatible endpoint at `/v1/`
 - **LLM models**:
-  - `gemma4:26b` — large MoE model for complex tasks (evaluation judges, agents)
-  - `gemma4:e2b` — small 2B model for simple/fast tasks (basic examples, testing)
-  - `nomic-embed-text` — embedding model (137M params, 768 dims) for RAG/vector DB
+  - `google/gemma-4-e4b` — small 4B model for simple/fast tasks (Level 1 lessons)
+  - `google/gemma-4-26b-a4b` — large 26B MoE model for complex tasks (Level 2/3, evaluation judges, agents)
+  - `text-embedding-nomic-embed-text-v1.5` — embedding model for RAG/vector DB
 - **MLFlow**: latest 2.x+
-- **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK, Codex SDK, DeepAgents
-- **Traditional ML** (supporting context only): scikit-learn, XGBoost, PyTorch, Hugging Face Transformers
+- **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK, DeepAgents
 - **Vector DB**: Qdrant (via Podman Compose)
 - **Workflow orchestration**: Temporal.io (via Podman Compose, Level 2)
 - **Observability**: Grafana + Prometheus (via Podman Compose, Level 3)
 - **Container runtime**: Podman (not Docker)
-
-## Project Layout
-
-```
-infra/                          # All infrastructure (Podman Compose)
-  compose.yml                   #   Single file to start everything
-  mlflow/                       #   MLflow Dockerfile
-  temporal/                     #   Temporal config
-  grafana/                      #   Grafana provisioning
-  prometheus/                   #   Prometheus config
-  postgres/                     #   PostgreSQL init script
-syllabus.md                     # Master syllabus — the source of truth (project root)
-tutorial/
-  level_1/                      # Level 1: Essentials (breadth)
-    M1_tracking/
-    M2_models_registry/
-    M3_autologging/
-    M4_evaluation/
-    M5_tracing/
-    M6_genai_features/
-    M7_data_datasets/
-    M8_deployment/
-    M9_projects/
-    M10_auth/
-  level_2/                      # Level 2: Practitioner (depth)
-    M1_advanced_tracking/
-    M2_advanced_models/
-    M3_deep_evaluation/
-    M4_advanced_tracing/
-    M5_agent_observability/
-    M6_prompt_engineering/
-    M7_ai_gateway/
-    M8_deployment/
-    M9_framework_integrations/
-  level_3/                      # Level 3: Expert (mastery)
-    M1_agent_evaluation/
-    M2_custom_integrations/
-    M3_production/
-    M4_advanced_features/
-    M5_capstones/
-```
-
-Each lesson is a self-contained directory:
-```
-N_lesson_name/
-  pyproject.toml        # uv project — declares dependencies
-  main.py               # Working code (the lesson implementation)
-  README.md             # Lesson guide with explanation, steps, expected output
-  .gitignore            # Ignore .venv, __pycache__, mlruns, mlartifacts
-```
 
 ## Starting Infrastructure
 
@@ -84,8 +36,6 @@ N_lesson_name/
 cd infra
 podman compose up -d
 ```
-
-This starts MLflow, Temporal, Qdrant, Grafana, Prometheus, PostgreSQL, and Elasticsearch.
 
 | Service | URL |
 |---------|-----|
@@ -95,7 +45,7 @@ This starts MLflow, Temporal, Qdrant, Grafana, Prometheus, PostgreSQL, and Elast
 | Grafana | http://localhost:3000 (admin/admin) |
 | Prometheus | http://localhost:9090 |
 
-Ollama runs natively (not in Podman) for Apple Silicon GPU access.
+LMStudio runs natively (not in Podman) for Apple Silicon GPU access.
 
 ## Running a Lesson
 
@@ -113,18 +63,15 @@ uv run python main.py
 - `uv init` — scaffold a new lesson project
 - `uv add <package>` — add a dependency
 - `uv run python main.py` — run the lesson code
-- `ollama pull gemma4:e2b` — pull the small LLM
-- `ollama pull gemma4:26b` — pull the large MoE LLM
-- `ollama pull nomic-embed-text` — pull the embedding model
-
-## Reference Sources
-
-See `.claude/rules/references.md` for the full map of external source code, documentation, and code samples to consult when building lessons.
+- `lms ls` — list available models in LMStudio
+- `lms ps` — show loaded models
+- `lms load <model>` — load a model
+- `lms server start` — start LMStudio server
 
 ## Rules
 
-Modular instructions are in `.claude/rules/`. Read them — they cover:
-- `tutorial-structure.md` — three-level layout and file conventions
+Modular instructions are in `.claude/rules/`. They cover:
+- `tutorial-structure.md` — lesson file conventions and principles
 - `coding-standards.md` — Python style for tutorial code
 - `mlflow-patterns.md` — MLFlow APIs and patterns to use
 - `agent-evaluation.md` — the core focus: agent Evals

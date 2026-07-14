@@ -10,7 +10,7 @@ Approaches:
   B. ReAct Agent      — langgraph.prebuilt.create_react_agent with tools
   C. Custom StateGraph — classify -> route -> process -> respond
 
-All approaches use ChatOllama(model="gemma4:e2b") and the same tool set.
+All approaches use ChatOpenAI(model="google/gemma-4-26b-a4b") and the same tool set.
 """
 
 import json
@@ -23,7 +23,7 @@ import mlflow
 import pandas as pd
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import create_react_agent
@@ -38,7 +38,12 @@ mlflow.set_experiment("L3/M5_capstones/2_framework_benchmark")
 # ---------------------------------------------------------------------------
 # Shared LLM and tools
 # ---------------------------------------------------------------------------
-LLM = ChatOllama(model="gemma4:e2b", temperature=0.0)
+LLM = ChatOpenAI(
+    model="google/gemma-4-26b-a4b",
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    temperature=0.0,
+)
 
 KNOWLEDGE: dict[str, str] = {
     "python": "Python is a high-level programming language created by Guido van Rossum, "
@@ -306,7 +311,7 @@ class BenchmarkSuite:
                 "benchmark_type": "framework_comparison",
                 "num_agents": str(len(self.agents)),
                 "num_test_cases": str(len(self.test_cases)),
-                "model": "gemma4:e2b",
+                "model": "google/gemma-4-26b-a4b",
             })
 
             for agent_entry in self.agents:
@@ -320,7 +325,7 @@ class BenchmarkSuite:
                 ) as agent_run:
                     mlflow.log_params({
                         "agent": agent_entry.name,
-                        "model": "gemma4:e2b",
+                        "model": "google/gemma-4-26b-a4b",
                         "num_cases": len(self.test_cases),
                     })
 

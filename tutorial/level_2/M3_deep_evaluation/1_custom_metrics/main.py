@@ -11,7 +11,7 @@ import re
 
 import mlflow
 import pandas as pd
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from mlflow.entities import AssessmentSource, Feedback
 from mlflow.genai.scorers import scorer
 
@@ -84,8 +84,13 @@ Return ONLY valid JSON (no markdown fences):
 
 @scorer
 def llm_technical_quality(inputs, outputs, expectations) -> Feedback:
-    """Use gemma4:e2b to judge technical accuracy and completeness."""
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    """Use LLM judge to assess technical accuracy and completeness."""
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
     prompt = JUDGE_PROMPT.format(
         question=inputs.get("question", ""),
         expected=expectations.get("expected_response", ""),
@@ -108,14 +113,19 @@ def llm_technical_quality(inputs, outputs, expectations) -> Feedback:
         value=avg,
         rationale=(f"accuracy={scores.get('accuracy')}, completeness={scores.get('completeness')}, "
                    f"clarity={scores.get('clarity')} | {scores.get('rationale', '')}"),
-        source=AssessmentSource(source_type="LLM_JUDGE", source_id="gemma4:e2b"),
+        source=AssessmentSource(source_type="LLM_JUDGE", source_id="google/gemma-4-26b-a4b"),
     )
 
 
 # -- Predict function ----------------------------------------------------- #
 def answer_question(question: str) -> str:
     """Generate an answer using the local LLM."""
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     return llm.invoke(f"Answer concisely in 2-3 sentences: {question}").content
 
 
@@ -125,7 +135,7 @@ def main() -> None:
     print("Part 1: Deterministic Scorer (formatting_quality)")
     print("  Checks sentence structure, keyword overlap, length.")
     print("Part 2: LLM-Based Scorer (llm_technical_quality)")
-    print("  Uses gemma4:e2b to judge accuracy/completeness/clarity.")
+    print("  Uses LLM judge to assess accuracy/completeness/clarity.")
     print("=" * 60)
 
     # Part 3: Combined evaluation

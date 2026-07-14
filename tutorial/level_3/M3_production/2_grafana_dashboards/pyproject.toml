@@ -5,9 +5,8 @@ description = "Grafana Dashboards for MLflow — export LLM metrics to Prometheu
 requires-python = ">=3.10"
 dependencies = [
     "mlflow>=2.0",
-    "langchain-ollama>=0.2",
+    "langchain-openai>=0.1",
     "langchain-core>=0.3",
     "prometheus-client>=0.20",
     "pandas>=2.0",
-    "ollama>=0.4",
 ]

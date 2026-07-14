@@ -12,7 +12,7 @@ from typing import Literal
 import mlflow
 import mlflow.langchain
 from langchain_core.messages import HumanMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
@@ -20,7 +20,12 @@ mlflow.set_tracking_uri("http://127.0.0.1:5000")
 mlflow.set_experiment("L2/M4_advanced_tracing/1_langgraph_tracing")
 mlflow.langchain.autolog()
 
-llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+llm = ChatOpenAI(
+    model="google/gemma-4-26b-a4b",
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    temperature=0.0,
+)
 
 
 # -- State --

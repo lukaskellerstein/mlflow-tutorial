@@ -11,7 +11,7 @@ This lesson demonstrates how to build a LangChain ReAct agent using `langchain.a
 
 - Completed: L1-M5.1 (Auto Tracing), L1-M3.2 (LLM/GenAI Autologging)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` pulled (`ollama pull gemma4:e2b`)
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -68,9 +68,9 @@ We use `langchain.agents.create_agent`, which is the current API replacing the d
 
 ```python
 from langchain.agents import create_agent
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
-llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.0)
 agent = create_agent(model=llm, tools=[calculator, string_reverser, word_counter])
 ```
 
@@ -141,7 +141,7 @@ Part 4: Trace Analysis
     [CHAIN] LangGraph — SpanStatus(...)
     [CHAIN] agent — SpanStatus(...)
     [CHAIN] call_model — SpanStatus(...)
-    [CHAT_MODEL] ChatOllama — SpanStatus(...)
+    [CHAT_MODEL] ChatOpenAI — SpanStatus(...)
     [CHAIN] should_continue — SpanStatus(...)
     [CHAIN] tools — SpanStatus(...)
     [TOOL] calculator — SpanStatus(...)
@@ -150,7 +150,7 @@ Part 4: Trace Analysis
     ...
 ```
 
-Note: Latency depends on your hardware and Ollama load. The `gemma4:e2b` model is small but still requires GPU inference time.
+Note: Latency depends on your hardware and LMStudio load. The `google/gemma-4-e4b` model is small but still requires GPU inference time.
 
 In the MLflow UI at http://127.0.0.1:5000, navigate to the experiment **L2/M5_agent_observability/1_langchain_agents** to view:
 - The parent run with aggregate metrics

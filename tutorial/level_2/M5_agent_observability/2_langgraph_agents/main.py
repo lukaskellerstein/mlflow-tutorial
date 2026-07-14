@@ -15,7 +15,7 @@ from typing import Annotated, Literal
 import mlflow
 import mlflow.langchain
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
@@ -30,7 +30,12 @@ mlflow.langchain.autolog(log_traces=True)
 # ---------------------------------------------------------------------------
 # LLM
 # ---------------------------------------------------------------------------
-llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+llm = ChatOpenAI(
+    model="google/gemma-4-26b-a4b",
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    temperature=0.7,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +272,7 @@ def main() -> None:
     with mlflow.start_run(run_name="langgraph_agent_observability") as run:
         mlflow.set_tags({
             "agent_type": "langgraph_research_assistant",
-            "model": "gemma4:e2b",
+            "model": "google/gemma-4-26b-a4b",
             "graph_nodes": "analyze_query,search_knowledge,synthesize_answer,quality_check",
         })
 

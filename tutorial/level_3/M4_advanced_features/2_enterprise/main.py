@@ -173,14 +173,14 @@ class AuditLogger:
 class CostTracker:
     """Tracks LLM token usage and estimates costs per model.
 
-    Prices are illustrative (local Ollama models have zero real cost,
+    Prices are illustrative (local LMStudio models have zero real cost,
     but this demonstrates the pattern for cloud LLM deployments).
     """
 
     # Cost per 1M tokens (USD) — illustrative rates
     PRICING: dict[str, dict[str, float]] = {
-        "gemma4:e2b": {"input": 0.10, "output": 0.30},
-        "gemma4:26b": {"input": 0.50, "output": 1.50},
+        "google/gemma-4-e4b": {"input": 0.10, "output": 0.30},
+        "google/gemma-4-26b-a4b": {"input": 0.50, "output": 1.50},
         "gpt-4o": {"input": 2.50, "output": 10.00},
         "claude-sonnet": {"input": 3.00, "output": 15.00},
     }
@@ -401,14 +401,14 @@ def part4_cost_tracking() -> None:
     with mlflow.start_run(run_name="cost-tracking-demo"):
         # Simulate a series of LLM calls across models
         simulated_calls = [
-            ("gemma4:e2b", 512, 128, "classification"),
-            ("gemma4:e2b", 1024, 256, "summarization"),
-            ("gemma4:26b", 2048, 512, "agent-reasoning"),
-            ("gemma4:26b", 4096, 1024, "evaluation-judge"),
+            ("google/gemma-4-e4b", 512, 128, "classification"),
+            ("google/gemma-4-e4b", 1024, 256, "summarization"),
+            ("google/gemma-4-26b-a4b", 2048, 512, "agent-reasoning"),
+            ("google/gemma-4-26b-a4b", 4096, 1024, "evaluation-judge"),
             ("gpt-4o", 3000, 800, "complex-analysis"),
             ("claude-sonnet", 2500, 600, "code-generation"),
-            ("gemma4:e2b", 768, 192, "embedding-query"),
-            ("gemma4:26b", 1500, 400, "rag-response"),
+            ("google/gemma-4-e4b", 768, 192, "embedding-query"),
+            ("google/gemma-4-26b-a4b", 1500, 400, "rag-response"),
         ]
 
         for model, inp, out, op in simulated_calls:

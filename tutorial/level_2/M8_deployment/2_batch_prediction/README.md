@@ -1,92 +1,100 @@
-# L2-8.2 -- Batch Prediction Pipelines
+# L2-8.2 -- Batch LLM Inference Pipeline
 
 **Level:** Practitioner
 **Duration:** 45 min
 
 ## Overview
 
-Batch prediction is how most ML models deliver value in production -- scoring large datasets on a schedule rather than one request at a time. This lesson builds a complete batch prediction pipeline with MLflow: loading a logged model, running predictions over a DataFrame, tracking results as artifacts and metrics, handling errors, and generating CLI commands for offline scoring.
+Batch LLM inference lets you score a collection of prompts in one pipeline run rather than handling them one at a time through a REST endpoint. This lesson wraps a local LLM inside an MLflow PyFunc model, runs a batch of diverse prompts, and tracks latency, token usage, and cost estimates -- the same pattern you would use with a paid API in production.
 
 ## Prerequisites
 
 - Completed: L1-8.1 (Model Serving Basics)
 - Completed: L2-8.1 (Serving Deep Dive)
 - MLflow server running at http://127.0.0.1:5000
+- LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts
 
-### Batch vs. Real-Time Prediction
+### Batch vs. Real-Time for LLMs
 
 | Aspect | Real-Time (Serving) | Batch |
-|--------|-------------------|-------|
-| Latency | Milliseconds | Minutes to hours |
-| Input | Single request | Large dataset |
-| Trigger | API call | Schedule / event |
-| Use case | User-facing apps | Reports, ETL, scoring |
-| Scaling | Horizontal (replicas) | Vertical (bigger machine) |
+|--------|---------------------|-------|
+| Latency | Per-request SLA | Total wall-clock time |
+| Input | Single prompt | DataFrame of prompts |
+| Trigger | API call / user action | Schedule or event |
+| Use case | Chatbots, assistants | Bulk classification, report generation, data enrichment |
+| Cost control | Hard to predict | Predictable per-batch budget |
 
-Batch prediction is ideal when you need to score an entire dataset periodically -- nightly fraud scoring, weekly churn prediction, daily recommendation refresh.
+Batch inference is the right choice when results are not needed immediately -- nightly content moderation, weekly sentiment scoring, bulk document summarization, or offline evaluation of prompt variants.
 
-### mlflow.pyfunc for Batch Scoring
+### Cost Tracking
 
-`mlflow.pyfunc.load_model()` loads any MLflow model (regardless of flavor) into a unified prediction interface. This makes batch scripts framework-agnostic -- the same pipeline works whether the model is scikit-learn, XGBoost, PyTorch, or a custom PyFunc.
+Even with a free local model, tracking token usage and latency per prompt builds the habit you need when switching to a paid API. The lesson logs `total_tokens`, `cost_estimate_usd`, and `avg_latency_per_prompt_ms` so you can set budgets and catch regressions.
 
-### Pipeline Pattern
+### PyFunc for Batch Scoring
 
-A production batch pipeline follows a consistent flow:
-
-1. **Load** -- read input data from a source (CSV, database, API)
-2. **Validate** -- check for missing values, schema mismatches, data quality
-3. **Predict** -- run the model, handle errors per-row or per-batch
-4. **Log** -- save predictions, metrics, and metadata to MLflow
-
-Tracking every batch run in MLflow gives you an audit trail: what model version was used, how many rows were scored, how long it took, and what the prediction distribution looked like.
+`mlflow.pyfunc.PythonModel` provides a framework-agnostic wrapper. By implementing `load_context` (initialize the OpenAI client) and `predict` (loop over prompts, call the LLM, collect results), the model can be loaded anywhere with `mlflow.pyfunc.load_model()` and scored with a single `.predict(df)` call -- locally, in a notebook, or via the `mlflow models predict` CLI.
 
 ## Step-by-Step
 
-### Step 1: Train and Log a Model
+### Step 1: Create and Log the LLM PyFunc Model
 
-We train a GradientBoostingClassifier on the wine dataset and log it with an inferred signature. The signature ensures that batch inputs are validated against the expected schema.
+We define `LLMModel(mlflow.pyfunc.PythonModel)` with two methods:
+
+- `load_context` -- initializes the OpenAI client pointing at LMStudio.
+- `predict` -- iterates over the `prompt` column, calls the LLM, and returns a DataFrame with `response`, `latency_ms`, and `tokens_used`.
+
+The model is logged with an inferred signature so MLflow validates inputs at prediction time.
 
 ```python
-signature = infer_signature(X_test, clf.predict(X_test))
-mlflow.sklearn.log_model(clf, name="model", signature=signature)
+class LLMModel(mlflow.pyfunc.PythonModel):
+    def load_context(self, context):
+        from openai import OpenAI
+        self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
+    def predict(self, context, model_input, params=None):
+        # Loop over prompts, call LLM, collect responses + timing + tokens
+        ...
+
+mlflow.pyfunc.log_model(name="llm_model", python_model=LLMModel(), signature=signature)
 ```
 
-### Step 2: Batch Prediction with mlflow.pyfunc
+### Step 2: Build Batch Prompts and Run Inference
 
-Load the model by its run URI and predict on a 60-row batch. We time the prediction to track throughput.
+A DataFrame of eight diverse prompts (summarization, translation, Q&A, classification, creative writing, explanation, listing, rewriting) is scored through the loaded model.
 
 ```python
 model = mlflow.pyfunc.load_model(model_uri)
-predictions = model.predict(batch_df)
+results = model.predict(batch_prompts)
 ```
 
-### Step 3: Result Tracking
+Each prompt is timed individually so you can see which task types are faster or slower.
 
-Log batch metrics (size, latency, throughput) and save predictions as a CSV artifact plus a JSON summary with class distribution.
+### Step 3: Log Results to MLflow
+
+Batch metrics are logged to a dedicated run:
+
+- `batch_size` -- number of prompts
+- `total_latency_sec` -- wall-clock time for the full batch
+- `avg_latency_per_prompt_ms` -- mean per-prompt latency
+- `total_tokens` -- sum of tokens across all completions
+- `cost_estimate_usd` -- estimated cost at a configurable rate
+
+The full prompts-and-responses table is saved as a CSV artifact.
 
 ```python
-mlflow.log_metrics({"batch_size": 60, "predictions_per_second": 1500.0})
-mlflow.log_artifact("batch_predictions.csv", artifact_path="predictions")
+mlflow.log_metrics({...})
+mlflow.log_artifact("batch_results.csv", artifact_path="results")
 ```
 
-### Step 4: Pipeline Pattern
+### Step 4: CLI Batch Prediction
 
-A four-step pipeline wraps the entire flow with validation and error handling:
-
-1. Load data and log input row count
-2. Validate inputs (drop rows with missing values)
-3. Predict with try/except to catch model failures
-4. Log output CSV and set a `pipeline_status` tag
-
-### Step 5: CLI Batch Prediction
-
-Generate `mlflow models predict` commands for offline scoring and create a sample input CSV as an artifact.
+The lesson prints ready-to-use `mlflow models predict` commands for offline scoring, along with scheduling examples for cron and workflow orchestrators.
 
 ```bash
-mlflow models predict -m "runs:/<run_id>/model" \
-  -i sample_input.csv -o predictions.csv
+mlflow models predict -m "runs:/<run_id>/llm_model" \
+  -i prompts.csv -o responses.csv --content-type csv
 ```
 
 ## Running the Lesson
@@ -101,72 +109,57 @@ uv run python main.py
 
 ```
 ============================================================
-L2-8.2 -- Batch Prediction Pipelines
+L2-8.2 -- Batch LLM Inference Pipeline
 ============================================================
 
-  Wine dataset: 178 samples, 13 features
-  Train: 142 | Test: 36
+============================================================
+Part 1: Create and Log the LLM PyFunc Model
+============================================================
+  Model URI: runs:/<run_id>/llm_model
+  Signature: inputs: ['prompt': string] -> outputs: ['response': string, ...]
 
 ============================================================
-Part 1: Train and Log a Model
+Part 2: Batch LLM Inference
 ============================================================
-  Accuracy : 0.97xx
-  Model URI: runs:/<run_id>/model
+  Batch size: 8 prompts
+  Model loaded from: runs:/<run_id>/llm_model
+  [1] 1200ms | 85 tok | Renewable energy reduces greenhouse gas emissions and ...
+  [2]  950ms | 42 tok | Le temps est magnifique aujourd'hui. ...
+  ...
+  Total time: 8.50s
 
 ============================================================
-Part 2: Batch Prediction with mlflow.pyfunc
+Part 3: Log Batch Results to MLflow
 ============================================================
-  Loaded model from: runs:/<run_id>/model
-  Batch size: 60 rows
-  Prediction time : 0.00xxs
-  Predictions/sec : xxxxx.x
-  Unique classes  : [0, 1, 2]
+  batch_size              : 8
+  total_latency_sec       : 8.50
+  avg_latency_per_prompt  : 1062.5 ms
+  total_tokens            : 520
+  cost_estimate_usd       : $0.000052
+  Logged artifact: results/batch_results.csv
 
 ============================================================
-Part 3: Result Tracking
+Part 4: CLI Batch Prediction
 ============================================================
-  Logged metrics: batch_size=60, time=0.00xxs, pps=xxxxx.x
-  Logged artifact: predictions/batch_predictions.csv
-  Logged artifact: predictions/prediction_summary.json
-  Class distribution: {0: xx, 1: xx, 2: xx}
-
-============================================================
-Part 4: Complete Pipeline Pattern
-============================================================
-  [1/4] Loading data ...
-  [2/4] Validating inputs ...
-        178 valid, 0 skipped (0 missing values)
-  [3/4] Running predictions ...
-        178 predicted, 0 failed in 0.00xxs
-  [4/4] Logging results ...
-        Artifact: pipeline/pipeline_output.csv
-        Status: success
-
-============================================================
-Part 5: CLI Batch Prediction
-============================================================
-  Logged sample input: cli/sample_input.csv
-  ...CLI commands...
+  ...CLI commands and scheduling examples...
 
 ============================================================
 Done!
 ============================================================
 ```
 
-In the MLflow UI you will see four runs under the experiment:
-- **train_wine_model** -- the trained model with accuracy metric
-- **batch_prediction_results** -- batch metrics and prediction artifacts
-- **batch_pipeline** -- the full pipeline run with validation metrics
-- **cli_batch_setup** -- sample input file for CLI scoring
+In the MLflow UI you will see two runs under the experiment:
+- **log_llm_model** -- the logged PyFunc model with parameters
+- **batch_inference_results** -- batch metrics and the CSV artifact
 
 ## Key Takeaways
 
-- `mlflow.pyfunc.load_model()` provides a unified interface for batch scoring regardless of the underlying model flavor.
-- Log batch metrics (size, latency, throughput) alongside predictions to build an operational audit trail.
-- Save prediction results as CSV artifacts for downstream consumption and debugging.
-- Wrap pipelines in validation and error handling -- production data is messy.
-- Use `mlflow models predict` for simple CLI-based batch scoring without writing Python code.
+- Wrapping an LLM in `mlflow.pyfunc.PythonModel` gives you a reusable, framework-agnostic batch scoring interface.
+- Tracking per-prompt latency and token usage lets you set cost budgets and catch performance regressions early.
+- Logging the full prompts-and-responses CSV as an artifact creates an audit trail for every batch run.
+- The same PyFunc model works with programmatic `.predict()` calls and the `mlflow models predict` CLI.
+- Batch inference is the right pattern for offline tasks like bulk classification, content moderation, and data enrichment where real-time latency is not required.
 
 ## Next Steps
 
-Move on to L2-M9 (Framework Integrations) to see how MLflow integrates with PyTorch, Hugging Face, and Sentence Transformers for deeper model tracking. In Level 3, you will build production batch pipelines with scheduling, monitoring, and CI/CD quality gates.
+Move on to L2-M9 (Framework Integrations) to see how MLflow integrates with PyTorch, Hugging Face, and LangChain for deeper model tracking and evaluation. In Level 3, you will build production batch pipelines with scheduling, monitoring, and CI/CD quality gates.

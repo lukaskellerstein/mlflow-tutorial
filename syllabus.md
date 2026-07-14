@@ -6,14 +6,14 @@ This tutorial is structured in three progressive levels:
 
 - **Level 1 — Essentials**: Breadth-first. Touch every major MLflow feature. Short lessons (~30 min). Goal: understand what MLflow can do and when to reach for each feature.
 - **Level 2 — Practitioner**: Go deeper in each area with real-world scenarios. Longer lessons (~1-2 hours). Goal: build working projects and develop muscle memory.
-- **Level 3 — Expert**: Production patterns, custom integrations, advanced evaluation, enterprise features. Goal: master MLflow for production AI systems, with special focus on agent evaluation.
+- **Level 3 — Expert**: Production patterns, custom integrations, advanced evaluation. Goal: master MLflow for production AI systems, with special focus on agent evaluation.
 
 Each level builds on the previous. A user can stop after Level 1 and have a working mental model of the entire platform, or continue through Level 3 for full mastery.
 
 ## Target Audience
 
-- **Level 1**: Anyone starting with MLflow — data scientists, ML engineers, AI developers
-- **Level 2**: Practitioners building real ML/AI applications who need depth
+- **Level 1**: Anyone starting with MLflow — AI developers, ML engineers, data scientists working with LLMs
+- **Level 2**: Practitioners building real AI applications who need depth
 - **Level 3**: Teams shipping AI agents to production who need evaluation, monitoring, and custom integrations
 
 ## Technical Stack
@@ -21,34 +21,37 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - **Python**: 3.10+
 - **Package Manager**: `uv` (every lesson is a standalone project)
 - **MLFlow**: Latest (2.x+)
-- **LLM provider**: Ollama (local, no API costs)
+- **LLM provider**: LMStudio (local, OpenAI-compatible API on `localhost:1234`)
 - **LLM models**:
-  - `gemma4:26b` — large MoE model for complex tasks (evaluation judges, agents)
-  - `gemma4:e2b` — small 2B model for simple/fast tasks (basic examples, testing)
-  - `nomic-embed-text` — embedding model (137M params, 768 dims) for RAG/vector DB
-- **Agent Frameworks**: LangChain v1.0+, LangGraph, Claude Agent SDK, Codex SDK, DeepAgents
-- **Traditional ML**: scikit-learn, XGBoost, PyTorch
-- **Vector DB**: Qdrant (in-memory for tutorials, Docker for production lessons)
-- **Workflow Orchestration**: Temporal.io (optional)
-- **Observability**: Grafana (production monitoring)
+  - `google/gemma-4-e4b` — 4B model for simple/fast tasks (Level 1, basic examples)
+  - `google/gemma-4-26b-a4b` — 26B MoE model for complex tasks (Level 2/3, evaluation judges, agents)
+  - `text-embedding-nomic-embed-text-v1.5` — embedding model for RAG/vector DB
+- **Agent Frameworks**: LangChain v1.0+, LangGraph, DeepAgents, Claude Agent SDK
+- **Vector DB**: Qdrant (via Podman Compose)
+- **Evaluation Benchmark**: SWE-Bench
+- **Workflow Orchestration**: Temporal.io (via Podman Compose)
+- **Observability**: Grafana + Prometheus (via Podman Compose)
+- **Container runtime**: Podman (not Docker)
 
 ## Reference Sources
 
 - **MLFlow**
   - Source code: `~/Projects/github/mlflow/mlflow`
   - Documentation: `/Users/lkellers/Projects/github/mlflow/mlflow/docs/docs`
-- **LangChain + LangGraph**:
-  - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai`
+- **LangChain**:
+  - Source code: `/Users/lkellers/Projects/github/langchain-ai/langchain`
+  - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain`
+- **LangGraph**:
+  - Source code: `/Users/lkellers/Projects/github/langchain-ai/langgraph`
+  - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph`
+- **DeepAgents**:
+  - Source code: `/Users/lkellers/Projects/github/langchain-ai/deepagents`
+  - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/3_deepagents`
+- **Claude Agent SDK**:
+  - Source code: `/Users/lkellers/Projects/github/anthropics/claude-agent-sdk-python`
+  - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
 - **Temporal.io**:
   - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/my-workflows/temporal-io/my-python`
-- **Claude Agent SDK**:
-  - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
-  - Source code: `~/Projects/github/anthropics/claude-agent-sdk-python`
-- **Codex SDK**:
-  - Code samples: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/3_Codex_SDK/typescript`
-  - Source code: `~/Projects/github/openai/codex/sdk`
-- **Deep agents**:
-  - Source code: `~/Projects/github/lanchain-ai/deepagents`
 
 ---
 ---
@@ -56,7 +59,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 # LEVEL 1 — ESSENTIALS (Breadth)
 
 *Goal: Touch every major MLflow feature. Understand the landscape.*
-*Estimated time: ~12-15 hours*
+*Estimated time: ~9-11 hours*
 
 ---
 
@@ -120,22 +123,23 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L1-M2: Models and Registry
 
-### L1-2.1 — MLflow Models and Flavors
+### L1-M2.1 — MLflow Models and Flavors
 **Duration:** 30 min
 **Topics:**
 - What is an MLflow Model? (the `MLmodel` file, flavors, signatures)
-- Built-in flavors overview: `sklearn`, `pytorch`, `transformers`, `pyfunc`, `openai`, `langchain`, etc.
+- Key flavors for LLM work: `pyfunc`, `langchain`, `openai`, `transformers`
 - Model signatures: `ModelSignature`, `infer_signature()`
 - `mlflow.<flavor>.log_model()` and `mlflow.<flavor>.load_model()`
 - Input examples for documentation
+- Logging a LangChain agent (compiled `StateGraph`) as an MLflow model
 
 **Deliverables:**
-- Log a scikit-learn model with signature and input example
-- Load it back and run predictions
+- Log a LangChain agent with signature and input example
+- Load it back and run inference
 
 ---
 
-### L1-2.2 — Model Registry
+### L1-M2.2 — Model Registry
 **Duration:** 30 min
 **Topics:**
 - Registering models: `mlflow.register_model()`
@@ -145,18 +149,18 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Loading models by name and version/alias
 
 **Deliverables:**
-- Register a model, create versions, set aliases, load by alias
+- Register an LLM model, create versions, set aliases, load by alias
 
 ---
 
-### L1-2.3 — PyFunc — The Universal Model Wrapper
+### L1-M2.3 — PyFunc — The Universal Model Wrapper
 **Duration:** 30 min
 **Topics:**
 - What is PyFunc and why it matters (universal interface)
 - `mlflow.pyfunc.log_model()` with custom `PythonModel` class
 - `predict()` interface
 - Wrapping arbitrary Python code as an MLflow model
-- Use case: wrapping an LLM prompt template as a model
+- Use case: wrapping an LLM prompt template + LMStudio call as a model
 
 **Deliverables:**
 - Custom PyFunc model that wraps a prompt template + LLM call
@@ -165,52 +169,24 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L1-M3: Autologging
 
-### L1-3.1 — Traditional ML Autologging
+### L1-M3.1 — LLM and GenAI Autologging
 **Duration:** 30 min
 **Topics:**
 - `mlflow.autolog()` — the universal autolog
-- Framework-specific: `mlflow.sklearn.autolog()`, `mlflow.xgboost.autolog()`, `mlflow.pytorch.autolog()`
-- What gets auto-logged per framework: params, metrics, models, artifacts
-- Supported frameworks overview: sklearn, XGBoost, LightGBM, CatBoost, PyTorch, TensorFlow/Keras, Statsmodels, Prophet, etc.
+- `mlflow.openai.autolog()` — trace OpenAI-compatible calls (LMStudio)
+- `mlflow.langchain.autolog()` — trace LangChain and LangGraph
+- Other LLM integrations: `mlflow.anthropic.autolog()`, Mistral, Gemini, Bedrock, Groq, LiteLLM
+- What gets captured: inputs, outputs, latencies, token counts, model info
 - Disabling/configuring autolog behavior
 
 **Deliverables:**
-- Side-by-side: sklearn + XGBoost autologging on the same dataset, comparing logged outputs
-
----
-
-### L1-3.2 — LLM and GenAI Autologging
-**Duration:** 30 min
-**Topics:**
-- `mlflow.openai.autolog()` — trace OpenAI calls
-- `mlflow.anthropic.autolog()` — trace Anthropic/Claude calls
-- `mlflow.langchain.autolog()` — trace LangChain and LangGraph
-- `mlflow.transformers.autolog()` — Hugging Face models
-- Other LLM integrations: Mistral, Gemini, Bedrock, Groq, LiteLLM
-- What gets captured: inputs, outputs, latencies, token counts, model info
-
-**Deliverables:**
-- Script showing autologging for Ollama via LangChain, with traces visible in UI
+- Script showing autologging for LMStudio via OpenAI SDK and via LangChain, with traces visible in UI
 
 ---
 
 ## L1-M4: Evaluation
 
-### L1-4.1 — Traditional ML Evaluation
-**Duration:** 30 min
-**Topics:**
-- `mlflow.evaluate()` for classification and regression
-- Built-in metrics: accuracy, precision, recall, F1, AUC, MAE, RMSE
-- Evaluation artifacts: confusion matrix, ROC curve, lift curve
-- Custom metrics with `make_metric()`
-- Comparing models via evaluation results in UI
-
-**Deliverables:**
-- Evaluate a classifier with built-in metrics, view confusion matrix in UI
-
----
-
-### L1-4.2 — LLM Evaluation Basics
+### L1-M4.1 — LLM Evaluation Basics
 **Duration:** 30 min
 **Topics:**
 - `mlflow.evaluate()` for LLMs — `model_type="question-answering"`, `"text-summarization"`, `"text"`
@@ -224,7 +200,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-4.3 — LLM-as-Judge
+### L1-M4.2 — LLM-as-Judge
 **Duration:** 30 min
 **Topics:**
 - What is LLM-as-judge and why use it?
@@ -239,7 +215,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L1-M5: Tracing
 
-### L1-5.1 — Automatic Tracing
+### L1-M5.1 — Automatic Tracing
 **Duration:** 30 min
 **Topics:**
 - What is tracing? (vs. logging — structured execution flow)
@@ -249,11 +225,11 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Trace search and filtering
 
 **Deliverables:**
-- Multi-step LangChain chain with auto-traced execution visible in UI
+- Multi-step LangChain agent (`create_agent` with tools) with auto-traced execution visible in UI
 
 ---
 
-### L1-5.2 — Manual Tracing
+### L1-M5.2 — Manual Tracing
 **Duration:** 30 min
 **Topics:**
 - `@mlflow.trace` decorator — function-level tracing
@@ -268,7 +244,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L1-M6: GenAI Features
 
-### L1-6.1 — Prompt Registry
+### L1-M6.1 — Prompt Registry
 **Duration:** 20 min
 **Topics:**
 - Registering prompts: `mlflow.genai.register_prompt()`
@@ -282,7 +258,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-6.2 — GenAI Scorers and Judges
+### L1-M6.2 — GenAI Scorers and Judges
 **Duration:** 30 min
 **Topics:**
 - Built-in scorers overview
@@ -295,7 +271,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-6.3 — Datasets and Labeling
+### L1-M6.3 — Datasets and Labeling
 **Duration:** 20 min
 **Topics:**
 - `mlflow.genai.datasets` — creating and managing evaluation datasets
@@ -310,37 +286,37 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L1-M7: Data and Datasets
 
-### L1-7.1 — Dataset Logging and Lineage
+### L1-M7.1 — Dataset Logging and Lineage
 **Duration:** 20 min
 **Topics:**
 - `mlflow.data` module — logging datasets alongside runs
-- Dataset sources: Pandas, Spark, Delta, HuggingFace, HTTP
+- Dataset sources: Pandas, HuggingFace, HTTP
 - Dataset schemas and profiling
-- Data lineage: connecting datasets to runs and models
-- `mlflow.log_input()` for tracking which data trained which model
+- Data lineage: connecting evaluation datasets to runs and models
+- `mlflow.log_input()` for tracking which data was used in evaluations
 
 **Deliverables:**
-- Log a pandas DataFrame as a dataset, link it to a training run
+- Log an LLM evaluation dataset, link it to an evaluation run
 
 ---
 
 ## L1-M8: Deployment and Serving
 
-### L1-8.1 — Model Serving Basics
+### L1-M8.1 — Model Serving Basics
 **Duration:** 30 min
 **Topics:**
 - `mlflow models serve` — local REST API serving
 - Serving endpoints: `/invocations`, `/ping`, `/version`
-- Input formats: JSON, CSV, split-orient
+- Input formats: JSON, split-orient
 - `mlflow models predict` — batch prediction from CLI
-- Docker containerization: `mlflow models build-docker`
+- Serving a PyFunc-wrapped LLM model
 
 **Deliverables:**
-- Serve a model locally, call it via `curl`, run batch predictions
+- Serve an LLM model locally, call it via `curl`, run batch predictions
 
 ---
 
-### L1-8.2 — AI Gateway Overview
+### L1-M8.2 — AI Gateway Overview
 **Duration:** 20 min
 **Topics:**
 - What is the AI Gateway? (unified LLM endpoint management)
@@ -354,26 +330,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M9: Projects
+## L1-M9: Authentication and Administration
 
-### L1-9.1 — MLflow Projects
-**Duration:** 20 min
-**Topics:**
-- What is an MLflow Project? (reproducible ML workflows)
-- `MLproject` file format
-- Running projects: `mlflow run`
-- Conda and Docker environments
-- Git-based projects
-- Use cases: reproducibility, CI/CD, collaboration
-
-**Deliverables:**
-- Create a simple MLflow Project, run it from CLI
-
----
-
-## L1-M10: Authentication and Administration
-
-### L1-10.1 — Authentication and Permissions
+### L1-M9.1 — Authentication and Permissions
 **Duration:** 15 min
 **Topics:**
 - Enabling authentication on the tracking server
@@ -393,15 +352,14 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 |--------|---------|---------------|
 | M1: Tracking | 4 lessons | ~1.5 hours |
 | M2: Models & Registry | 3 lessons | ~1.5 hours |
-| M3: Autologging | 2 lessons | ~1 hour |
-| M4: Evaluation | 3 lessons | ~1.5 hours |
+| M3: Autologging | 1 lesson | ~30 min |
+| M4: Evaluation | 2 lessons | ~1 hour |
 | M5: Tracing | 2 lessons | ~1 hour |
 | M6: GenAI Features | 3 lessons | ~1 hour |
 | M7: Data & Datasets | 1 lesson | ~20 min |
 | M8: Deployment & Serving | 2 lessons | ~50 min |
-| M9: Projects | 1 lesson | ~20 min |
-| M10: Auth & Admin | 1 lesson | ~15 min |
-| **Total** | **22 lessons** | **~10-12 hours** |
+| M9: Auth & Admin | 1 lesson | ~15 min |
+| **Total** | **19 lessons** | **~9-11 hours** |
 
 ---
 ---
@@ -410,55 +368,55 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 *Goal: Go deeper in each area. Build real-world projects.*
 *Prerequisite: Level 1 completed*
-*Estimated time: ~25-30 hours*
+*Estimated time: ~20-25 hours*
 
 ---
 
 ## L2-M1: Advanced Tracking
 
-### L2-1.1 — Nested Runs and Run Hierarchies
+### L2-M1.1 — Nested Runs and Run Hierarchies
 **Duration:** 45 min
 **Topics:**
-- Nested runs for hyperparameter sweeps
+- Nested runs for LLM configuration sweeps (temperature, model variants, prompt variants)
 - Parent-child run relationships
-- Using nested runs with cross-validation
+- Organizing prompt/model comparisons with nested runs
 - Organizing runs with tags for filtering
 - Best practices for experiment organization
 
 **Deliverables:**
-- Hyperparameter grid search with nested runs, results filterable in UI
+- LLM configuration sweep (temperature x prompt variant) with nested runs, results filterable in UI
 
 ---
 
-### L2-1.2 — Async and Batch Logging
+### L2-M1.2 — Async and Batch Logging
 **Duration:** 30 min
 **Topics:**
 - `mlflow.config.enable_async_logging()` — non-blocking logging
 - Performance impact of sync vs. async
-- Batch logging large numbers of metrics
-- Step-based metric logging for training curves
-- Logging in distributed/parallel training
+- Batch logging large numbers of metrics during LLM evaluation runs
+- Step-based metric logging for iterative LLM workflows
+- Logging in parallel/concurrent LLM inference
 
 **Deliverables:**
-- Training loop with async logging, step-based loss curves in UI
+- Batch LLM evaluation loop with async logging, step-based quality metrics in UI
 
 ---
 
-### L2-1.3 — Artifact Management Deep Dive
+### L2-M1.3 — Artifact Management Deep Dive
 **Duration:** 45 min
 **Topics:**
 - Artifact storage backends: local, S3, GCS, Azure Blob
-- Logging different artifact types: images, audio, tables, dicts, figures
+- Logging LLM-specific artifacts: generated texts, evaluation reports, trace exports
 - `mlflow.log_image()`, `mlflow.log_table()`, `mlflow.log_figure()`
 - Artifact organization and naming conventions
 - Large artifact handling and storage limits
 
 **Deliverables:**
-- Run that logs multiple artifact types (plots, tables, JSON configs), organized in folders
+- Run that logs LLM evaluation artifacts (response tables, metric plots, JSON reports), organized in folders
 
 ---
 
-### L2-1.4 — MlflowClient — Programmatic Access
+### L2-M1.4 — MlflowClient — Programmatic Access
 **Duration:** 45 min
 **Topics:**
 - `MlflowClient` vs. fluent API — when to use which
@@ -468,76 +426,74 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Building custom dashboards and reports from MLflow data
 
 **Deliverables:**
-- Script that builds a comparison report across experiments using MlflowClient
+- Script that builds a comparison report across LLM experiments using MlflowClient
 
 ---
 
 ## L2-M2: Advanced Models
 
-### L2-2.1 — Model Signatures Deep Dive
+### L2-M2.1 — Model Signatures Deep Dive
 **Duration:** 45 min
 **Topics:**
 - `ModelSignature` — input/output schema definition
-- `infer_signature()` from training data
-- Column-based vs. tensor-based signatures
+- `infer_signature()` from LLM input/output pairs
+- Signatures for chat messages, completions, tool call interfaces
 - Signature enforcement during serving
-- Handling complex input types (images, nested JSON)
-- Params in signatures (for inference-time configuration)
+- Handling complex input types (nested JSON, chat history)
+- Params in signatures (for inference-time configuration: temperature, max_tokens)
 
 **Deliverables:**
-- Models with different signature types, tested with enforcement
+- LLM models with different signature types (chat, completion, tool-call), tested with enforcement
 
 ---
 
-### L2-2.2 — Custom PyFunc Models
+### L2-M2.2 — Custom PyFunc Models
 **Duration:** 1 hour
 **Topics:**
 - Advanced `PythonModel` subclassing
-- `load_context()` for loading dependencies (files, other models)
+- `load_context()` for loading dependencies (config files, prompt templates)
 - `predict()` with params support
-- Multi-model ensembles as a single PyFunc
-- Wrapping REST API clients as PyFunc models
+- Wrapping a RAG pipeline as a single PyFunc model
+- Wrapping an agent as a PyFunc model
 - Dependency management: `conda_env`, `pip_requirements`, `extra_pip_requirements`
 
 **Deliverables:**
-- Custom PyFunc that wraps an ensemble of sklearn + LLM, with configurable predict params
+- Custom PyFunc that wraps a RAG pipeline (LangChain + Qdrant), with configurable predict params
 
 ---
 
-### L2-2.3 — Model Registry Workflows
+### L2-M2.3 — Model Registry Workflows
 **Duration:** 45 min
 **Topics:**
 - Model lifecycle: None → Staging → Production → Archived
 - Alias-based deployment (`champion`, `challenger`)
 - Model descriptions, tags, and annotations
-- Webhooks for registry events
 - Comparing model versions side-by-side
-- Promoting models through CI/CD
+- Promoting LLM models through CI/CD
 
 **Deliverables:**
-- Full registry workflow: train → register → test → promote → serve
+- Full registry workflow: build LLM model → register → evaluate → promote → serve
 
 ---
 
 ## L2-M3: Deep Evaluation
 
-### L2-3.1 — Custom Metrics and Evaluators
+### L2-M3.1 — Custom Metrics and Evaluators
 **Duration:** 1 hour
 **Topics:**
-- `make_metric()` — custom metric functions
+- `make_metric()` — custom metric functions for LLM output quality
 - Custom evaluators: subclassing `EvaluationMetric`
-- Metrics that use artifacts (confusion matrix, ROC curve)
+- Domain-specific LLM metrics (e.g., code quality scoring, instruction following, safety)
 - Combining built-in and custom metrics
 - Metric validation and thresholds
 - Evaluation with `extra_metrics` and `custom_artifacts`
-- MLflow + EvalHub integration: EvalHub (Red Hat's evaluation control plane) stores results in MLflow experiments. Understanding MLflow's evaluation data model is foundational for using EvalHub on OpenShift AI (reference: evalhub-tutorial)
 
 **Deliverables:**
-- Custom metric suite for a domain-specific task (e.g., code quality scoring)
+- Custom metric suite for an LLM task (e.g., code generation quality scoring)
 
 ---
 
-### L2-3.2 — RAG System Evaluation
+### L2-M3.2 — RAG System Evaluation
 **Duration:** 1.5 hours
 **Topics:**
 - Building a RAG system with LangChain + Qdrant
@@ -553,7 +509,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L2-3.3 — GenAI Evaluation Framework
+### L2-M3.3 — GenAI Evaluation Framework
 **Duration:** 1 hour
 **Topics:**
 - `mlflow.genai.evaluation` — the full framework
@@ -561,14 +517,14 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Built-in scorers vs. custom scorers
 - LLM judges with custom criteria and rubrics
 - Evaluation runs and comparison in UI
-- Batch evaluation across multiple models
+- Batch evaluation across multiple models/configurations
 
 **Deliverables:**
 - Evaluation framework comparing 3 different LLM configurations on a shared dataset
 
 ---
 
-### L2-3.4 — Human-in-the-Loop Evaluation
+### L2-M3.4 — Human-in-the-Loop Evaluation
 **Duration:** 45 min
 **Topics:**
 - `mlflow.genai.labeling` — active labeling workflows
@@ -584,7 +540,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L2-M4: Advanced Tracing
 
-### L2-4.1 — Tracing LangGraph State Machines
+### L2-M4.1 — Tracing LangGraph State Machines
 **Duration:** 1.5 hours
 **Topics:**
 - LangGraph `StateGraph` with MLflow auto-tracing
@@ -600,14 +556,14 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L2-4.2 — Tracing Temporal.io Workflows
+### L2-M4.2 — Tracing Temporal.io Workflows
 **Duration:** 1.5 hours
 **Topics:**
 - Temporal.io workflow and activity basics
 - Integrating MLflow tracing with Temporal activities
 - Long-running process observability
 - Retry and failure tracking with traces
-- Durable execution + ML observability
+- Durable execution + AI observability
 - Reference: `/Users/lkellers/Projects/github/lukaskellerstein/my-workflows/temporal-io/my-python/MY/5_AI`
 
 **Deliverables:**
@@ -616,7 +572,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L2-4.3 — OpenTelemetry Integration
+### L2-M4.3 — OpenTelemetry Integration
 **Duration:** 45 min
 **Topics:**
 - MLflow's OpenTelemetry (OTel) foundation
@@ -630,10 +586,10 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L2-4.4 — Trace-based Debugging and Analysis
+### L2-M4.4 — Trace-based Debugging and Analysis
 **Duration:** 45 min
 **Topics:**
-- Using traces to find latency bottlenecks
+- Using traces to find latency bottlenecks in LLM pipelines
 - Token usage analysis from traces
 - Cost estimation from traced LLM calls
 - Trace search and filtering at scale
@@ -647,29 +603,31 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L2-M5: Agent Observability
 
-### L2-5.1 — LangChain Agent Tracking
+### L2-M5.1 — LangChain Agent Tracking
 **Duration:** 1.5 hours
 **Topics:**
-- Creating agents with LangChain v1.0+ (`create_react_agent`)
+- Creating agents with LangChain v1+ (`create_agent` from `langchain.agents`)
+- Tools with the `@tool` decorator (`langchain_core.tools`)
 - Auto-logging agents with `mlflow.langchain.autolog()`
 - Tracking tool calls and reasoning steps
-- Agent iteration and decision tracking
+- Agent middleware: `HumanInTheLoopMiddleware`, `TodoListMiddleware`
 - Comparing agent configurations
 - Reference: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain/10_agent`
 
 **Deliverables:**
-- ReAct agent with custom tools, fully traced
+- Agent (`create_agent`) with custom tools, fully traced
 - Tool usage metrics and decision visualization
 
 ---
 
-### L2-5.2 — LangGraph Agent Observability
+### L2-M5.2 — LangGraph Agent Observability
 **Duration:** 2 hours
 **Topics:**
-- Building agents with LangGraph (`StateGraph`, nodes, edges)
+- Building agents with LangGraph (`StateGraph`, nodes, edges, `ToolNode`)
+- `create_agent` returns a compiled `StateGraph` — understanding the relationship
 - Auto-tracing state transitions
 - Visualizing agent execution graphs
-- Conditional branching and routing in traces
+- Conditional edges (`add_conditional_edges`) and routing in traces
 - Debugging agent behavior with traces
 - Reference: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph/5_agent`
 
@@ -678,13 +636,14 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L2-5.3 — Multi-Agent Systems
+### L2-M5.3 — Multi-Agent Systems
 **Duration:** 2.5 hours
 **Topics:**
 - Multi-agent patterns: collaboration, supervision, swarm
-- Building multi-agent graphs with agent handoffs
+- Building multi-agent graphs with agent handoffs (`Command(goto=..., graph=Command.PARENT)`)
 - Tracing inter-agent communication and state sharing
-- `create_react_agent` for individual agents in a graph
+- `create_agent` for individual agents composed as subgraphs
+- Swarm pattern: transfer tools for agent-to-agent handoff
 - Aggregating metrics across agents
 - Debugging collaboration failures
 - Reference: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph/6_agents`
@@ -697,7 +656,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L2-M6: Prompt Engineering and Optimization
 
-### L2-6.1 — Prompt Management at Scale
+### L2-M6.1 — Prompt Management at Scale
 **Duration:** 45 min
 **Topics:**
 - Prompt Registry deep dive
@@ -712,7 +671,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L2-6.2 — Prompt Optimization
+### L2-M6.2 — Prompt Optimization
 **Duration:** 1 hour
 **Topics:**
 - `mlflow.genai.optimize` — automated prompt tuning
@@ -728,7 +687,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L2-M7: AI Gateway Deep Dive
 
-### L2-7.1 — Gateway Configuration and Routing
+### L2-M7.1 — Gateway Configuration and Routing
 **Duration:** 1 hour
 **Topics:**
 - Route configuration: models, rate limits, API keys
@@ -745,76 +704,49 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L2-M8: Deployment Patterns
 
-### L2-8.1 — Model Serving Deep Dive
+### L2-M8.1 — LLM Serving Deep Dive
 **Duration:** 1 hour
 **Topics:**
-- Serving configurations and customization
-- Custom request/response handling
-- Serving multiple models
+- Serving LLM-backed models (PyFunc-wrapped pipelines, agents)
+- Custom request/response handling for chat interfaces
+- Serving multiple model versions
 - Health checks and monitoring
 - Docker-based deployment: `mlflow models build-docker`
-- Cloud deployment patterns: AWS, GCP, Azure
-- OpenShift AI managed MLflow: the `mlflowoperator` DSC component deploys MLflow as a managed service on the cluster. Workbenches connect automatically. The managed server handles HA, TLS, and RBAC — you only write the tracking code (reference: OpenShift AI tutorial L2-M5.1)
+- Cloud deployment patterns
 
 **Deliverables:**
-- Dockerized model server with custom configuration
+- Dockerized LLM model server with custom configuration
 
 ---
 
-### L2-8.2 — Batch Prediction Pipelines
+### L2-M8.2 — Batch Prediction Pipelines
 **Duration:** 45 min
 **Topics:**
-- `mlflow models predict` for batch inference
-- Building batch prediction scripts
-- Scheduling predictions (cron, Airflow, Temporal)
+- `mlflow models predict` for batch LLM inference
+- Building batch prediction scripts for LLM evaluation
+- Scheduling predictions (cron, Temporal)
 - Result logging and tracking
 - Error handling and retry strategies
 
 **Deliverables:**
-- Batch prediction pipeline with result tracking in MLflow
+- Batch LLM inference pipeline with result tracking in MLflow
 
 ---
 
-## L2-M9: Framework Integrations Deep Dive
+## L2-M9: LLM Fine-Tuning
 
-### L2-9.1 — PyTorch + MLflow
-**Duration:** 1 hour
-**Topics:**
-- `mlflow.pytorch.autolog()` — full capabilities
-- Training loop integration
-- Logging checkpoints and model artifacts
-- Distributed training with MLflow
-- PyTorch Lightning integration
-
-**Deliverables:**
-- PyTorch training pipeline with full MLflow integration
-
----
-
-### L2-9.2 — Hugging Face Transformers + MLflow
+### L2-M9.1 — Hugging Face Transformers + MLflow
 **Duration:** 1.5 hours
 **Topics:**
-- `mlflow.transformers.autolog()` — auto-logging
-- Fine-tuning tracking with training metrics
-- Model logging and loading HF models
+- `mlflow.transformers.autolog()` — auto-logging for fine-tuning
+- Fine-tuning a small LLM with training metrics tracking
+- Logging checkpoints and model artifacts
+- Model logging and loading HF models via MLflow
+- Comparing base vs. fine-tuned models with evaluation metrics
 - Pipeline serving via MLflow
-- Comparing base vs. fine-tuned models
 
 **Deliverables:**
-- Fine-tuning experiment with full tracking and model comparison
-
----
-
-### L2-9.3 — Sentence Transformers + MLflow
-**Duration:** 45 min
-**Topics:**
-- Embedding model tracking
-- Evaluating embedding quality
-- Logging embedding models to registry
-- Use case: tracking embeddings for RAG systems
-
-**Deliverables:**
-- Embedding model evaluation with quality metrics tracked
+- Fine-tuning experiment with full tracking and base vs. fine-tuned model comparison
 
 ---
 
@@ -830,8 +762,8 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 | M6: Prompt Engineering | 2 lessons | ~1.75 hours |
 | M7: AI Gateway | 1 lesson | ~1 hour |
 | M8: Deployment | 2 lessons | ~1.75 hours |
-| M9: Framework Integrations | 3 lessons | ~3.25 hours |
-| **Total** | **26 lessons** | **~25-30 hours** |
+| M9: LLM Fine-Tuning | 1 lesson | ~1.5 hours |
+| **Total** | **24 lessons** | **~22-27 hours** |
 
 ---
 ---
@@ -846,7 +778,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L3-M1: Advanced Agent Evaluation (Core Focus)
 
-### L3-1.1 — Agent Testing Framework
+### L3-M1.1 — Agent Testing Framework
 **Duration:** 2 hours
 **Topics:**
 - `mlflow.genai.agent_tester` — automated agent test generation
@@ -863,7 +795,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-1.2 — Agent Quality Metrics Design
+### L3-M1.2 — Agent Quality Metrics Design
 **Duration:** 2 hours
 **Topics:**
 - Designing metrics for agent-specific behaviors:
@@ -882,13 +814,13 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-1.3 — Agent Architecture Comparison
+### L3-M1.3 — Agent Architecture Comparison
 **Duration:** 2.5 hours
 **Topics:**
 - Systematic comparison of agent architectures:
-  - ReAct vs. Plan-and-Execute
-  - Single-agent vs. multi-agent
-  - LangChain agents vs. LangGraph agents
+  - Single-agent (`create_agent`) vs. custom `StateGraph` agents
+  - Single-agent vs. multi-agent (swarm, supervision, collaboration)
+  - LangChain/LangGraph agents vs. DeepAgents (`create_deep_agent`)
 - Controlled evaluation methodology
 - Ablation studies: which component matters most?
 - Cost-quality tradeoff analysis
@@ -900,7 +832,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-1.4 — Agent Optimization
+### L3-M1.4 — Agent Optimization
 **Duration:** 2 hours
 **Topics:**
 - `mlflow.genai.optimize` for agent instruction tuning
@@ -915,7 +847,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-1.5 — End-to-End Agent Evaluation Pipeline
+### L3-M1.5 — End-to-End Agent Evaluation Pipeline
 **Duration:** 2.5 hours
 **Topics:**
 - Designing a complete evaluation pipeline:
@@ -937,7 +869,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L3-M2: Custom Framework Integrations
 
-### L3-2.1 — Claude Agent SDK + MLflow
+### L3-M2.1 — Claude Agent SDK + MLflow
 **Duration:** 2.5 hours
 **Topics:**
 - Claude Agent SDK architecture and lifecycle
@@ -947,7 +879,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Custom autolog implementation for Claude Agent SDK
 - Evaluation of Claude-based agents with MLflow
 - Reference code: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
-- Source: `~/Projects/github/anthropics/claude-agent-sdk-python`
+- Source: `/Users/lkellers/Projects/github/anthropics/claude-agent-sdk-python`
 
 **Deliverables:**
 - Claude Agent SDK agent with full MLflow tracing
@@ -956,32 +888,17 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-2.2 — Codex SDK + MLflow
-**Duration:** 2.5 hours
-**Topics:**
-- Codex SDK architecture (TypeScript-based)
-- Cross-language integration: calling TypeScript from Python (subprocess, REST, or Node bridge)
-- Building MLflow tracing for Codex operations
-- Logging code generation metrics: correctness, compilation success, test pass rate
-- Evaluating code generation quality with custom scorers
-- Reference code: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/3_Codex_SDK/typescript`
-- Source: `~/Projects/github/openai/codex/sdk`
-
-**Deliverables:**
-- Codex SDK integration with MLflow tracing
-- Code generation evaluation pipeline with quality metrics
-
----
-
-### L3-2.3 — DeepAgents + MLflow
+### L3-M2.2 — DeepAgents + MLflow
 **Duration:** 2 hours
 **Topics:**
-- DeepAgents architecture and multi-agent patterns
-- Existing MLflow integration (if any) vs. custom
-- Tracing multi-agent orchestration flows
+- DeepAgents architecture: `create_deep_agent()` built on top of `create_agent()`
+- Built-in tools (filesystem, planning, sub-agent delegation via `task` tool)
+- Sub-agents with isolated context windows
+- Backends: `StateBackend`, `FilesystemBackend`, `CompositeBackend`
+- Tracing multi-agent orchestration flows with MLflow
 - Evaluating multi-agent collaboration quality
 - Comparing DeepAgents vs. LangGraph multi-agent patterns
-- Source: `~/Projects/github/lanchain-ai/deepagents`
+- Reference: `/Users/lkellers/Projects/github/langchain-ai/deepagents`
 
 **Deliverables:**
 - DeepAgents system with MLflow tracing
@@ -989,7 +906,25 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-2.4 — Building Custom Autolog Integrations
+### L3-M2.3 — SWE-Bench Evaluation Pipeline
+**Duration:** 2.5 hours
+**Topics:**
+- SWE-Bench: the standardized benchmark for coding agents
+- Setting up SWE-Bench Verified dataset from HuggingFace
+- Building an agent that attempts SWE-Bench tasks
+- Integrating SWE-Bench evaluation with MLflow tracking
+- Logging per-instance results, pass rates, and error analysis
+- Comparing agent configurations on SWE-Bench
+- Reference: https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified
+
+**Deliverables:**
+- SWE-Bench evaluation pipeline integrated with MLflow
+- Agent performance comparison across configurations
+- Per-instance failure analysis logged as artifacts
+
+---
+
+### L3-M2.4 — Building Custom Autolog Integrations
 **Duration:** 2 hours
 **Topics:**
 - MLflow autolog architecture: how it works internally
@@ -1007,7 +942,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L3-M3: Production Monitoring and Operations
 
-### L3-3.1 — Production Tracing at Scale
+### L3-M3.1 — Production Tracing at Scale
 **Duration:** 1.5 hours
 **Topics:**
 - High-volume trace collection strategies
@@ -1022,7 +957,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-3.2 — Grafana Dashboards for MLflow
+### L3-M3.2 — Grafana Dashboards for MLflow
 **Duration:** 2 hours
 **Topics:**
 - Exporting MLflow metrics to Prometheus
@@ -1040,7 +975,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-3.3 — Feedback Loops and Continuous Improvement
+### L3-M3.3 — Feedback Loops and Continuous Improvement
 **Duration:** 1.5 hours
 **Topics:**
 - Collecting user feedback on agent responses
@@ -1048,7 +983,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 - Feeding production data back into evaluation datasets
 - Identifying drift: prompt drift, data drift, quality drift
 - Active learning: selecting the most informative examples for labeling
-- Closing the loop: feedback → retrain/re-prompt → evaluate → deploy
+- Closing the loop: feedback → re-prompt → evaluate → deploy
 
 **Deliverables:**
 - Feedback collection pipeline with drift detection
@@ -1056,7 +991,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-3.4 — CI/CD for AI Applications
+### L3-M3.4 — CI/CD for AI Applications
 **Duration:** 1.5 hours
 **Topics:**
 - Automated evaluation in CI pipelines (GitHub Actions)
@@ -1074,7 +1009,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ## L3-M4: Advanced MLflow Features
 
-### L3-4.1 — MLflow Plugins and Extensibility
+### L3-M4.1 — MLflow Plugins and Extensibility
 **Duration:** 1.5 hours
 **Topics:**
 - MLflow plugin system architecture
@@ -1089,7 +1024,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-4.2 — Multi-tenant and Enterprise Patterns
+### L3-M4.2 — Multi-tenant and Enterprise Patterns
 **Duration:** 1 hour
 **Topics:**
 - Workspace isolation and multi-tenancy
@@ -1104,7 +1039,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-4.3 — MLflow + MCP (Model Context Protocol)
+### L3-M4.3 — MLflow + MCP (Model Context Protocol)
 **Duration:** 1 hour
 **Topics:**
 - What is MCP? (standardized tool/resource protocol for AI)
@@ -1117,23 +1052,23 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-4.4 — Advanced Data Management
+### L3-M4.4 — Advanced Data Management
 **Duration:** 1 hour
 **Topics:**
 - Dataset versioning strategies at scale
-- Data lineage across the full ML lifecycle
-- Feature store integration patterns
-- Large-scale dataset handling (Spark, Delta Lake)
+- Data lineage across the full AI lifecycle
+- Large-scale evaluation dataset management
 - Data quality monitoring with MLflow
+- Connecting evaluation datasets → runs → models → production
 
 **Deliverables:**
-- Data lineage pipeline connecting datasets → training runs → models → predictions
+- Data lineage pipeline connecting evaluation datasets → agent runs → models → production metrics
 
 ---
 
 ## L3-M5: Capstone Projects
 
-### L3-5.1 — Capstone: Production AI Agent Platform
+### L3-M5.1 — Capstone: Production AI Agent Platform
 **Duration:** 4-6 hours
 **Topics:**
 - Build a complete AI agent platform with:
@@ -1153,15 +1088,17 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L3-5.2 — Capstone: Agent Framework Benchmark
+### L3-M5.2 — Capstone: Agent Framework Benchmark
 **Duration:** 4-6 hours
 **Topics:**
 - Build a standardized benchmark comparing agent frameworks:
-  - LangChain/LangGraph agents
-  - Claude Agent SDK agents
+  - LangChain agents
+  - LangGraph agents
   - DeepAgents multi-agent systems
+  - Claude Agent SDK agents
   - Custom PyFunc-wrapped agents
 - Shared evaluation dataset and metrics
+- SWE-Bench subset as standardized coding benchmark
 - Statistical analysis of results
 - Cost-quality-latency comparison
 - Recommendations for framework selection
@@ -1182,7 +1119,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 | M3: Production Operations | 4 lessons | ~6.5 hours |
 | M4: Advanced MLflow Features | 4 lessons | ~4.5 hours |
 | M5: Capstone Projects | 2 projects | ~8-12 hours |
-| **Total** | **19 lessons + 2 capstones** | **~25-35 hours** |
+| **Total** | **19 lessons + 2 capstones** | **~28-38 hours** |
 
 ---
 ---
@@ -1191,10 +1128,49 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 | Level | Focus | Lessons | Time |
 |-------|-------|---------|------|
-| **Level 1 — Essentials** | Breadth: every feature area | 22 lessons | ~10-12 hours |
-| **Level 2 — Practitioner** | Depth: real-world projects | 26 lessons | ~25-30 hours |
-| **Level 3 — Expert** | Mastery: production + agents | 19 lessons + 2 capstones | ~25-35 hours |
-| **Total** | | **67 lessons + 2 capstones** | **~60-77 hours** |
+| **Level 1 — Essentials** | Breadth: every feature area | 19 lessons | ~9-11 hours |
+| **Level 2 — Practitioner** | Depth: real-world projects | 24 lessons | ~22-27 hours |
+| **Level 3 — Expert** | Mastery: production + agents | 19 lessons + 2 capstones | ~28-38 hours |
+| **Total** | | **62 lessons + 2 capstones** | **~59-76 hours** |
+
+---
+
+## Changes from Previous Syllabus
+
+### Removed (pure ML, no LLM/agent relevance)
+- **L1-M3.1** Traditional ML Autologging (sklearn, XGBoost, PyTorch autolog)
+- **L1-M4.1** Traditional ML Evaluation (classifier metrics, confusion matrix, ROC)
+- **L1-M9** MLflow Projects (legacy feature, not relevant to LLM/agent workflows)
+- **L2-M9.1** PyTorch + MLflow (pure ML training)
+- **L2-M9.3** Sentence Transformers + MLflow (embedding model tracking — covered in RAG eval)
+- **L3-M2.2** Codex SDK (not in preferred tech stack)
+
+### Added
+- **L3-M2.3** SWE-Bench Evaluation Pipeline (standardized coding agent benchmark)
+
+### Kept (reframed for LLM focus)
+- **L2-M9.1** HuggingFace Transformers — reframed for LLM fine-tuning (not generic ML training)
+- **L3-M2.1** Claude Agent SDK — custom MLflow tracing integration
+
+### Reframed (from ML to LLM/agent focus)
+- **L1-M2.1** Models & Flavors: sklearn → LangChain agent logging (`langchain` flavor)
+- **L2-M1.1** Nested Runs: hyperparameter grid search → LLM configuration sweeps
+- **L2-M1.2** Async Logging: training loop → batch LLM evaluation
+- **L2-M2.1** Signatures: tensor-based → chat/completion/tool-call signatures
+- **L2-M2.2** Custom PyFunc: sklearn ensemble → RAG pipeline wrapping
+- **L2-M3.1** Custom Metrics: generic → LLM-specific (code quality, instruction following)
+- **L2-M8.1** Serving: generic model server → LLM model server
+- **L2-M9.1** HuggingFace: generic training → LLM fine-tuning with base vs. fine-tuned comparison
+- **L3-M4.4** Data Management: feature stores → evaluation dataset management
+- **L3-M5.2** Capstone Benchmark: LangChain/LangGraph/DeepAgents/Claude SDK (removed Codex), added SWE-Bench subset
+
+### Tech Stack Updates
+- **LMStudio** replaces Ollama (OpenAI-compatible API on localhost:1234)
+- **Gemma4-E4B** (4B) as primary small model, **Gemma4-26B** for complex tasks
+- **Claude Agent SDK** kept as agent framework
+- **DeepAgents** added as a primary agent framework (alongside LangChain/LangGraph)
+- **SWE-Bench** added for standardized evaluation benchmarking
+- Removed: scikit-learn, XGBoost, Codex SDK
 
 ---
 
@@ -1202,7 +1178,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ```
 tutorial/
-├── tutorial_new_syllabus.md          # This file — the master syllabus
+├── syllabus.md                     # This file — the master syllabus
 ├── level_1/
 │   ├── M1_tracking/
 │   │   ├── 1_first_run/
@@ -1214,12 +1190,10 @@ tutorial/
 │   │   ├── 2_model_registry/
 │   │   └── 3_pyfunc/
 │   ├── M3_autologging/
-│   │   ├── 1_traditional_ml/
-│   │   └── 2_llm_genai/
+│   │   └── 1_llm_genai/
 │   ├── M4_evaluation/
-│   │   ├── 1_traditional_ml_eval/
-│   │   ├── 2_llm_eval_basics/
-│   │   └── 3_llm_as_judge/
+│   │   ├── 1_llm_eval_basics/
+│   │   └── 2_llm_as_judge/
 │   ├── M5_tracing/
 │   │   ├── 1_auto_tracing/
 │   │   └── 2_manual_tracing/
@@ -1232,9 +1206,7 @@ tutorial/
 │   ├── M8_deployment/
 │   │   ├── 1_model_serving/
 │   │   └── 2_ai_gateway/
-│   ├── M9_projects/
-│   │   └── 1_mlflow_projects/
-│   └── M10_auth/
+│   └── M9_auth/
 │       └── 1_auth_permissions/
 ├── level_2/
 │   ├── M1_advanced_tracking/
@@ -1268,10 +1240,8 @@ tutorial/
 │   ├── M8_deployment/
 │   │   ├── 1_serving_deep_dive/
 │   │   └── 2_batch_prediction/
-│   └── M9_framework_integrations/
-│       ├── 1_pytorch/
-│       ├── 2_huggingface/
-│       └── 3_sentence_transformers/
+│   └── M9_llm_finetuning/
+│       └── 1_huggingface/
 ├── level_3/
 │   ├── M1_agent_evaluation/
 │   │   ├── 1_agent_testing/
@@ -1281,8 +1251,8 @@ tutorial/
 │   │   └── 5_evaluation_pipeline/
 │   ├── M2_custom_integrations/
 │   │   ├── 1_claude_agent_sdk/
-│   │   ├── 2_codex_sdk/
-│   │   ├── 3_deepagents/
+│   │   ├── 2_deepagents/
+│   │   ├── 3_swe_bench/
 │   │   └── 4_custom_autolog/
 │   ├── M3_production/
 │   │   ├── 1_production_tracing/
@@ -1301,19 +1271,15 @@ tutorial/
 
 ## MLflow Feature Coverage Matrix
 
-This matrix shows which MLflow features are covered at each level:
-
 | Feature Area | Level 1 | Level 2 | Level 3 |
 |---|---|---|---|
 | Experiment Tracking | Basics | Nested runs, async, MlflowClient | — |
 | System Metrics | Overview | — | — |
 | Search/Query API | Basics | Advanced filtering | — |
-| Models & Flavors | Overview, PyFunc | Signatures, custom PyFunc | Plugins |
+| Models & Flavors | LLM flavors, PyFunc | Signatures, custom PyFunc | Plugins |
 | Model Registry | Basics | Lifecycle workflows | Enterprise |
-| Autologging (Traditional ML) | Overview | — | — |
 | Autologging (LLM/GenAI) | Overview | — | Custom autolog |
-| Traditional ML Evaluation | Basics | Custom metrics | — |
-| LLM Evaluation | Basics, LLM-as-judge | RAG eval, GenAI framework | Agent eval pipeline |
+| LLM Evaluation | Basics, LLM-as-judge | RAG eval, GenAI framework, custom metrics | Agent eval pipeline |
 | Human Evaluation | — | Labeling, assessments | Feedback loops |
 | Tracing (Auto) | Basics | LangGraph, Temporal | Production scale |
 | Tracing (Manual) | Basics | OTel, analysis | Custom frameworks |
@@ -1323,14 +1289,12 @@ This matrix shows which MLflow features are covered at each level:
 | AI Gateway | Overview | Routing, fallbacks | — |
 | Model Serving | CLI basics | Docker, cloud | — |
 | Batch Prediction | — | Pipelines | — |
-| MLflow Projects | Overview | — | — |
 | Authentication | Overview | — | Multi-tenant |
-| Agent Tracking | — | LangChain, LangGraph, Multi-agent | Claude SDK, Codex, DeepAgents |
-| Agent Evaluation | — | — | Testing, metrics, optimization, pipeline |
+| LLM Fine-Tuning | — | HuggingFace Transformers | — |
+| Agent Tracking | — | LangChain, LangGraph, Multi-agent | Claude Agent SDK, DeepAgents |
+| Agent Evaluation | — | — | Testing, metrics, optimization, pipeline, SWE-Bench |
 | CI/CD | — | — | Quality gates, canary |
 | Grafana Monitoring | — | — | Dashboards, alerts |
 | Plugins/Extensibility | — | — | Custom flavors, plugins |
 | MCP Integration | — | — | MCP + tracing |
-| PyTorch Deep | — | Training integration | — |
-| Hugging Face Deep | — | Fine-tuning tracking | — |
 | Capstone Projects | — | — | 2 full projects |

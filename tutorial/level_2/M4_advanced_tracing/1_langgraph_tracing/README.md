@@ -11,7 +11,7 @@ LangGraph workflows are stateful graphs where data flows through nodes connected
 
 - Completed: L1-M5.1 (Auto Tracing), L1-M5.2 (Manual Tracing)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 

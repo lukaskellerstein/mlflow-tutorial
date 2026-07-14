@@ -19,7 +19,7 @@ import mlflow
 import pandas as pd
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
@@ -94,7 +94,12 @@ class AgentRegistry:
 
     def register(self, config: AgentConfig) -> None:
         """Register an agent with the given configuration."""
-        llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+        llm = ChatOpenAI(
+            model="google/gemma-4-26b-a4b",
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            temperature=0.0,
+        )
         agent = create_react_agent(
             model=llm,
             tools=config.tools,

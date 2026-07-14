@@ -1,113 +1,103 @@
-# L2-8.1 — Model Serving Deep Dive
+# L2-8.1 -- LLM Model Serving Deep Dive
 
 **Level:** Practitioner
 **Duration:** 1 hour
 
 ## Overview
 
-Go beyond basic `mlflow models serve` and learn production serving patterns: advanced CLI configuration, custom PyFunc models with embedded preprocessing, Docker containerization, and health check endpoints. This lesson prepares models and documents patterns without starting a live server, so you can study the full serving surface area.
+Learn how to serve LLM models through MLflow by wrapping an OpenAI-compatible LLM in a custom PyFunc model. This lesson covers the full serving lifecycle: defining a reusable chat model wrapper, logging multiple versions with different configurations, Docker containerization, and production health checks. You will work with a local LMStudio-hosted model, but the patterns apply to any OpenAI-compatible endpoint.
 
 ## Prerequisites
 
 - Completed: L1-8.1 Model Serving, L1-2.1 Models & Flavors, L2-2.2 Custom PyFunc Models
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama is **not** required for this lesson (uses scikit-learn only)
+- LMStudio running with `google/gemma-4-e4b` loaded at http://localhost:1234
 
 ## Concepts
 
-### Serving Architecture
+### PyFunc Wrapping for LLMs
 
-MLflow model serving wraps your logged model in a REST API powered by Flask (default) or MLServer. The server loads the model artifact, validates incoming requests against the model signature, runs inference, and returns predictions. Understanding the full configuration surface lets you tune performance, handle complex inputs, and deploy reliably.
+LLMs do not fit neatly into traditional ML flavors like `sklearn` or `pytorch`. By wrapping an LLM client in `mlflow.pyfunc.PythonModel`, you get a standardized serving interface: clients send a DataFrame with prompts, and the model returns a DataFrame with responses. The `__init__` method stores configuration (model name, default temperature), `load_context` initializes the LLM client at serving time, and `predict` handles the chat completion loop.
 
-### Serving Configurations
+### Chat Interface Patterns
 
-The `mlflow models serve` CLI accepts options that control performance and behavior:
-
-| Option | Purpose |
-|--------|---------|
-| `--host` | Bind address (default `127.0.0.1`, use `0.0.0.0` for containers) |
-| `--port` | Port number (default `5000`) |
-| `--workers` | Number of Gunicorn workers for parallel request handling |
-| `--timeout` | Request timeout in seconds |
-| `--no-conda` | Skip Conda environment creation (use current env) |
-| `--enable-mlserver` | Use MLServer (Seldon) instead of Flask for advanced features |
-
-### Custom PyFunc for Serving
-
-When your model needs preprocessing (scaling, feature engineering) or custom output formatting, wrap everything in a `mlflow.pyfunc.PythonModel`. The `predict()` method receives raw client input and can transform it before passing to the underlying model. This keeps the serving contract clean: clients send raw data, the model handles the rest.
+The PyFunc model accepts a DataFrame with a required `prompt` column and optional `temperature` and `max_tokens` columns. This pattern lets callers override generation parameters per request while keeping sensible defaults. The response DataFrame includes both the generated text and token usage, enabling downstream cost tracking.
 
 ### Docker Containerization
 
-`mlflow models build-docker` packages your model, its dependencies, and the serving infrastructure into a Docker image. The resulting container exposes the same REST endpoints and can be deployed to Kubernetes, ECS, or any container runtime.
+`mlflow models build-docker` packages the PyFunc model, its pip dependencies, and the MLflow serving infrastructure into a single container image. For LLM models, the container needs network access to the LLM provider (LMStudio, OpenAI, etc.), so you must configure host networking or pass the provider URL as an environment variable.
 
-### Health Check Endpoints
+### Health Checks and Monitoring
 
-Every MLflow model server exposes endpoints for orchestration:
+Every MLflow serving endpoint exposes standard health check routes that integrate with Kubernetes probes and load balancers. For LLM workloads, monitoring token usage per request is especially important for cost control, alongside the standard latency and error rate metrics.
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/invocations` | POST | Prediction requests |
-| `/ping` | GET | Liveness probe (returns 200) |
+| `/invocations` | POST | Prediction requests (send prompts, get responses) |
+| `/ping` | GET | Liveness probe (returns 200 when server is ready) |
 | `/health` | GET | Alias for `/ping` |
 | `/version` | GET | MLflow version info |
 
 ## Step-by-Step
 
-### Step 1: Prepare multiple models for serving
+### Step 1: Define and log the LLM PyFunc model
 
-Train a RandomForest and GradientBoosting classifier on the wine dataset. Log each with a proper signature and input example, then register them in the model registry:
-
-```python
-signature = infer_signature(df_test, preds)
-input_example = df_test.head(3)
-
-info = mlflow.sklearn.log_model(
-    model, name="model",
-    signature=signature,
-    input_example=input_example,
-)
-mlflow.register_model(info.model_uri, f"serving-demo-{name}")
-```
-
-The signature enables request validation at serving time, and the input example generates a sample request in the MLflow UI.
-
-### Step 2: Explore serving configurations
-
-Review the CLI options for `mlflow models serve` and the equivalent environment variables. A serving configuration JSON is logged as an artifact for reference:
+Create an `LLMChatModel` class that extends `mlflow.pyfunc.PythonModel`. The class stores the model name and default temperature, initializes an OpenAI client in `load_context`, and runs chat completions in `predict`:
 
 ```python
-SERVING_CONFIG = {
-    "model_uri": "models:/serving-demo-RandomForest/1",
-    "host": "0.0.0.0",
-    "port": 5001,
-    "workers": 4,
-    "timeout": 120,
-}
-```
+class LLMChatModel(mlflow.pyfunc.PythonModel):
+    def __init__(self, model_name="google/gemma-4-e4b", default_temperature=0.7):
+        self.model_name = model_name
+        self.default_temperature = default_temperature
 
-### Step 3: Build a custom PyFunc with preprocessing
-
-Create a `PythonModel` that bundles a StandardScaler and a classifier. The `predict()` method scales raw inputs before classification and returns both class IDs and human-readable names:
-
-```python
-class WineClassifierWithPreprocessing(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
-        self.scaler = pickle.load(open(context.artifacts["scaler"], "rb"))
-        self.classifier = pickle.load(open(context.artifacts["classifier"], "rb"))
+        from openai import OpenAI
+        self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
     def predict(self, context, model_input, params=None):
-        scaled = self.scaler.transform(model_input)
-        class_ids = self.classifier.predict(scaled)
-        return pd.DataFrame({"class_id": class_ids, "class_name": ...})
+        # Iterate rows, call chat completion, return DataFrame
+        ...
 ```
+
+Log the model with a proper signature inferred from sample input/output DataFrames. The signature tells MLflow (and clients) exactly what columns to send and what to expect back.
+
+### Step 2: Load and test locally
+
+Load the logged model back using `mlflow.pyfunc.load_model()` and run sample prompts through it. This verifies the full serialize-deserialize cycle works before attempting to serve the model:
+
+```python
+loaded_model = mlflow.pyfunc.load_model(model_uri)
+results = loaded_model.predict(test_prompts)
+```
+
+### Step 3: Log a second version and register both
+
+Log another version of the model with a lower temperature (0.3) for more deterministic responses. Register both versions in the Model Registry and assign aliases (`champion` for creative, `challenger` for deterministic):
+
+```python
+client.set_registered_model_alias(reg_name, "champion", mv1.version)
+client.set_registered_model_alias(reg_name, "challenger", mv2.version)
+```
+
+This lets you serve different configurations side by side and A/B test them.
 
 ### Step 4: Docker containerization
 
-Review the `mlflow models build-docker` command and the input format options (dataframe_split, dataframe_records, instances). A deployment guide is logged as an artifact.
+Review the `mlflow models build-docker` command for packaging the LLM model into a container. For LLM models, the container needs network access to the LLM provider:
+
+```bash
+mlflow models build-docker \
+    --model-uri models:/llm-serving-demo@champion \
+    --name mlflow-llm-server
+
+podman run -p 5001:8080 \
+    --add-host=host.containers.internal:host-gateway \
+    mlflow-llm-server
+```
 
 ### Step 5: Health checks and monitoring
 
-Review the four serving endpoints and monitoring best practices for production deployments (latency tracking, error rates, model staleness).
+Review the standard MLflow serving endpoints and monitoring best practices. For LLM workloads, token usage tracking is a critical addition to standard latency and error rate monitoring.
 
 ## Running the Lesson
 
@@ -121,95 +111,111 @@ uv run python main.py
 
 ```
 ============================================================
-Part 1: Preparing multiple models for serving
+Part 1: Define and log LLM PyFunc model (temp=0.7)
 ============================================================
-  RandomForest              accuracy=1.0000  uri=runs:/<id>/model
-  GradientBoosting          accuracy=0.9444  uri=runs:/<id>/model
+  Model logged: runs:/<id>/model
+  Default temperature: 0.7
 
 ============================================================
-Part 2: Serving configurations
+Part 2: Load and test locally with sample prompts
 ============================================================
-  CLI command:
-    mlflow models serve \
-      --model-uri models:/serving-demo-RandomForest/1 \
-      --host 0.0.0.0 \
-      --port 5001 \
-      --workers 4 \
-      --timeout 120 \
-      --no-conda
+  Loading model from: runs:/<id>/model
+  Running predictions...
 
-  Environment variable equivalents:
-    export MLFLOW_MODEL_URI=models:/serving-demo-RandomForest/1
-    export MLFLOW_HOST=0.0.0.0
-    export MLFLOW_PORT=5001
-    export MLFLOW_WORKERS=4
+  Prompt 1: What is MLflow model serving in one sentence?
+  Response: MLflow model serving wraps logged models in a REST API...
+  Tokens used: 42
 
-  Serving config logged as artifact: serving_config.json
+  Prompt 2: Name three benefits of containerized ML deployments.
+  Response: 1. Reproducibility - containers package all dependencies...
+  Tokens used: 67
 
 ============================================================
-Part 3: Custom PyFunc with preprocessing
+Part 3: Log second version (temp=0.3) and register both
 ============================================================
-  Custom PyFunc model URI: runs:/<id>/custom_model
-  Sample prediction:
-  class_id class_name
-         0    class_0
-         ...
+  Model logged: runs:/<id>/model
+  Default temperature: 0.3
+  Registered version 1 (temp=0.7) as 'llm-serving-demo'
+  Registered version 2 (temp=0.3) as 'llm-serving-demo'
+  Alias 'champion' -> version 1 (creative, temp=0.7)
+  Alias 'challenger' -> version 2 (deterministic, temp=0.3)
+
+  Serve each version:
+    mlflow models serve -m models:/llm-serving-demo@champion -p 5001
+    mlflow models serve -m models:/llm-serving-demo@challenger -p 5002
 
 ============================================================
 Part 4: Docker containerization
 ============================================================
-  Build a Docker image for a registered model:
+  Build a Docker image for the champion model:
     mlflow models build-docker \
-      --model-uri models:/serving-demo-RandomForest/1 \
-      --name mlflow-wine-server
+      --model-uri models:/llm-serving-demo@champion \
+      --name mlflow-llm-server
 
-  Run the container:
-    podman run -p 5001:8080 mlflow-wine-server
+  Run the container (pass LMStudio host for LLM access):
+    podman run -p 5001:8080 \
+      --add-host=host.containers.internal:host-gateway \
+      mlflow-llm-server
 
-  Deployment guide logged as artifact: deployment_guide.md
+  Send a prediction request:
+    curl -X POST http://localhost:5001/invocations \
+      -H "Content-Type: application/json" \
+      -d '{"dataframe_split": {
+            "columns": ["prompt", "temperature", "max_tokens"],
+            "data": [["What is MLflow?", 0.7, 128]]
+          }}'
+
+  Input format options:
+    dataframe_split: {"columns": [...], "data": [[...]]}
+    dataframe_records: [{"prompt": "...", "temperature": 0.7}]
 
 ============================================================
-Part 5: Health checks and monitoring endpoints
+Part 5: Health check endpoints and monitoring
 ============================================================
-  GET /ping                 Liveness check. Returns 200 ...
-  GET /health               Alias for /ping. ...
-  GET /version              Returns MLflow version. ...
-  POST /invocations         Prediction endpoint. ...
+  GET /ping                 Liveness check. Returns 200 when server is ready.
+  GET /health               Alias for /ping. Use in Kubernetes readiness probes.
+  GET /version              Returns MLflow version. Useful for debugging.
+  POST /invocations         Prediction endpoint. Accepts JSON or CSV.
+
+  Example health check commands:
+    curl http://localhost:5001/ping
+    curl http://localhost:5001/health
+    curl http://localhost:5001/version
+
+  Kubernetes probe configuration:
+    livenessProbe:
+      httpGet: { path: /ping, port: 8080 }
+    readinessProbe:
+      httpGet: { path: /health, port: 8080 }
 
   Monitoring best practices:
-    1. Track request latency ...
-    2. Log prediction counts ...
-    ...
+    1. Track request latency (p50, p95, p99) via reverse proxy or sidecar.
+    2. Log prediction counts and error rates to Prometheus.
+    3. Monitor token usage per request to control LLM costs.
+    4. Set up alerts for latency spikes or error rate > threshold.
+    5. Track model version staleness -- when was the served version updated?
 
 ============================================================
 Done! Check the MLflow UI at http://127.0.0.1:5000
   Experiment: L2/M8_deployment/1_serving_deep_dive
-  Registered models: serving-demo-RandomForest,
-    serving-demo-GradientBoosting, serving-demo-CustomPyFunc
+  Registered model: llm-serving-demo (2 versions)
 ============================================================
 ```
 
 In the MLflow UI you will see:
 
-- Experiment **L2/M8_deployment/1_serving_deep_dive** with four runs
-- Two sklearn model runs (RandomForest, GradientBoosting) with signatures and input examples
-- A serving_config run with a JSON artifact
-- A custom_pyfunc_serving run with the bundled scaler+classifier model
-- A deployment_guide run with a markdown deployment reference
-- Three registered models in the Model Registry
-
-### OpenShift AI Managed MLflow
-
-OpenShift AI includes a managed MLflow operator (`mlflowoperator` in the DataScienceCluster CR). The managed server handles HA, TLS, and RBAC automatically — workbenches connect without manual URI configuration. The tracking and serving APIs are identical to standalone MLflow; all patterns in this lesson apply to both modes.
+- Experiment **L2/M8_deployment/1_serving_deep_dive** with three runs
+- Two LLM model runs with different default temperatures (0.7 and 0.3)
+- Both versions registered under **llm-serving-demo** with `champion` and `challenger` aliases
+- Model signatures showing the prompt/temperature/max_tokens input schema and response/tokens_used output schema
 
 ## Key Takeaways
 
-- Always log models with signatures and input examples — they enable request validation and self-documenting APIs at serving time.
-- Use `--workers` to scale serving throughput via multiple Gunicorn workers.
-- Custom PyFunc models let you embed preprocessing, postprocessing, and multi-model ensembles behind a single serving endpoint.
-- `mlflow models build-docker` creates production-ready containers with all dependencies baked in.
-- The `/ping` and `/health` endpoints integrate directly with Kubernetes liveness and readiness probes.
-- OpenShift AI provides managed MLflow with automatic HA, TLS, and RBAC — the code you write is the same.
+- Wrapping an LLM in `mlflow.pyfunc.PythonModel` gives you a standardized serving interface that works with `mlflow models serve` and Docker deployment out of the box.
+- Use `load_context` to initialize expensive resources (like the OpenAI client) once at model load time, not on every prediction call.
+- Logging multiple model versions with different configurations (temperature, model name) lets you A/B test and roll back via the Model Registry.
+- For containerized LLM models, ensure the container has network access to the LLM provider -- use host networking or pass the provider URL as a configuration.
+- Monitor token usage per request alongside latency and error rates to control LLM serving costs in production.
 
 ## Next Steps
 

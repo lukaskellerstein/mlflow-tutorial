@@ -11,7 +11,7 @@ Learn how to build custom evaluation scorers that go beyond MLflow's built-in op
 
 - Completed: L1-M4.2 (LLM Eval Basics), L1-M6.2 (Scorers & Judges)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -75,18 +75,18 @@ Key points:
 
 ### Step 2: LLM-based scorer
 
-The `llm_technical_quality` scorer uses `gemma4:e2b` as a judge:
+The `llm_technical_quality` scorer uses `google/gemma-4-e4b` as a judge:
 
 ```python
 @scorer
 def llm_technical_quality(inputs, outputs, expectations) -> Feedback:
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.0)
     # Prompt the LLM to score accuracy, completeness, clarity
     # Parse JSON response, compute average
     return Feedback(
         value=avg_score,
         rationale="accuracy=0.9, completeness=0.8, clarity=0.85",
-        source=AssessmentSource(source_type="LLM_JUDGE", source_id="gemma4:e2b"),
+        source=AssessmentSource(source_type="LLM_JUDGE", source_id="google/gemma-4-e4b"),
     )
 ```
 
@@ -147,7 +147,7 @@ Part 1: Custom Deterministic Scorer (formatting_quality)
 ============================================================
 Part 2: Custom LLM-Based Scorer (llm_technical_quality)
 ============================================================
-  Uses gemma4:e2b as a judge to score accuracy,
+  Uses google/gemma-4-e4b as a judge to score accuracy,
   completeness, and clarity on a 0-1 scale.
 
 ============================================================

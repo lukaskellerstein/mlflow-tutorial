@@ -83,7 +83,7 @@ The full trail is saved as a JSON artifact on the MLflow run.
 The `CostTracker` records token usage per call and estimates costs based on per-model pricing tables:
 
 ```python
-tracker.record("gemma4:26b", input_tokens=2048, output_tokens=512, operation="agent-reasoning")
+tracker.record("google/gemma-4-26b-a4b", input_tokens=2048, output_tokens=512, operation="agent-reasoning")
 tracker.log_to_mlflow()
 report = tracker.report()  # Per-model cost summary DataFrame
 ```

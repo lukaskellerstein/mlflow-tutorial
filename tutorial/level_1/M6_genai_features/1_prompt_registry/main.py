@@ -1,7 +1,7 @@
 """L1-M6.1 — Prompt Registry: versioned prompt management with MLflow."""
 
 import mlflow
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 # ── MLflow setup ──────────────────────────────────────────────
@@ -91,14 +91,19 @@ def main() -> None:
     # ── Step 7: Use the prompt with an LLM ───────────────────
     print()
     print("=" * 60)
-    print("Step 7: Use the production prompt with ChatOllama")
+    print("Step 7: Use the production prompt with ChatOpenAI")
     print("=" * 60)
 
     # Convert {{var}} to {var} for LangChain compatibility
     lc_template = loaded_prod.to_single_brace_format()
     lc_prompt = ChatPromptTemplate.from_template(lc_template)
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-e4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     chain = lc_prompt | llm
 
     with mlflow.start_run(run_name="prompt_registry_demo"):

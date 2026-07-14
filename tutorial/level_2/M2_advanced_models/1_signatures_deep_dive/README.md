@@ -5,65 +5,41 @@
 
 ## Overview
 
-Model signatures are the contract between a model and its consumers. They
-describe the exact shape, types, and names of inputs, outputs, and
-inference-time parameters. In this lesson you will learn how to infer
-signatures automatically, construct them manually, use tensor-based schemas,
-attach inference parameters, and see how MLflow enforces signatures at
-prediction time.
+Model signatures define the contract between an LLM-backed model and its
+consumers. This lesson explores how to build signatures for chat completion
+models, structured JSON output, and inference-time parameters like temperature
+and max_tokens -- the patterns you will use whenever you wrap an LLM as a
+logged MLflow model.
 
 ## Prerequisites
 
-- Completed: L1-M2.1 (Models and Flavors — basic signature usage)
+- Completed: L1-M2.1 (Models and Flavors -- basic signature usage)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama is **not** required for this lesson (we use scikit-learn)
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
-### Signature Types
+### Signature Types for LLMs
 
-MLflow supports two fundamental signature types:
+When wrapping LLM calls as MLflow `PythonModel` objects, signatures use
+column-based schemas (`ColSpec`) to describe string inputs and outputs.
+The most common patterns are:
 
-| Type | Use Case | Spec Class |
-|------|----------|------------|
-| **Column-based** | Tabular / DataFrame data | `ColSpec` |
-| **Tensor-based** | NumPy arrays, images, embeddings | `TensorSpec` |
+| Pattern | Input | Output |
+|---------|-------|--------|
+| **Chat completion** | `question` (string) | list of strings |
+| **Structured output** | `text` (string) | JSON string |
+| **Configurable chat** | `question` (string) + params | list of strings |
 
-You cannot mix `ColSpec` and `TensorSpec` in the same schema.
-
-### Column-Based Signatures
-
-Column-based signatures describe named columns with data types drawn from
-`mlflow.types.DataType`: `boolean`, `integer`, `long`, `float`, `double`,
-`string`, `binary`, `datetime`.
-
-```python
-from mlflow.types import Schema, ColSpec, DataType
-
-schema = Schema([
-    ColSpec(DataType.double, "price"),
-    ColSpec(DataType.string, "category"),
-])
-```
-
-### Tensor-Based Signatures
-
-Tensor-based signatures describe multi-dimensional arrays using numpy dtypes
-and shape tuples. Use `-1` for the batch dimension.
-
-```python
-from mlflow.types import Schema, TensorSpec
-
-schema = Schema([
-    TensorSpec(np.dtype("float32"), shape=(-1, 768), name="embeddings"),
-])
-```
+Unlike traditional ML models that take numeric arrays, LLM signatures
+typically operate on string columns -- a question, prompt, or text passage
+goes in, and a generated string comes out.
 
 ### Inference Parameters (ParamSpec)
 
-Starting with MLflow 2.6, signatures can include parameter specifications.
-These describe runtime configuration that consumers can pass at inference
-time — like `temperature`, `max_tokens`, or `top_p` for LLM models.
+Real LLM applications need runtime control over generation behavior.
+`ParamSpec` lets you declare these parameters as part of the model
+signature so that consumers know what knobs are available:
 
 ```python
 from mlflow.types import ParamSchema, ParamSpec, DataType
@@ -74,76 +50,86 @@ params = ParamSchema([
 ])
 ```
 
+When a consumer calls `model.predict(data, params={"temperature": 0.2})`,
+MLflow validates the parameter names and types against the schema before
+forwarding them to the model's `predict` method.
+
 ### Signature Enforcement
 
-When you load a model via `mlflow.pyfunc.load_model()` and call `.predict()`,
-MLflow validates the input against the stored signature. It will:
+When you load a model with `mlflow.pyfunc.load_model()` and call
+`.predict()`, MLflow validates the input against the stored signature:
 
-- Warn or error on missing required columns
-- Warn on extra columns
-- Attempt type coercion (e.g., int to float) where possible
-- Raise errors when types are incompatible
+- Missing required columns trigger warnings or errors.
+- Extra columns are flagged (and typically ignored).
+- Type mismatches may be coerced (e.g., int to string) or rejected.
 
-This catch-errors-early behavior is especially valuable in production serving.
+This catch-errors-early behavior is especially valuable when serving
+models behind a REST API, where malformed requests should fail fast.
 
 ## Step-by-Step
 
-### Part 1: Column-Based Signature (Inferred)
+### Part 1: Chat Completion Signature
 
-We train a RandomForest on Iris and let `infer_signature()` capture column
-names and types automatically from the DataFrame.
+We wrap an LLM call in a `ChatModel` (subclass of `PythonModel`) and use
+`infer_signature()` to automatically capture the input/output schema from
+sample data.
 
 ```python
-signature = infer_signature(X_train, predictions)
-mlflow.sklearn.log_model(clf, name="model", signature=signature)
+input_df = pd.DataFrame({"question": ["What is MLflow?"]})
+output = ["MLflow is an open-source platform..."]
+signature = infer_signature(input_df, output)
 ```
 
-### Part 2: Manual Signature Construction
+The inferred signature records that the model expects a DataFrame with a
+`question` string column and returns a list of strings. We log the model
+with this signature and then load it back to verify prediction works.
 
-We build a signature by hand using `Schema`, `ColSpec`, and `DataType` for
-a hypothetical house-price model with mixed types (double, integer, string,
-boolean).
+### Part 2: Structured Output Signature
+
+For models that return JSON, we build the signature manually using
+`Schema` and `ColSpec`. This gives explicit control over column names and
+types on both input and output sides.
 
 ```python
-input_schema = Schema([
-    ColSpec(DataType.double, "square_feet"),
-    ColSpec(DataType.integer, "bedrooms"),
-    ColSpec(DataType.string, "neighborhood"),
-    ColSpec(DataType.boolean, "has_garage"),
-])
+input_schema = Schema([ColSpec(DataType.string, "text")])
+output_schema = Schema([ColSpec(DataType.string, "json_output")])
 signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 ```
 
-### Part 3: Tensor-Based Signature
+The `StructuredOutputModel` instructs the LLM to return JSON with specific
+keys (`summary`, `key_points`, `confidence`), and the signature documents
+this contract for downstream consumers.
 
-We create a model that takes numpy arrays and build a tensor signature with
-`TensorSpec`, specifying dtype and shape (using `-1` for the batch dimension).
+### Part 3: Signature with Inference Params
 
-```python
-Schema([TensorSpec(np.dtype("float64"), shape=(-1, 4), name="features")])
-```
-
-### Part 4: Signature with Inference Params
-
-We attach `ParamSpec` entries to describe inference-time parameters. This
-is the pattern used for LLM models where consumers need to control
-temperature, max tokens, stop sequences, etc.
+We attach `ParamSpec` entries so that consumers can pass `temperature` and
+`max_tokens` at inference time. The `ConfigurableChatModel` reads these
+from the `params` dict in its `predict` method.
 
 ```python
-ParamSchema([
+param_schema = ParamSchema([
     ParamSpec("temperature", DataType.double, default=0.7),
     ParamSpec("max_tokens", DataType.long, default=256),
-    ParamSpec("stop_sequences", DataType.string, default=["###"], shape=(-1,)),
 ])
+signature = ModelSignature(
+    inputs=input_schema, outputs=output_schema, params=param_schema,
+)
 ```
 
-### Part 5: Signature Enforcement
+When calling the loaded model, the consumer passes params explicitly:
 
-We load the Part 1 model via `pyfunc` and test prediction with:
-- Correct input (succeeds)
-- Wrong column names (may warn or error)
-- Too few columns (may error)
-- Wrong data types (may error or coerce)
+```python
+model.predict(data, params={"temperature": 0.2, "max_tokens": 64})
+```
+
+### Part 4: Signature Enforcement
+
+We load the Part 1 chat model and test it with several kinds of
+malformed input to see how MLflow enforces the signature:
+
+- **Wrong column name** (`query` instead of `question`) -- may error or warn.
+- **Wrong data type** (integer instead of string) -- MLflow may coerce.
+- **Extra columns** -- typically ignored with a warning.
 
 ## Running the Lesson
 
@@ -155,31 +141,35 @@ uv run python main.py
 
 ## Expected Output
 
-You should see five sections, each printing:
+You should see four sections, each printing:
+
 - The signature in human-readable form
 - The signature as JSON (showing the internal representation)
 - Confirmation that the model was logged
+- A test prediction from the loaded model
 
-For Part 5 (enforcement), you will see whether MLflow accepts or rejects
-each malformed input. The exact behavior depends on your MLflow version —
-newer versions are stricter.
+For Part 4 (enforcement), you will see whether MLflow accepts or rejects
+each malformed input. The exact behavior depends on your MLflow version --
+newer versions tend to be stricter about schema validation.
 
 In the MLflow UI at http://127.0.0.1:5000:
-- Open each run under the `L2/M2_advanced_models/1_signatures_deep_dive` experiment
+
+- Open each run under the `L2/M2_advanced_models/1_signatures_deep_dive`
+  experiment
 - Click into the model artifact and inspect the **MLmodel** file
 - The signature section shows inputs, outputs, and params schemas
 
 ## Key Takeaways
 
-- **Column-based** signatures are for tabular DataFrames; **tensor-based** are for numpy arrays.
-- Use `infer_signature()` for quick automatic signatures, or build them manually with `Schema`, `ColSpec`, and `TensorSpec` for precise control.
-- `ParamSpec` lets you declare inference-time parameters (temperature, max_tokens, etc.) as part of the model contract.
-- Signature enforcement catches schema mismatches at prediction time — a safety net for production serving.
+- LLM model signatures use column-based schemas (`ColSpec`) with string types for text-in, text-out patterns.
+- Use `infer_signature()` for quick automatic signatures from sample data, or build them manually with `Schema` and `ColSpec` for precise control.
+- `ParamSpec` declares inference-time parameters (temperature, max_tokens) as part of the model contract, enabling runtime configuration.
+- Signature enforcement catches schema mismatches at prediction time, acting as a safety net for production serving.
 - Always include a signature when logging models; it serves as documentation, validation, and REST API schema generation.
 
 ## Next Steps
 
-In the next lesson (L2-M2.2 — Custom PyFunc Models) you will learn how to
+In the next lesson (L2-M2.2 -- Custom PyFunc Models) you will learn how to
 build fully custom models using `mlflow.pyfunc.PythonModel`, including
 loading external artifacts, custom predict logic, and advanced signatures
 for non-standard model types.

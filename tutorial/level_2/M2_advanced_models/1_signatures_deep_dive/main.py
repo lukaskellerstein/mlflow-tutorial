@@ -1,281 +1,228 @@
 """
 L2-M2.1 — Model Signatures Deep Dive
 
-Explore MLflow model signatures in depth: column-based signatures,
-tensor-based signatures, manual construction, inference-time params,
-and signature enforcement during prediction.
+Explore MLflow model signatures for LLM applications: chat completion
+signatures, structured output signatures, and signatures with
+inference-time parameters.
 """
 
 import json
 
 import mlflow
-import numpy as np
+import mlflow.pyfunc
 import pandas as pd
 from mlflow.models import ModelSignature, infer_signature
-from mlflow.types import ColSpec, DataType, ParamSchema, ParamSpec, Schema, TensorSpec
-from sklearn.datasets import load_iris
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from mlflow.types import ColSpec, DataType, ParamSchema, ParamSpec, Schema
+from openai import OpenAI
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
-mlflow.set_experiment("L2/M2_advanced_models/1_signatures_deep_dive")
+LLM_BASE_URL = "http://localhost:1234/v1"
+LLM_API_KEY = "lm-studio"
+LLM_MODEL = "google/gemma-4-e4b"
 
 
-def part1_column_based_signature() -> str:
-    """Infer a column-based signature from tabular training data."""
+def _make_client() -> OpenAI:
+    return OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+
+
+class ChatModel(mlflow.pyfunc.PythonModel):
+    """A simple chat completion model."""
+    def predict(self, context, model_input, params=None):
+        from openai import OpenAI
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        results = []
+        for _, row in model_input.iterrows():
+            resp = client.chat.completions.create(
+                model="google/gemma-4-e4b",
+                messages=[{"role": "user", "content": row["question"]}],
+                temperature=0.7,
+            )
+            results.append(resp.choices[0].message.content)
+        return results
+
+
+class StructuredOutputModel(mlflow.pyfunc.PythonModel):
+    """Model that returns structured JSON output."""
+    def predict(self, context, model_input, params=None):
+        from openai import OpenAI
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        system_msg = (
+            "Return a JSON object with keys: summary (string), "
+            "key_points (list of strings), confidence (float 0-1). "
+            "Return ONLY the JSON, no other text."
+        )
+        results = []
+        for _, row in model_input.iterrows():
+            resp = client.chat.completions.create(
+                model="google/gemma-4-e4b",
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": row["text"]},
+                ],
+                temperature=0.3,
+            )
+            results.append(resp.choices[0].message.content)
+        return results
+
+
+class ConfigurableChatModel(mlflow.pyfunc.PythonModel):
+    """Chat model with runtime-configurable parameters."""
+    def predict(self, context, model_input, params=None):
+        from openai import OpenAI
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        params = params or {}
+        temperature = params.get("temperature", 0.7)
+        max_tokens = params.get("max_tokens", 256)
+        results = []
+        for _, row in model_input.iterrows():
+            resp = client.chat.completions.create(
+                model="google/gemma-4-e4b",
+                messages=[{"role": "user", "content": row["question"]}],
+                temperature=temperature, max_tokens=max_tokens,
+            )
+            results.append(resp.choices[0].message.content)
+        return results
+
+
+def part1_chat_signature() -> str:
+    """Demo 1: Infer a signature from chat-style input/output."""
     print("=" * 60)
-    print("Part 1: Column-Based Signature (inferred)")
+    print("Part 1: Chat Completion Signature")
     print("=" * 60)
-
-    iris = load_iris(as_frame=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        iris.data, iris.target, test_size=0.2, random_state=42
-    )
-
-    clf = RandomForestClassifier(n_estimators=50, random_state=42)
-    clf.fit(X_train, y_train)
-    predictions = clf.predict(X_train)
-
-    # infer_signature captures column names, types, and shapes
-    signature = infer_signature(X_train, predictions)
+    input_df = pd.DataFrame({"question": ["What is MLflow?"]})
+    output = ["MLflow is an open-source platform for managing ML lifecycles."]
+    signature = infer_signature(input_df, output)
     print(f"\n  Inferred signature:\n{signature}\n")
     print(f"  Signature JSON:\n{json.dumps(signature.to_dict(), indent=2)}\n")
-
-    with mlflow.start_run(run_name="part1_column_based"):
-        mlflow.log_param("signature_type", "column-based (inferred)")
-        model_info = mlflow.sklearn.log_model(
-            sk_model=clf,
-            name="iris_inferred_sig",
-            signature=signature,
-            input_example=X_train.head(3),
+    with mlflow.start_run(run_name="part1_chat_signature"):
+        mlflow.log_param("signature_type", "chat completion")
+        info = mlflow.pyfunc.log_model(
+            name="chat_model", python_model=ChatModel(),
+            signature=signature, input_example=input_df,
         )
         run_id = mlflow.active_run().info.run_id
-        print(f"  Logged model with inferred column signature. Run: {run_id}")
-
+        print(f"  Logged model. Run: {run_id}")
+        loaded = mlflow.pyfunc.load_model(info.model_uri)
+        result = loaded.predict(pd.DataFrame({"question": ["What is experiment tracking?"]}))
+        print(f"  Test prediction: {result[0][:120]}...")
     return run_id
 
 
-def part2_manual_signature() -> str:
-    """Build a model signature manually with explicit column specs."""
+def part2_structured_output() -> str:
+    """Demo 2: Manual signature for structured JSON output."""
     print("\n" + "=" * 60)
-    print("Part 2: Manual Signature Construction")
+    print("Part 2: Structured Output Signature")
     print("=" * 60)
-
-    # Manually specify the schema for a house price model
-    input_schema = Schema([
-        ColSpec(DataType.double, "square_feet"),
-        ColSpec(DataType.integer, "bedrooms"),
-        ColSpec(DataType.integer, "bathrooms"),
-        ColSpec(DataType.string, "neighborhood"),
-        ColSpec(DataType.boolean, "has_garage"),
-    ])
-    output_schema = Schema([
-        ColSpec(DataType.double, "predicted_price"),
-    ])
+    input_schema = Schema([ColSpec(DataType.string, "text")])
+    output_schema = Schema([ColSpec(DataType.string, "json_output")])
     signature = ModelSignature(inputs=input_schema, outputs=output_schema)
-
     print(f"\n  Manual signature:\n{signature}\n")
-    print(f"  Input columns:")
-    for col in input_schema.inputs:
-        print(f"    - {col.name}: {col.type} (required={col.required})")
+    for label, schema in [("Input", input_schema), ("Output", output_schema)]:
+        for col in schema.inputs:
+            print(f"  {label} column: {col.name} ({col.type})")
     print(f"\n  Signature JSON:\n{json.dumps(signature.to_dict(), indent=2)}\n")
-
-    # Log a simple sklearn model with this manual signature
-    iris = load_iris(as_frame=True)
-    clf = RandomForestClassifier(n_estimators=10, random_state=42)
-    clf.fit(iris.data, iris.target)
-
-    with mlflow.start_run(run_name="part2_manual_signature"):
-        mlflow.log_param("signature_type", "column-based (manual)")
-        mlflow.sklearn.log_model(
-            sk_model=clf,
-            name="house_price_manual_sig",
+    with mlflow.start_run(run_name="part2_structured_output"):
+        mlflow.log_param("signature_type", "structured JSON output")
+        info = mlflow.pyfunc.log_model(
+            name="structured_model", python_model=StructuredOutputModel(),
             signature=signature,
+            input_example=pd.DataFrame({"text": ["Explain gradient descent."]}),
         )
         run_id = mlflow.active_run().info.run_id
-        print(f"  Logged model with manual column signature. Run: {run_id}")
-
+        print(f"  Logged model. Run: {run_id}")
+        loaded = mlflow.pyfunc.load_model(info.model_uri)
+        result = loaded.predict(pd.DataFrame({"text": ["Explain neural networks."]}))
+        print(f"  Test prediction: {result[0][:120]}...")
     return run_id
 
 
-def part3_tensor_signature() -> str:
-    """Create a tensor-based signature for numpy array inputs/outputs."""
+def part3_params_signature() -> str:
+    """Demo 3: ParamSpec for runtime configuration."""
     print("\n" + "=" * 60)
-    print("Part 3: Tensor-Based Signature")
+    print("Part 3: Signature with Inference Params")
     print("=" * 60)
-
-    # Generate synthetic data shaped like image features
-    np.random.seed(42)
-    X = np.random.rand(100, 4).astype(np.float64)
-    y = (X[:, 0] + X[:, 1] > 1.0).astype(np.int64)
-
-    clf = RandomForestClassifier(n_estimators=30, random_state=42)
-    clf.fit(X, y)
-    preds = clf.predict(X)
-
-    # Infer tensor signature from numpy arrays
-    tensor_sig = infer_signature(X, preds)
-    print(f"\n  Inferred tensor signature:\n{tensor_sig}\n")
-
-    # Also build one manually with TensorSpec
-    manual_input = Schema([
-        TensorSpec(np.dtype("float64"), shape=(-1, 4), name="features"),
-    ])
-    manual_output = Schema([
-        TensorSpec(np.dtype("int64"), shape=(-1,), name="predictions"),
-    ])
-    manual_tensor_sig = ModelSignature(inputs=manual_input, outputs=manual_output)
-    print(f"  Manual tensor signature:\n{manual_tensor_sig}\n")
-    print(f"  Signature JSON:\n{json.dumps(manual_tensor_sig.to_dict(), indent=2)}\n")
-
-    with mlflow.start_run(run_name="part3_tensor_signature"):
-        mlflow.log_param("signature_type", "tensor-based")
-        mlflow.sklearn.log_model(
-            sk_model=clf,
-            name="tensor_sig_model",
-            signature=manual_tensor_sig,
-            input_example=X[:2],
-        )
-        run_id = mlflow.active_run().info.run_id
-        print(f"  Logged model with tensor signature. Run: {run_id}")
-
-    return run_id
-
-
-def part4_signature_with_params() -> str:
-    """Create a signature that includes inference-time parameters."""
-    print("\n" + "=" * 60)
-    print("Part 4: Signature with Inference Params")
-    print("=" * 60)
-
-    # Define input/output schemas
-    input_schema = Schema([
-        ColSpec(DataType.string, "question"),
-    ])
-    output_schema = Schema([
-        ColSpec(DataType.string, "answer"),
-    ])
-
-    # Define inference-time parameters the model accepts
+    input_schema = Schema([ColSpec(DataType.string, "question")])
+    output_schema = Schema([ColSpec(DataType.string, "answer")])
     param_schema = ParamSchema([
         ParamSpec("temperature", DataType.double, default=0.7),
         ParamSpec("max_tokens", DataType.long, default=256),
-        ParamSpec("top_p", DataType.double, default=0.9),
-        ParamSpec("stop_sequences", DataType.string, default=["###"], shape=(-1,)),
     ])
-
     signature = ModelSignature(
-        inputs=input_schema,
-        outputs=output_schema,
-        params=param_schema,
+        inputs=input_schema, outputs=output_schema, params=param_schema,
     )
-
     print(f"\n  Signature with params:\n{signature}\n")
-    print(f"  Parameters:")
     for p in param_schema.params:
-        shape_info = f", shape={p.shape}" if p.shape else ""
-        print(f"    - {p.name}: {p.dtype} (default={p.default}{shape_info})")
+        print(f"  Param: {p.name} ({p.dtype}, default={p.default})")
     print(f"\n  Signature JSON:\n{json.dumps(signature.to_dict(), indent=2)}\n")
-
-    # Log a dummy model with this signature to show it in the UI
-    iris = load_iris(as_frame=True)
-    clf = RandomForestClassifier(n_estimators=10, random_state=42)
-    clf.fit(iris.data, iris.target)
-
-    with mlflow.start_run(run_name="part4_params_signature"):
+    with mlflow.start_run(run_name="part3_params_signature"):
         mlflow.log_param("signature_type", "with inference params")
-        mlflow.sklearn.log_model(
-            sk_model=clf,
-            name="llm_params_sig_model",
+        info = mlflow.pyfunc.log_model(
+            name="configurable_chat_model", python_model=ConfigurableChatModel(),
             signature=signature,
+            input_example=pd.DataFrame({"question": ["What is MLflow?"]}),
         )
         run_id = mlflow.active_run().info.run_id
-        print(f"  Logged model with param signature. Run: {run_id}")
-
+        print(f"  Logged model. Run: {run_id}")
+        loaded = mlflow.pyfunc.load_model(info.model_uri)
+        test_df = pd.DataFrame({"question": ["Explain model signatures."]})
+        result = loaded.predict(test_df, params={"temperature": 0.2, "max_tokens": 64})
+        print(f"  Test (temp=0.2, max_tokens=64): {result[0][:120]}...")
     return run_id
 
 
-def part5_signature_enforcement(run_id: str) -> None:
-    """Demonstrate signature enforcement during prediction."""
+def part4_signature_enforcement(chat_run_id: str) -> None:
+    """Demo 4: Test how MLflow enforces signatures at prediction time."""
     print("\n" + "=" * 60)
-    print("Part 5: Signature Enforcement")
+    print("Part 4: Signature Enforcement")
     print("=" * 60)
+    loaded = mlflow.pyfunc.load_model(f"runs:/{chat_run_id}/chat_model")
+    print(f"\n  Loaded model signature:\n{loaded.metadata.signature}\n")
 
-    # Load the model from Part 1 (column-based, inferred from Iris)
-    model_uri = f"runs:/{run_id}/iris_inferred_sig"
-    loaded = mlflow.pyfunc.load_model(model_uri)
-    sig = loaded.metadata.signature
+    # Correct input
+    result = loaded.predict(pd.DataFrame({"question": ["What is MLflow?"]}))
+    print(f"  Correct input: {result[0][:80]}...")
 
-    print(f"\n  Loaded model signature:\n{sig}\n")
-
-    # --- Correct input ---
-    correct_input = pd.DataFrame({
-        "sepal length (cm)": [5.1],
-        "sepal width (cm)": [3.5],
-        "petal length (cm)": [1.4],
-        "petal width (cm)": [0.2],
-    })
-    pred = loaded.predict(correct_input)
-    print(f"  Correct input prediction: {pred}")
-
-    # --- Wrong column names ---
-    print("\n  Testing with wrong column names...")
-    wrong_cols = pd.DataFrame({
-        "feat_a": [5.1],
-        "feat_b": [3.5],
-        "feat_c": [1.4],
-        "feat_d": [0.2],
-    })
+    # Wrong column name
+    print("\n  Testing wrong column name ('query' instead of 'question')...")
     try:
-        loaded.predict(wrong_cols)
-        print("  Result: prediction succeeded (schema may allow flexible columns)")
+        loaded.predict(pd.DataFrame({"query": ["What is MLflow?"]}))
+        print("  Result: succeeded (schema allowed flexible columns)")
     except Exception as e:
-        print(f"  Result: caught error - {type(e).__name__}: {e}")
+        print(f"  Result: {type(e).__name__}: {e}")
 
-    # --- Wrong number of columns ---
-    print("\n  Testing with wrong number of columns...")
-    too_few = pd.DataFrame({"sepal length (cm)": [5.1], "sepal width (cm)": [3.5]})
+    # Wrong data type
+    print("\n  Testing wrong data type (integer instead of string)...")
     try:
-        loaded.predict(too_few)
-        print("  Result: prediction succeeded (model handled missing columns)")
+        r = loaded.predict(pd.DataFrame({"question": [12345]}))
+        print(f"  Result: succeeded (type coerced) - {r[0][:60]}...")
     except Exception as e:
-        print(f"  Result: caught error - {type(e).__name__}: {e}")
+        print(f"  Result: {type(e).__name__}: {e}")
 
-    # --- Wrong data types ---
-    print("\n  Testing with wrong data types (strings instead of floats)...")
-    wrong_types = pd.DataFrame({
-        "sepal length (cm)": ["not_a_number"],
-        "sepal width (cm)": ["bad"],
-        "petal length (cm)": ["data"],
-        "petal width (cm)": ["here"],
-    })
+    # Extra columns
+    print("\n  Testing extra columns...")
     try:
-        loaded.predict(wrong_types)
-        print("  Result: prediction succeeded (types were coerced)")
+        r = loaded.predict(pd.DataFrame({"question": ["Hi"], "extra": ["x"]}))
+        print(f"  Result: succeeded (extra columns ignored) - {r[0][:60]}...")
     except Exception as e:
-        print(f"  Result: caught error - {type(e).__name__}: {e}")
-
+        print(f"  Result: {type(e).__name__}: {e}")
     print()
 
 
 def main() -> None:
     print("=" * 60)
-    print("L2-M2.1 — Model Signatures Deep Dive")
+    print("L2-M2.1 -- Model Signatures Deep Dive")
     print("=" * 60)
     print()
-
-    run_id_part1 = part1_column_based_signature()
-    part2_manual_signature()
-    part3_tensor_signature()
-    part4_signature_with_params()
-    part5_signature_enforcement(run_id_part1)
-
+    chat_run_id = part1_chat_signature()
+    part2_structured_output()
+    part3_params_signature()
+    part4_signature_enforcement(chat_run_id)
     print("=" * 60)
     print("Done! Check the MLflow UI at http://127.0.0.1:5000")
-    print("Explore each run's model artifacts to see the signatures")
-    print("in the MLmodel file and the signature tab.")
+    print("Explore each run's model artifacts to see the signatures.")
     print("=" * 60)
 
 
 if __name__ == "__main__":
+    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_experiment("L2/M2_advanced_models/1_signatures_deep_dive")
     main()

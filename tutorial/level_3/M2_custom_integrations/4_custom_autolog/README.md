@@ -12,7 +12,7 @@ MLflow provides built-in autolog integrations for major frameworks (LangChain, s
 - Completed: L1-M3.2 (LLM/GenAI Autologging), L1-M5.2 (Manual Tracing)
 - Completed: L3-M2.1 through L3-M2.3 (Custom integration patterns)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -53,7 +53,7 @@ A well-designed autolog integration captures:
 
 ### Step 1: Define the Target Framework
 
-We create `SimpleChat`, a minimal chat framework wrapping ChatOllama. It has three methods that we want to instrument:
+We create `SimpleChat`, a minimal chat framework wrapping ChatOpenAI. It has three methods that we want to instrument:
 
 ```python
 class SimpleChat:
@@ -130,7 +130,7 @@ L3-2.4 — Building Custom Autolog Integrations
   [architecture explanation printed]
 
 --- Part 2: SimpleChat Framework (unpatched) ---
-  Created SimpleChat(model=gemma4:e2b, temperature=0.5)
+  Created SimpleChat(model=google/gemma-4-26b-a4b, temperature=0.5)
   Unpatched chat response: 4
   Call count: 1
 

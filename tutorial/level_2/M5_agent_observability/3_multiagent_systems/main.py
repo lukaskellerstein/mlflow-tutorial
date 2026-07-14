@@ -17,7 +17,7 @@ from typing import Annotated, Literal
 import mlflow
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from typing_extensions import TypedDict
 
@@ -44,7 +44,12 @@ def researcher_node(state: PipelineState) -> dict:
     print("\n  [Researcher] Researching topic...")
     start = time.time()
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
     prompt = ChatPromptTemplate.from_messages([
         ("system",
          "You are a research assistant. Given a topic, produce 3-5 concise "
@@ -71,7 +76,12 @@ def writer_node(state: PipelineState) -> dict:
     print(f"\n  [Writer] {label}...")
     start = time.time()
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.7)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.7,
+    )
 
     if revision == 0:
         prompt = ChatPromptTemplate.from_messages([
@@ -112,7 +122,12 @@ def reviewer_node(state: PipelineState) -> dict:
     print("\n  [Reviewer] Reviewing draft...")
     start = time.time()
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.3)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.3,
+    )
     prompt = ChatPromptTemplate.from_messages([
         ("system",
          "You are an editor. Review the draft for clarity and accuracy. "

@@ -18,7 +18,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 import mlflow
-import ollama
+from openai import OpenAI
 from temporalio import activity
 from temporalio.client import Client
 from temporalio.worker import Worker
@@ -34,11 +34,13 @@ from workflow_def import (
 TRACKING_URI = "http://127.0.0.1:5000"
 EXPERIMENT = "L2/M4_advanced_tracing/2_temporal_tracing"
 TASK_QUEUE = "mlflow-tutorial-text-analysis"
-MODEL = "gemma4:e2b"
+MODEL = "google/gemma-4-26b-a4b"
 TEMPORAL_ADDRESS = "localhost:7233"
 
 mlflow.set_tracking_uri(TRACKING_URI)
 mlflow.set_experiment(EXPERIMENT)
+
+llm_client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
 
 # ============================================================
@@ -60,15 +62,16 @@ TASK_PROMPTS = {
 
 
 def _call_llm(system_prompt: str, user_prompt: str) -> str:
-    """Call Ollama and return the response text."""
-    response = ollama.chat(
+    """Call the LLM via OpenAI-compatible API and return the response text."""
+    response = llm_client.chat.completions.create(
         model=MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
+        temperature=0.7,
     )
-    return response["message"]["content"]
+    return response.choices[0].message.content
 
 
 @activity.defn

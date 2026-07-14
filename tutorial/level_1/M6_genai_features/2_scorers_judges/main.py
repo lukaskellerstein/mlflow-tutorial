@@ -11,7 +11,7 @@ import json
 import re
 
 import mlflow
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 # -- Sample Q&A data -------------------------------------------------------- #
@@ -85,7 +85,7 @@ Return ONLY valid JSON (no markdown, no code fences) in this exact format:
 
 
 def llm_judge(
-    llm: ChatOllama, question: str, expected: str, response: str
+    llm: ChatOpenAI, question: str, expected: str, response: str
 ) -> dict[str, float]:
     """Use an LLM to judge response quality on relevance, completeness, clarity."""
     prompt = JUDGE_PROMPT.format(
@@ -116,7 +116,12 @@ def llm_judge(
 # -- Part 3: Combine and evaluate ------------------------------------------- #
 
 def main() -> None:
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    llm = ChatOpenAI(
+        model="google/gemma-4-e4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
 
     # ------------------------------------------------------------------ #
     print("=" * 60)
@@ -131,7 +136,7 @@ def main() -> None:
 
     # ------------------------------------------------------------------ #
     print("\n" + "=" * 60)
-    print("Part 2: LLM Judge (gemma4:e2b)")
+    print("Part 2: LLM Judge (google/gemma-4-e4b)")
     print("=" * 60)
 
     for i, qa in enumerate(QA_PAIRS):

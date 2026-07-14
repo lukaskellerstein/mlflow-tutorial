@@ -14,7 +14,7 @@ import mlflow
 import pandas as pd
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from mlflow.entities import Feedback
 from mlflow.genai.scorers import scorer
 
@@ -125,7 +125,7 @@ def _cosine_similarity(a: dict[str, float], b: dict[str, float]) -> float:
 class SimpleRAG:
     """TF-IDF based retrieval + LLM generation."""
 
-    def __init__(self, docs: list[dict], llm: ChatOllama, top_k: int = 3) -> None:
+    def __init__(self, docs: list[dict], llm: ChatOpenAI, top_k: int = 3) -> None:
         self.docs = docs
         self.llm = llm
         self.top_k = top_k
@@ -333,7 +333,12 @@ def main() -> None:
     """Evaluate a RAG system with two retrieval strategies."""
     mlflow.langchain.autolog()
 
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
 
     print("=" * 60)
     print("L2-3.2 — RAG System Evaluation")

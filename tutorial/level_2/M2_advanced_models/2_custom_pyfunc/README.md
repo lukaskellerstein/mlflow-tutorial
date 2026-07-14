@@ -5,94 +5,125 @@
 
 ## Overview
 
-MLflow's `PythonModel` base class lets you wrap arbitrary prediction logic as a first-class MLflow model. This lesson explores three advanced patterns: loading external artifacts at model-load time with `load_context()`, accepting runtime parameters via `params`, and packaging a multi-model ensemble as a single deployable PyFunc.
+This lesson demonstrates how to wrap a complete RAG (Retrieval-Augmented Generation) pipeline as a single MLflow PyFunc model. You will build a `PythonModel` subclass that initializes an embedding model, populates an in-memory Qdrant vector store, and generates answers by retrieving relevant context before calling an LLM. The result is a self-contained, deployable model artifact that bundles the entire RAG workflow behind a standard `predict()` interface.
 
 ## Prerequisites
 
 - Completed: L1-M2.3 (PyFunc basics)
 - MLFlow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-e4b` and `text-embedding-nomic-embed-text-v1.5` models loaded
 
 ## Concepts
 
 ### Why Custom PyFunc?
 
-MLflow's built-in flavors (sklearn, pytorch, etc.) cover common cases, but real-world deployments often need custom logic:
+MLflow's built-in flavors (sklearn, pytorch, etc.) cover single-model use cases, but real-world LLM applications are multi-component systems. A RAG pipeline combines an embedding model, a vector database, retrieval logic, prompt construction, and an LLM -- none of which fit neatly into a single built-in flavor. Wrapping the entire pipeline as a custom PyFunc gives you:
 
-- **Pre/post-processing** baked into the model artifact
-- **Loading external resources** (files, databases, other models) at startup
-- **Runtime configurability** — callers pass parameters that change behavior without reloading the model
-- **Ensemble or composite models** — multiple models behind a single prediction API
-
-All of these are handled by subclassing `mlflow.pyfunc.PythonModel`.
+- **Single deployment unit** -- one model artifact that includes all components
+- **Standard interface** -- callers use `predict()` without knowing about the internals
+- **Artifact management** -- MLflow stores and restores all configuration and data files
+- **Runtime configurability** -- `params` let callers adjust behavior (temperature, number of retrieved docs) without relogging
 
 ### Key Methods
 
-| Method | Purpose |
-|---|---|
-| `load_context(self, context)` | Called once when the model is loaded. Use it to load heavy artifacts (models, lookup tables, tokenizers) from `context.artifacts`. |
-| `predict(self, context, model_input, params=None)` | Called on every prediction request. `model_input` is a DataFrame or dict; `params` is an optional dict of runtime overrides. |
+| Method | When it runs | Purpose |
+|---|---|---|
+| `load_context(self, context)` | Once, when the model is loaded | Initialize heavy resources: LLM clients, embedding models, vector stores. Access bundled files via `context.artifacts`. |
+| `predict(self, context, model_input, params=None)` | Every prediction request | Run the RAG pipeline: embed the query, retrieve docs, generate an answer. Accept runtime overrides via `params`. |
 
 ### The artifacts Dict
 
-When you call `mlflow.pyfunc.log_model(..., artifacts={"name": "/path/to/file"})`, MLflow copies each file into the model artifact store. At load time, `context.artifacts["name"]` returns the local path to the restored file.
+When you call `mlflow.pyfunc.log_model(..., artifacts={"config": "/path/to/config.json", "documents": "/path/to/docs.json"})`, MLflow copies each file into the model artifact store. At load time, `context.artifacts["config"]` returns the local path to the restored file. This is how the RAG model gets its configuration and document corpus without hardcoding paths.
+
+### Runtime Params for LLM Configuration
+
+The `params` argument to `predict()` lets callers control LLM behavior at inference time:
+
+- **`temperature`** -- controls randomness of the generated answer (default: 0.7)
+- **`top_k`** -- number of documents to retrieve from the vector store (default: 3)
+
+The params schema is captured in the model signature, so MLflow can validate inputs at serving time.
 
 ## Step-by-Step
 
-### Step 1: PythonModel with load_context()
+### Step 1: Prepare RAG Artifacts
 
-We train a scikit-learn RandomForest, save it to a temporary file, then wrap it in a custom `SklearnWrapper` that loads the model inside `load_context()`. This pattern is useful when you want to add custom pre/post-processing around an existing model.
+Before logging the model, we create two JSON files that will be bundled as artifacts:
+
+- **`config.json`** -- LLM endpoint URL, API key, model names for the LLM and embedding model
+- **`documents.json`** -- the document corpus to index in the vector store
 
 ```python
-class SklearnWrapper(mlflow.pyfunc.PythonModel):
-    def load_context(self, context):
-        import joblib
-        self.model = joblib.load(context.artifacts["sklearn_model"])
-
-    def predict(self, context, model_input, params=None):
-        return self.model.predict(model_input)
+config = {
+    "base_url": "http://localhost:1234/v1",
+    "api_key": "lm-studio",
+    "llm_model": "google/gemma-4-e4b",
+    "embedding_model": "text-embedding-nomic-embed-text-v1.5",
+}
 ```
 
-The model is logged with the sklearn artifact:
+Externalizing configuration into an artifact (rather than hardcoding) makes the model portable -- you can change the LLM endpoint without rebuilding the model.
+
+### Step 2: Define the RAGModel PyFunc
+
+The `RAGModel` class subclasses `mlflow.pyfunc.PythonModel` and implements two methods:
+
+**`load_context()`** runs once when the model is loaded. It:
+1. Reads the config and document artifacts
+2. Initializes the `OpenAIEmbeddings` client for embedding queries and documents
+3. Creates an in-memory Qdrant collection
+4. Embeds all documents and inserts them into the vector store
 
 ```python
-mlflow.pyfunc.log_model(
-    name="sklearn_wrapper",
-    python_model=SklearnWrapper(),
-    artifacts={"sklearn_model": str(model_path)},
+class RAGModel(mlflow.pyfunc.PythonModel):
+    def load_context(self, context):
+        # Read config from artifact
+        config_path = context.artifacts["config"]
+        with open(config_path) as f:
+            self.config = json.load(f)
+
+        # Initialize embeddings and Qdrant, index documents
+        ...
+```
+
+**`predict()`** runs on every request. For each query it:
+1. Embeds the query using the same embedding model
+2. Retrieves the top-k most similar documents from Qdrant
+3. Constructs a prompt with the retrieved context
+4. Calls the LLM and returns the generated answer
+
+### Step 3: Log and Load the Model
+
+We log the model with `mlflow.pyfunc.log_model()`, passing:
+- `python_model=RAGModel()` -- the model class
+- `artifacts={"config": ..., "documents": ...}` -- files to bundle
+- `signature` -- input/output schema with params
+- `pip_requirements` -- Python packages needed at load time
+
+```python
+model_info = mlflow.pyfunc.log_model(
+    name="rag_model",
+    python_model=RAGModel(),
+    artifacts={"config": str(config_path), "documents": str(docs_path)},
     signature=signature,
+    pip_requirements=["openai", "langchain-openai", "qdrant-client"],
 )
 ```
 
-### Step 2: PyFunc with params Support
+After logging, we load the model back with `mlflow.pyfunc.load_model()` and run test queries. The `load_context()` method fires automatically, rebuilding the vector store from the bundled artifacts.
 
-The `predict()` method accepts an optional `params` dict, letting callers change behavior at inference time without reloading. Here we build a text processor that calls Ollama's `gemma4:e2b` model with configurable `temperature` and `style`:
+### Step 4: Test with Custom Params
+
+We call `predict()` with custom `params` to demonstrate runtime configurability:
 
 ```python
 result = loaded.predict(
-    test_input,
-    params={"temperature": 0.3, "style": "concise"}
+    pd.DataFrame({"query": ["What does MLflow do?"]}),
+    params={"temperature": 0.2, "top_k": 2},
 )
 ```
 
-The params schema is captured in the model signature so MLflow can validate inputs at serving time.
-
-### Step 3: Multi-Model Ensemble
-
-We train three classifiers (RandomForest, GradientBoosting, LogisticRegression), save each as a separate artifact, and wrap them in an `EnsembleModel` PyFunc. The ensemble averages class probabilities and returns the argmax:
-
-```python
-class EnsembleModel(mlflow.pyfunc.PythonModel):
-    def load_context(self, context):
-        for name in self.manifest["model_names"]:
-            self.models[name] = joblib.load(context.artifacts[name])
-
-    def predict(self, context, model_input, params=None):
-        all_probas = [m.predict_proba(model_input) for m in self.models.values()]
-        return np.argmax(np.mean(all_probas, axis=0), axis=1)
-```
-
-A JSON manifest tracks which models belong to the ensemble, making the pattern extensible.
+Lower temperature produces more deterministic answers. Fewer retrieved documents (top_k=2) focuses the context on the most relevant matches.
 
 ## Running the Lesson
 
@@ -106,55 +137,57 @@ uv run python main.py
 
 ```
 ============================================================
-Part 1: PythonModel with load_context()
+Step 1: Preparing RAG model artifacts
 ============================================================
-  Trained RandomForest — accuracy: 0.9778
-  Saved sklearn model to /tmp/.../rf_model.joblib
-  [load_context] Loaded sklearn model from ...
-  Logged custom PyFunc model: runs:/.../sklearn_wrapper
-  Predictions on 5 samples: [1 0 2 1 1]
-  Expected:                 [1 0 2 1 1]
+  Config saved: LLM=google/gemma-4-e4b
+  Documents saved: 8 entries
 
 ============================================================
-Part 2: PyFunc with params support
+Step 2: Logging RAG model as PyFunc
 ============================================================
-  Logged LLMTextProcessor model: runs:/.../text_processor
-
-  --- Test 1: concise style, temperature=0.3 ---
-  Result: <rewritten text in concise style>...
-
-  --- Test 2: formal style, temperature=0.9 ---
-  Result: <rewritten text in formal style>...
+  [load_context] Indexed 8 documents
+  Logged model: runs:/.../rag_model
+  Run ID: abc123...
 
 ============================================================
-Part 3: Multi-model ensemble as a single PyFunc
+Step 3: Loading and testing the RAG model
 ============================================================
-  Trained random_forest             — accuracy: 0.9778
-  Trained gradient_boosting         — accuracy: 0.9778
-  Trained logistic_regression       — accuracy: 0.9778
-  [load_context] Loaded model 'random_forest' from ...
-  [load_context] Loaded model 'gradient_boosting' from ...
-  [load_context] Loaded model 'logistic_regression' from ...
+  [load_context] Indexed 8 documents
 
-  Individual model accuracies:
-    random_forest             0.9778
-    gradient_boosting         0.9778
-    logistic_regression       0.9778
-    ENSEMBLE                  0.9778
+  Query: What is MLflow Tracking?
+  Answer: MLflow Tracking allows you to log parameters, metrics, and artifacts...
+
+  Query: How does the Model Registry work?
+  Answer: The MLflow Model Registry provides a central model store...
+
+  Query: What is MLflow Tracing?
+  Answer: MLflow Tracing captures detailed execution traces for LLM applications...
+
+============================================================
+Step 4: Testing with custom params
+============================================================
+
+  Query: What does MLflow do? (temperature=0.2, top_k=2)
+  Answer: MLflow is an open-source platform for managing the end-to-end...
 
 ============================================================
 Done!
-============================================================
 Open MLflow UI at http://127.0.0.1:5000
+Look for experiment: L2/M2_advanced_models/2_custom_pyfunc
+============================================================
 ```
+
+In the MLflow UI you will see:
+- One run named `rag_pyfunc_model` with logged parameters (llm_model, embedding_model, num_documents, vector_db)
+- The `rag_model` artifact containing the serialized PyFunc, config.json, and documents.json
 
 ## Key Takeaways
 
-- **`load_context()`** is the right place to load heavy artifacts once, rather than on every `predict()` call.
-- **`artifacts` dict** in `log_model()` tells MLflow which files to bundle with the model; they are restored automatically on load.
-- **`params`** in `predict()` enables runtime configurability without retraining or relogging the model.
-- **Ensemble models** can be packaged as a single PyFunc, simplifying deployment of composite prediction logic.
-- Custom PyFunc models are served via `mlflow models serve` just like any built-in flavor.
+- **`PythonModel`** lets you wrap arbitrary multi-component systems (like a RAG pipeline) as a single deployable MLflow model.
+- **`load_context()`** is the right place to initialize heavy resources (LLM clients, vector stores, embedding models) -- it runs once at load time, not on every prediction.
+- **The `artifacts` dict** bundles configuration files and data with the model. MLflow copies them into the artifact store and restores them automatically on load.
+- **Runtime `params`** (temperature, top_k) let callers tune model behavior at inference time without relogging or redeploying.
+- **In-memory Qdrant** works well for demos and small corpora. For production, replace with a persistent Qdrant instance and store only connection config in the artifact.
 
 ## Next Steps
 

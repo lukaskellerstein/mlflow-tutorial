@@ -13,7 +13,7 @@ You will learn how to define custom Prometheus metrics, instrument LLM calls, ge
 
 - Completed: L1-M1 (Tracking), L1-M4 (Evaluation), L3-M3.1 (Production Tracing)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 - Prometheus running at http://localhost:9090 (via `podman compose up -d` from `infra/`)
 - Grafana running at http://localhost:3000 (admin/admin)
 
@@ -101,7 +101,7 @@ scrape_configs:
 
 ### Step 3: Instrument LLM Calls
 
-The `InstrumentedLLMService` class wraps every `ChatOllama` call:
+The `InstrumentedLLMService` class wraps every `ChatOpenAI` call:
 
 - Increments `llm_active_requests` on entry, decrements on exit
 - Observes `llm_request_duration_seconds` with the elapsed time
@@ -143,7 +143,7 @@ L3-3.2 — Grafana Dashboards for MLflow
   Metrics server listening on http://localhost:8099/metrics
 
 --- Part 2: Creating instrumented LLM service ---
-  Model: gemma4:e2b
+  Model: google/gemma-4-26b-a4b
 
 --- Part 3: Generating sample LLM traffic ---
   [ 1/10] What is the capital of France?                      OK  1.23s
@@ -156,7 +156,7 @@ L3-3.2 — Grafana Dashboards for MLflow
 
 --- Part 5: Verifying Prometheus metrics ---
   Scraped N metric series from :8099/metrics
-    llm_request_total{model="gemma4:e2b",status="success"}: 10.0
+    llm_request_total{model="google/gemma-4-26b-a4b",status="success"}: 10.0
     llm_tokens_used_total{...}: ...
 
 ============================================================

@@ -1,126 +1,217 @@
 """
-L1-8.1 -- Model Serving Basics
+L1-M8.1 -- Model Serving Basics
 
-Trains a model, registers it, and demonstrates serving commands,
-programmatic prediction, and batch prediction workflows.
+Wrap an LLM call in a custom PythonModel, log it with MLflow,
+test it locally, and show how to serve it as a REST API.
 """
 
 import json
-import os
-import tempfile
 
 import mlflow
 import pandas as pd
 from mlflow.models import infer_signature
-from sklearn.datasets import load_iris
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 
-MODEL_NAME = "iris-classifier-serving-demo"
-FEATURE_COLS = [f"feature_{i}" for i in range(4)]
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_experiment("L1/M8_deployment/1_model_serving")
+
+MODEL_NAME = "L1-llm-serving-demo"
 
 
-def part1_prepare_model(X_train, X_test, y_train, y_test) -> None:
-    """Train, log, and register a model for serving."""
-    print("=" * 60)
-    print("Part 1: Prepare a Model for Serving")
-    print("=" * 60)
-    with mlflow.start_run(run_name="train_for_serving") as run:
-        clf = RandomForestClassifier(n_estimators=50, max_depth=4, random_state=42)
-        clf.fit(X_train, y_train)
-        accuracy = clf.score(X_test, y_test)
-        mlflow.log_params({"n_estimators": 50, "max_depth": 4})
-        mlflow.log_metric("accuracy", accuracy)
-        # Signature and input example define the serving request/response format.
-        signature = infer_signature(X_test, clf.predict(X_test))
-        input_example = pd.DataFrame(X_test[:2], columns=FEATURE_COLS)
-        mlflow.sklearn.log_model(
-            clf, name="model", signature=signature,
-            input_example=input_example, registered_model_name=MODEL_NAME,
+class LLMModel(mlflow.pyfunc.PythonModel):
+    """Wraps an LLM API call as a servable MLflow model.
+
+    This PythonModel calls a local LMStudio server. When served via
+    `mlflow models serve`, it exposes the LLM through a REST API so
+    any language or service can call it over HTTP.
+    """
+
+    def predict(self, context, model_input, params=None):
+        from openai import OpenAI
+
+        client = OpenAI(
+            base_url="http://localhost:1234/v1", api_key="lm-studio"
         )
-        print(f"  Accuracy: {accuracy:.4f}")
-        print(f"  Model URI: runs:/{run.info.run_id}/model")
-        print(f"  Registered as: {MODEL_NAME}")
+
+        # model_input is a DataFrame with a "question" column
+        questions = model_input["question"].tolist()
+        answers = []
+        for question in questions:
+            response = client.chat.completions.create(
+                model="google/gemma-4-e4b",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant. "
+                        "Give clear, concise answers.",
+                    },
+                    {"role": "user", "content": question},
+                ],
+                temperature=0.7,
+                max_tokens=300,
+            )
+            answers.append(response.choices[0].message.content)
+        return answers
 
 
-def part2_serving_commands() -> None:
-    """Print CLI commands and endpoint details for model serving."""
-    print("\n" + "=" * 60)
-    print("Part 2: Serving Commands and Endpoints")
+def part1_log_model() -> str:
+    """Create, log, and register the LLM model. Returns the run ID."""
     print("=" * 60)
-    print(f'\n  Serve locally:')
-    print(f'    mlflow models serve -m "models:/{MODEL_NAME}/1" --port 5001 --no-conda')
-    print("\n  Endpoints:")
-    print("    POST /invocations  -- run predictions")
-    print("    GET  /ping         -- health check (returns 200 OK)")
-    print("    GET  /version      -- MLflow version info")
-    sample = {"dataframe_split": {
-        "columns": FEATURE_COLS,
-        "data": [[5.1, 3.5, 1.4, 0.2], [6.7, 3.0, 5.2, 2.3]],
-    }}
-    print("\n  Prediction (dataframe_split format):")
-    print("    curl -X POST http://127.0.0.1:5001/invocations \\")
-    print('      -H "Content-Type: application/json" \\')
-    print(f"      -d '{json.dumps(sample)}'")
-    alt = {"instances": [dict(zip(FEATURE_COLS, [5.1, 3.5, 1.4, 0.2]))]}
-    print(f"\n  Alternative (instances format):")
-    print(f"    -d '{json.dumps(alt)}'")
-
-
-def part3_programmatic_prediction(X_test) -> None:
-    """Load the model and run predictions without serving."""
-    print("\n" + "=" * 60)
-    print("Part 3: Programmatic Prediction (No Server Needed)")
+    print("Part 1: Creating and Logging the LLM Model")
     print("=" * 60)
-    model_uri = f"models:/{MODEL_NAME}/1"
+
+    # Define signature: input is a DataFrame with "question", output is strings
+    input_example = pd.DataFrame(
+        {"question": ["What is machine learning?"]}
+    )
+    output_example = [
+        "Machine learning is a branch of AI that enables computers "
+        "to learn from data without being explicitly programmed."
+    ]
+    signature = infer_signature(input_example, output_example)
+    print(f"  Model signature:\n{signature}\n")
+
+    with mlflow.start_run(run_name="log_llm_for_serving") as run:
+        mlflow.pyfunc.log_model(
+            name="model",
+            python_model=LLMModel(),
+            signature=signature,
+            input_example=input_example,
+            registered_model_name=MODEL_NAME,
+            pip_requirements=["openai>=1.0", "mlflow>=2.0"],
+        )
+        mlflow.log_param("model_backend", "google/gemma-4-e4b")
+        mlflow.log_param("server", "http://localhost:1234/v1")
+        run_id = run.info.run_id
+        print(f"  Model logged and registered as: {MODEL_NAME}")
+        print(f"  Run ID: {run_id}")
+
+    return run_id
+
+
+def part2_test_locally(run_id: str) -> None:
+    """Load the model and test it without serving."""
+    print("\n" + "=" * 60)
+    print("Part 2: Testing the Model Locally (No Server)")
+    print("=" * 60)
+
+    model_uri = f"runs:/{run_id}/model"
     print(f"  Loading model from: {model_uri}")
     model = mlflow.pyfunc.load_model(model_uri)
-    sample = pd.DataFrame(X_test[:3], columns=FEATURE_COLS)
-    predictions = model.predict(sample)
-    print(f"  Input shape: {sample.shape}")
-    print(f"  Predictions: {predictions.tolist()}")
-    print("\n  Serving  -- REST API, language-agnostic, production use")
-    print("  Loading  -- in-process, Python only, scripts and notebooks")
+
+    test_questions = pd.DataFrame({
+        "question": [
+            "What is MLflow?",
+            "Explain REST APIs in one sentence.",
+            "What is Python used for?",
+        ]
+    })
+
+    print(f"  Running {len(test_questions)} test questions...\n")
+    predictions = model.predict(test_questions)
+
+    for q, a in zip(test_questions["question"], predictions):
+        print(f"  Q: {q}")
+        print(f"  A: {a[:120]}...")
+        print()
+
+    print("  Local testing passed. The model works in-process.")
 
 
-def part4_batch_prediction(X_test) -> None:
-    """Demonstrate batch prediction workflow."""
+def part3_serving_commands() -> None:
+    """Print CLI commands and endpoint details for model serving."""
     print("\n" + "=" * 60)
-    print("Part 4: Batch Prediction and Docker")
+    print("Part 3: Serving the Model as a REST API")
     print("=" * 60)
-    sample_df = pd.DataFrame(X_test[:5], columns=FEATURE_COLS)
-    csv_path = os.path.join(tempfile.gettempdir(), "iris_batch_input.csv")
-    sample_df.to_csv(csv_path, index=False)
-    mlflow.log_artifact(csv_path, artifact_path="batch_inputs")
-    print(f"  Sample input CSV: {csv_path}")
-    print(f'\n  Batch predict:')
-    print(f'    mlflow models predict -m "models:/{MODEL_NAME}/1" -i {csv_path}')
-    print(f'\n  Docker containerization:')
-    print(f'    mlflow models build-docker -m "models:/{MODEL_NAME}/1" -n "iris-server"')
-    print(f'    docker run -p 5001:8080 iris-server')
+
+    print(f"""
+  To serve this model, run:
+
+    mlflow models serve \\
+      -m "models:/{MODEL_NAME}/1" \\
+      --port 5001 \\
+      --no-conda
+
+  This starts a local REST server on port 5001.
+  The --no-conda flag uses your current Python environment.
+
+  Endpoints:
+    POST /invocations  -- run predictions
+    GET  /ping         -- health check (returns 200 OK)
+    GET  /version      -- MLflow version info
+""")
+
+    # Show example curl commands
+    sample_payload = {
+        "dataframe_split": {
+            "columns": ["question"],
+            "data": [["What is machine learning?"]],
+        }
+    }
+    print("  Example prediction request:")
+    print("    curl -X POST http://127.0.0.1:5001/invocations \\")
+    print('      -H "Content-Type: application/json" \\')
+    print(f"      -d '{json.dumps(sample_payload)}'")
+
+    # Alternative: instances format
+    alt_payload = {"instances": [{"question": "What is machine learning?"}]}
+    print(f"\n  Alternative (instances format):")
+    print(f"    -d '{json.dumps(alt_payload)}'")
+
+    # Batch with multiple questions
+    batch_payload = {
+        "dataframe_split": {
+            "columns": ["question"],
+            "data": [
+                ["What is Python?"],
+                ["What is an API?"],
+                ["Explain Docker briefly."],
+            ],
+        }
+    }
+    print(f"\n  Batch prediction (multiple questions):")
+    print("    curl -X POST http://127.0.0.1:5001/invocations \\")
+    print('      -H "Content-Type: application/json" \\')
+    print(f"      -d '{json.dumps(batch_payload)}'")
+
+
+def part4_deployment_options() -> None:
+    """Show additional deployment options."""
+    print("\n" + "=" * 60)
+    print("Part 4: Additional Deployment Options")
+    print("=" * 60)
+
+    print(f"""
+  Batch prediction (no server needed):
+    mlflow models predict \\
+      -m "models:/{MODEL_NAME}/1" \\
+      -i questions.csv
+
+  Container deployment (Podman/Docker):
+    mlflow models build-docker \\
+      -m "models:/{MODEL_NAME}/1" \\
+      -n "llm-server"
+    podman run -p 5001:8080 llm-server
+
+  Load programmatically (Python only):
+    import mlflow
+    model = mlflow.pyfunc.load_model("models:/{MODEL_NAME}@champion")
+    result = model.predict(pd.DataFrame({{"question": ["..."]}}))
+
+  Comparison:
+    Serving  -- REST API, language-agnostic, production use
+    Loading  -- in-process, Python only, scripts and notebooks
+    Batch    -- CLI-based, file I/O, periodic jobs
+    Docker   -- containerized, portable, cloud deployment
+""")
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
-    mlflow.set_experiment("L1/M8_deployment/1_model_serving")
+    run_id = part1_log_model()
+    part2_test_locally(run_id)
+    part3_serving_commands()
+    part4_deployment_options()
 
     print("=" * 60)
-    print("Loading Iris dataset")
-    print("=" * 60)
-    iris = load_iris()
-    X_train, X_test, y_train, y_test = train_test_split(
-        iris.data, iris.target, test_size=0.2, random_state=42
-    )
-    print(f"  Training: {len(X_train)} samples | Test: {len(X_test)} samples")
-
-    part1_prepare_model(X_train, X_test, y_train, y_test)
-    part2_serving_commands()
-
-    with mlflow.start_run(run_name="batch_and_programmatic"):
-        part3_programmatic_prediction(X_test)
-        part4_batch_prediction(X_test)
-
-    print("\n" + "=" * 60)
-    print("Done! Try serving with the command from Part 2.")
+    print("Done! Try serving with the command from Part 3.")
     print("View runs in MLflow UI: http://127.0.0.1:5000")
     print("=" * 60)

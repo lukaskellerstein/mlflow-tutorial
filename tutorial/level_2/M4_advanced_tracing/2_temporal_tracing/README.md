@@ -12,7 +12,7 @@ This lesson integrates MLflow tracing with Temporal.io durable workflows. You wi
 - Completed: L2-M4.1 (LangGraph Tracing) -- familiarity with MLflow tracing concepts
 - MLflow server running at http://127.0.0.1:5000
 - Temporal server running at localhost:7233 (start with `podman compose up -d` from `infra/`)
-- Ollama running locally with `gemma4:e2b` pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 
@@ -59,7 +59,7 @@ This means you will see separate traces in MLflow: one for the workflow dispatch
 
 ### Step 1: Define Activities with MLflow Tracing
 
-Each Temporal activity wraps an Ollama LLM call inside an `mlflow.start_span()` context manager. This captures the task type, input text length, output preview, and duration.
+Each Temporal activity wraps an LLM call inside an `mlflow.start_span()` context manager. This captures the task type, input text length, output preview, and duration.
 
 ```python
 @activity.defn

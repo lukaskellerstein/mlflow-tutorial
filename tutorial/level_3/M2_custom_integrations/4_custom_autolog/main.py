@@ -3,7 +3,7 @@ L3-2.4 — Building Custom Autolog Integrations
 
 Build a production-quality custom autolog implementation that:
   1. Explains how MLflow autolog works (monkey-patching / wrapper pattern)
-  2. Creates a "SimpleChat" framework wrapping ChatOllama
+  2. Creates a "SimpleChat" framework wrapping ChatOpenAI
   3. Builds an autolog function that monkey-patches SimpleChat methods
   4. Demonstrates enable/disable lifecycle with configurable options
   5. Adds callback hooks for extensibility
@@ -16,23 +16,28 @@ from typing import Any, Callable
 
 import mlflow
 import pandas as pd
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 
 # ---------------------------------------------------------------------------
-# 1. SimpleChat framework — a thin wrapper around ChatOllama
+# 1. SimpleChat framework — a thin wrapper around ChatOpenAI
 # ---------------------------------------------------------------------------
 class SimpleChat:
-    """A minimal chat framework that wraps ChatOllama.
+    """A minimal chat framework that wraps ChatOpenAI.
 
     This represents any third-party framework that lacks native MLflow
     integration. Our custom autolog will instrument it transparently.
     """
 
-    def __init__(self, model: str = "gemma4:e2b", temperature: float = 0.7):
+    def __init__(self, model: str = "google/gemma-4-26b-a4b", temperature: float = 0.7):
         self.model = model
         self.temperature = temperature
-        self._llm = ChatOllama(model=model, temperature=temperature)
+        self._llm = ChatOpenAI(
+            model=model,
+            base_url="http://localhost:1234/v1",
+            api_key="lm-studio",
+            temperature=temperature,
+        )
         self._call_count = 0
 
     def chat(self, message: str) -> str:
@@ -321,7 +326,7 @@ def main() -> None:
 
     # ── Part 2: Build and test SimpleChat ─────────────────────────
     print("--- Part 2: SimpleChat Framework (unpatched) ---")
-    bot = SimpleChat(model="gemma4:e2b", temperature=0.5)
+    bot = SimpleChat(model="google/gemma-4-26b-a4b", temperature=0.5)
     print(f"  Created SimpleChat(model={bot.model}, temperature={bot.temperature})")
 
     response = bot.chat("What is 2 + 2? Reply with just the number.")

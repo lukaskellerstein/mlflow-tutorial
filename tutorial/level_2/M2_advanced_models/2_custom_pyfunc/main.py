@@ -1,10 +1,11 @@
 """
 L2-M2.2 — Custom PyFunc Models
 
-Demonstrates advanced custom PyFunc patterns:
-- Part 1: PythonModel with load_context() for artifact loading
-- Part 2: PyFunc with params support (runtime-configurable LLM calls)
-- Part 3: Multi-model ensemble wrapped as a single PyFunc
+Demonstrates wrapping a RAG pipeline as a custom MLflow PyFunc model:
+- PythonModel with load_context() for initializing LLM and vector DB
+- In-memory Qdrant vector store with sample documents
+- predict() that retrieves relevant docs and generates answers
+- Runtime params support (temperature, top_k)
 """
 
 import json
@@ -13,290 +14,219 @@ from pathlib import Path
 
 import mlflow
 import mlflow.pyfunc
-import numpy as np
 import pandas as pd
 from mlflow.models import infer_signature
-from sklearn.datasets import load_iris
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+from openai import OpenAI
 
 TRACKING_URI = "http://127.0.0.1:5000"
 EXPERIMENT_NAME = "L2/M2_advanced_models/2_custom_pyfunc"
 
+# Sample documents about MLflow for the RAG knowledge base
+DOCUMENTS = [
+    "MLflow is an open-source platform for managing the end-to-end machine learning lifecycle. It provides tools for experiment tracking, model packaging, versioning, and deployment.",
+    "MLflow Tracking allows you to log parameters, metrics, and artifacts during ML experiments. Each experiment contains runs, and each run records the inputs, outputs, and metadata of a training session.",
+    "The MLflow Model Registry provides a central model store for versioning and stage transitions. Teams use it to manage model lifecycle from development through staging to production.",
+    "MLflow Models use a standard format that supports multiple deployment tools. A model directory contains an MLmodel file describing flavors, a conda.yaml for dependencies, and the serialized model artifacts.",
+    "MLflow Projects package data science code for reproducible runs on any platform. A project is a directory or Git repo with an MLproject file specifying the entry points, parameters, and environment.",
+    "MLflow Evaluate provides tools for evaluating LLM and traditional ML models. It supports built-in metrics like toxicity and readability, plus custom metrics and LLM-as-judge evaluation.",
+    "MLflow Tracing captures detailed execution traces for LLM applications. Traces show each step in a chain or agent workflow, including inputs, outputs, and latency for every span.",
+    "MLflow supports autologging for many frameworks including scikit-learn, PyTorch, and LangChain. Autologging automatically captures parameters, metrics, and model artifacts without manual log calls.",
+]
 
-def section(title: str) -> None:
-    print(f"\n{'=' * 60}")
-    print(title)
-    print("=" * 60)
 
-
-# ---------------------------------------------------------------------------
-# Part 1: PythonModel with load_context()
-# ---------------------------------------------------------------------------
-
-class SklearnWrapper(mlflow.pyfunc.PythonModel):
-    """A custom PyFunc that loads a sklearn model from artifacts in load_context()."""
+class RAGModel(mlflow.pyfunc.PythonModel):
+    """A RAG pipeline wrapped as a single MLflow PyFunc model."""
 
     def load_context(self, context) -> None:
-        import joblib
+        """Initialize LLM client, embeddings, and Qdrant vector store."""
+        from langchain_openai import OpenAIEmbeddings
+        from qdrant_client import QdrantClient
+        from qdrant_client.models import Distance, PointStruct, VectorParams
 
-        model_path = context.artifacts["sklearn_model"]
-        self.model = joblib.load(model_path)
-        print(f"  [load_context] Loaded sklearn model from {model_path}")
+        # Load config from artifact
+        config_path = context.artifacts["config"]
+        with open(config_path) as f:
+            self.config = json.load(f)
 
-    def predict(self, context, model_input, params=None):
-        predictions = self.model.predict(model_input)
-        return predictions
+        # Initialize embedding model
+        self.embeddings = OpenAIEmbeddings(
+            model=self.config["embedding_model"],
+            base_url=self.config["base_url"],
+            api_key=self.config["api_key"],
+            check_embedding_ctx_length=False,
+        )
 
+        # Initialize Qdrant in-memory
+        self.qdrant = QdrantClient(":memory:")
 
-def part1_load_context() -> None:
-    section("Part 1: PythonModel with load_context()")
+        # Load and index documents from artifact
+        docs_path = context.artifacts["documents"]
+        with open(docs_path) as f:
+            documents = json.load(f)
 
-    # Train a sklearn model
-    X, y = load_iris(return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42
-    )
-    rf = RandomForestClassifier(n_estimators=50, random_state=42)
-    rf.fit(X_train, y_train)
-    accuracy = rf.score(X_test, y_test)
-    print(f"  Trained RandomForest — accuracy: {accuracy:.4f}")
-
-    # Save the sklearn model to a temp file
-    import joblib
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        model_path = Path(tmp_dir) / "rf_model.joblib"
-        joblib.dump(rf, model_path)
-        print(f"  Saved sklearn model to {model_path}")
-
-        # Log as a custom PyFunc with artifact dependency
-        with mlflow.start_run(run_name="part1_load_context"):
-            mlflow.log_param("wrapper_type", "SklearnWrapper")
-            mlflow.log_param("underlying_model", "RandomForestClassifier")
-            mlflow.log_metric("training_accuracy", accuracy)
-
-            signature = infer_signature(X_test, rf.predict(X_test))
-
-            model_info = mlflow.pyfunc.log_model(
-                name="sklearn_wrapper",
-                python_model=SklearnWrapper(),
-                artifacts={"sklearn_model": str(model_path)},
-                signature=signature,
-            )
-            print(f"  Logged custom PyFunc model: {model_info.model_uri}")
-
-            # Load it back and predict
-            loaded = mlflow.pyfunc.load_model(model_info.model_uri)
-            test_df = pd.DataFrame(X_test[:5], columns=[f"f{i}" for i in range(4)])
-            preds = loaded.predict(test_df)
-            print(f"  Predictions on 5 samples: {preds}")
-            print(f"  Expected:                 {y_test[:5]}")
-
-
-# ---------------------------------------------------------------------------
-# Part 2: PyFunc with params support
-# ---------------------------------------------------------------------------
-
-class LLMTextProcessor(mlflow.pyfunc.PythonModel):
-    """A PyFunc that calls Ollama with runtime-configurable params."""
+        # Create collection and add docs
+        vectors = self.embeddings.embed_documents(documents)
+        vector_size = len(vectors[0])
+        self.qdrant.create_collection(
+            collection_name="knowledge_base",
+            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+        )
+        points = [
+            PointStruct(id=i, vector=vec, payload={"text": doc})
+            for i, (vec, doc) in enumerate(zip(vectors, documents))
+        ]
+        self.qdrant.upsert(collection_name="knowledge_base", points=points)
+        print(f"  [load_context] Indexed {len(documents)} documents")
 
     def predict(self, context, model_input, params=None):
-        import ollama
+        """Retrieve relevant docs and generate answers for each query."""
+        from openai import OpenAI
 
         params = params or {}
         temperature = params.get("temperature", 0.7)
-        style = params.get("style", "concise")
+        top_k = params.get("top_k", 3)
+
+        client = OpenAI(
+            base_url=self.config["base_url"],
+            api_key=self.config["api_key"],
+        )
 
         results = []
         if isinstance(model_input, pd.DataFrame):
-            texts = model_input["text"].tolist()
+            queries = model_input["query"].tolist()
         else:
-            texts = [str(model_input)]
+            queries = [str(model_input)]
 
-        for text in texts:
-            prompt = f"Rewrite the following text in a {style} style:\n\n{text}"
-            response = ollama.chat(
-                model="gemma4:e2b",
-                messages=[{"role": "user", "content": prompt}],
-                options={"temperature": temperature},
+        for query in queries:
+            # Retrieve relevant docs
+            query_vector = self.embeddings.embed_query(query)
+            search_results = self.qdrant.query_points(
+                collection_name="knowledge_base",
+                query=query_vector,
+                limit=top_k,
             )
-            result = response["message"]["content"]
-            results.append(result)
+            context_text = "\n".join(
+                [p.payload["text"] for p in search_results.points]
+            )
+
+            # Generate answer with retrieved context
+            response = client.chat.completions.create(
+                model=self.config["llm_model"],
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Answer the question based on the following context. "
+                            "Be concise and accurate.\n\n"
+                            f"Context:\n{context_text}"
+                        ),
+                    },
+                    {"role": "user", "content": query},
+                ],
+                temperature=temperature,
+            )
+            results.append(response.choices[0].message.content)
 
         return results
 
-
-def part2_params_support() -> None:
-    section("Part 2: PyFunc with params support")
-
-    with mlflow.start_run(run_name="part2_params_support"):
-        mlflow.log_param("model_class", "LLMTextProcessor")
-        mlflow.log_param("llm_model", "gemma4:e2b")
-
-        input_example = pd.DataFrame({"text": ["The quick brown fox jumps."]})
-        signature = infer_signature(
-            input_example,
-            ["A fox leapt swiftly."],
-            params={"temperature": 0.7, "style": "concise"},
-        )
-
-        model_info = mlflow.pyfunc.log_model(
-            name="text_processor",
-            python_model=LLMTextProcessor(),
-            signature=signature,
-        )
-        print(f"  Logged LLMTextProcessor model: {model_info.model_uri}")
-
-        # Load and test with different params
-        loaded = mlflow.pyfunc.load_model(model_info.model_uri)
-        test_input = pd.DataFrame(
-            {"text": ["MLflow is an open source platform for the ML lifecycle."]}
-        )
-
-        print("\n  --- Test 1: concise style, temperature=0.3 ---")
-        result1 = loaded.predict(
-            test_input, params={"temperature": 0.3, "style": "concise"}
-        )
-        print(f"  Result: {result1[0][:120]}...")
-
-        print("\n  --- Test 2: formal style, temperature=0.9 ---")
-        result2 = loaded.predict(
-            test_input, params={"temperature": 0.9, "style": "formal"}
-        )
-        print(f"  Result: {result2[0][:120]}...")
-
-        mlflow.log_metric("num_styles_tested", 2)
-
-
-# ---------------------------------------------------------------------------
-# Part 3: Multi-model ensemble as a single PyFunc
-# ---------------------------------------------------------------------------
-
-class EnsembleModel(mlflow.pyfunc.PythonModel):
-    """A PyFunc that loads multiple sklearn models and averages their predictions."""
-
-    def load_context(self, context) -> None:
-        import joblib
-
-        manifest_path = context.artifacts["manifest"]
-        with open(manifest_path) as f:
-            self.manifest = json.load(f)
-
-        self.models = {}
-        for name in self.manifest["model_names"]:
-            path = context.artifacts[name]
-            self.models[name] = joblib.load(path)
-            print(f"  [load_context] Loaded model '{name}' from {path}")
-
-        print(f"  [load_context] Ensemble ready with {len(self.models)} models")
-
-    def predict(self, context, model_input, params=None):
-        # Collect probability predictions from each model
-        all_probas = []
-        for name, model in self.models.items():
-            probas = model.predict_proba(model_input)
-            all_probas.append(probas)
-
-        # Average the probabilities and take argmax
-        avg_probas = np.mean(all_probas, axis=0)
-        return np.argmax(avg_probas, axis=1)
-
-
-def part3_ensemble() -> None:
-    section("Part 3: Multi-model ensemble as a single PyFunc")
-
-    # Prepare data
-    X, y = load_iris(return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.3, random_state=42
-    )
-
-    # Train three different models
-    models = {
-        "random_forest": RandomForestClassifier(n_estimators=50, random_state=42),
-        "gradient_boosting": GradientBoostingClassifier(
-            n_estimators=50, random_state=42
-        ),
-        "logistic_regression": LogisticRegression(max_iter=200, random_state=42),
-    }
-
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        import joblib
-
-        artifacts = {}
-        individual_accuracies = {}
-
-        for name, model in models.items():
-            model.fit(X_train, y_train)
-            acc = model.score(X_test, y_test)
-            individual_accuracies[name] = acc
-            print(f"  Trained {name:25s} — accuracy: {acc:.4f}")
-
-            path = Path(tmp_dir) / f"{name}.joblib"
-            joblib.dump(model, path)
-            artifacts[name] = str(path)
-
-        # Save manifest with model names
-        manifest = {"model_names": list(models.keys())}
-        manifest_path = Path(tmp_dir) / "manifest.json"
-        with open(manifest_path, "w") as f:
-            json.dump(manifest, f)
-        artifacts["manifest"] = str(manifest_path)
-
-        # Log ensemble as a single PyFunc
-        with mlflow.start_run(run_name="part3_ensemble"):
-            for name, acc in individual_accuracies.items():
-                mlflow.log_metric(f"{name}_accuracy", acc)
-            mlflow.log_param("ensemble_models", list(models.keys()))
-            mlflow.log_param("ensemble_strategy", "probability_averaging")
-
-            signature = infer_signature(
-                X_test, models["random_forest"].predict(X_test)
-            )
-
-            model_info = mlflow.pyfunc.log_model(
-                name="ensemble_model",
-                python_model=EnsembleModel(),
-                artifacts=artifacts,
-                signature=signature,
-            )
-            print(f"\n  Logged ensemble model: {model_info.model_uri}")
-
-            # Load and test
-            loaded = mlflow.pyfunc.load_model(model_info.model_uri)
-            test_df = pd.DataFrame(X_test, columns=[f"f{i}" for i in range(4)])
-            ensemble_preds = loaded.predict(test_df)
-
-            ensemble_acc = np.mean(ensemble_preds == y_test)
-            mlflow.log_metric("ensemble_accuracy", ensemble_acc)
-
-            print(f"\n  Individual model accuracies:")
-            for name, acc in individual_accuracies.items():
-                print(f"    {name:25s} {acc:.4f}")
-            print(f"    {'ENSEMBLE':25s} {ensemble_acc:.4f}")
-
-            print(f"\n  Sample predictions (first 10):")
-            print(f"    Ensemble:  {ensemble_preds[:10]}")
-            print(f"    Actual:    {y_test[:10]}")
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     mlflow.set_tracking_uri(TRACKING_URI)
     mlflow.set_experiment(EXPERIMENT_NAME)
 
-    part1_load_context()
-    part2_params_support()
-    part3_ensemble()
+    print("=" * 60)
+    print("Step 1: Preparing RAG model artifacts")
+    print("=" * 60)
 
-    section("Done!")
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Save config
+        config = {
+            "base_url": "http://localhost:1234/v1",
+            "api_key": "lm-studio",
+            "llm_model": "google/gemma-4-e4b",
+            "embedding_model": "text-embedding-nomic-embed-text-v1.5",
+        }
+        config_path = Path(tmp_dir) / "config.json"
+        with open(config_path, "w") as f:
+            json.dump(config, f)
+
+        # Save documents
+        docs_path = Path(tmp_dir) / "documents.json"
+        with open(docs_path, "w") as f:
+            json.dump(DOCUMENTS, f)
+
+        print(f"  Config saved: LLM={config['llm_model']}")
+        print(f"  Documents saved: {len(DOCUMENTS)} entries")
+
+        # Log the RAG model
+        print("\n" + "=" * 60)
+        print("Step 2: Logging RAG model as PyFunc")
+        print("=" * 60)
+
+        input_example = pd.DataFrame({"query": ["What is MLflow?"]})
+        signature = infer_signature(
+            input_example,
+            ["MLflow is an open-source platform..."],
+            params={"temperature": 0.7, "top_k": 3},
+        )
+
+        with mlflow.start_run(run_name="rag_pyfunc_model") as run:
+            mlflow.log_param("llm_model", config["llm_model"])
+            mlflow.log_param("embedding_model", config["embedding_model"])
+            mlflow.log_param("num_documents", len(DOCUMENTS))
+            mlflow.log_param("vector_db", "qdrant_in_memory")
+
+            model_info = mlflow.pyfunc.log_model(
+                name="rag_model",
+                python_model=RAGModel(),
+                artifacts={
+                    "config": str(config_path),
+                    "documents": str(docs_path),
+                },
+                signature=signature,
+                pip_requirements=[
+                    "openai",
+                    "langchain-openai",
+                    "qdrant-client",
+                ],
+            )
+            print(f"  Logged model: {model_info.model_uri}")
+            print(f"  Run ID: {run.info.run_id}")
+
+    # Load and test (outside the temp dir -- artifacts are in MLflow now)
+    print("\n" + "=" * 60)
+    print("Step 3: Loading and testing the RAG model")
+    print("=" * 60)
+
+    loaded = mlflow.pyfunc.load_model(model_info.model_uri)
+
+    test_queries = [
+        "What is MLflow Tracking?",
+        "How does the Model Registry work?",
+        "What is MLflow Tracing?",
+    ]
+
+    for query in test_queries:
+        single_df = pd.DataFrame({"query": [query]})
+        result = loaded.predict(single_df)
+        print(f"\n  Query: {query}")
+        print(f"  Answer: {result[0][:200]}...")
+
+    # Test with custom params
+    print("\n" + "=" * 60)
+    print("Step 4: Testing with custom params")
+    print("=" * 60)
+
+    single_df = pd.DataFrame({"query": ["What does MLflow do?"]})
+    result = loaded.predict(single_df, params={"temperature": 0.2, "top_k": 2})
+    print(f"\n  Query: What does MLflow do? (temperature=0.2, top_k=2)")
+    print(f"  Answer: {result[0][:200]}...")
+
+    print("\n" + "=" * 60)
+    print("Done!")
     print(f"Open MLflow UI at {TRACKING_URI}")
     print(f"Look for experiment: {EXPERIMENT_NAME}")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

@@ -15,25 +15,26 @@ mlflow.set_experiment("L1/M2_models_registry/3_pyfunc")
 
 
 class PromptTemplateModel(mlflow.pyfunc.PythonModel):
-    """A custom PyFunc model that applies a prompt template and calls Ollama."""
+    """A custom PyFunc model that applies a prompt template and calls LMStudio."""
 
-    def __init__(self, template: str, model_name: str = "gemma4:e2b"):
+    def __init__(self, template: str, model_name: str = "google/gemma-4-e4b"):
         self.template = template
         self.model_name = model_name
 
     def predict(
         self, context, model_input: pd.DataFrame, params=None
     ) -> list[str]:
-        import ollama
+        from openai import OpenAI
 
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
         results = []
         for _, row in model_input.iterrows():
             prompt = self.template.format(**row.to_dict())
-            response = ollama.chat(
+            response = client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": prompt}],
             )
-            results.append(response["message"]["content"])
+            results.append(response.choices[0].message.content)
         return results
 
 

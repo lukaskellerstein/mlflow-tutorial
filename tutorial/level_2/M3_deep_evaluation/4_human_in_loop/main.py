@@ -13,11 +13,13 @@ import random
 import time
 
 import mlflow
-import ollama
 import pandas as pd
+from openai import OpenAI
 from mlflow.entities import AssessmentSource, AssessmentSourceType
 
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
+
+client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
 EXPERIMENT_NAME = "L2/M3_deep_evaluation/4_human_in_loop"
 
@@ -33,14 +35,14 @@ QA_PAIRS = [
 
 
 def generate_answer(question: str) -> str:
-    """Call Ollama to generate an answer."""
-    response = ollama.chat(
-        model="gemma4:e2b",
+    """Call the LLM to generate an answer."""
+    response = client.chat.completions.create(
+        model="google/gemma-4-26b-a4b",
         messages=[{"role": "user", "content": question}],
-        options={"temperature": 0.7, "num_predict": 100},
-        think=False,
+        temperature=0.7,
+        max_tokens=100,
     )
-    return response["message"]["content"].strip()
+    return response.choices[0].message.content.strip()
 
 
 def auto_judge_score(question: str, expected: str, answer: str) -> dict:
@@ -52,13 +54,14 @@ def auto_judge_score(question: str, expected: str, answer: str) -> dict:
         'Reply ONLY with valid JSON: {"score": <number 1-5>, "reasoning": "<why>"}'
     )
     try:
-        response = ollama.chat(
-            model="gemma4:e2b",
+        response = client.chat.completions.create(
+            model="google/gemma-4-26b-a4b",
             messages=[{"role": "user", "content": prompt}],
-            options={"temperature": 0.0, "num_predict": 80},
-            format="json", think=False,
+            temperature=0.0,
+            max_tokens=80,
+            response_format={"type": "json_object"},
         )
-        text = response["message"]["content"].strip()
+        text = response.choices[0].message.content.strip()
         start, end = text.find("{"), text.rfind("}") + 1
         if start >= 0 and end > start:
             parsed = json.loads(text[start:end])
@@ -195,7 +198,7 @@ def part3_combined_evaluation(results: list[dict]) -> None:
                 auto_feedback = mlflow.log_feedback(
                     trace_id=trace_id, name="auto_judge_score", value=score,
                     source=AssessmentSource(
-                        source_type=AssessmentSourceType.LLM_JUDGE, source_id="gemma4:e2b"),
+                        source_type=AssessmentSourceType.LLM_JUDGE, source_id="google/gemma-4-26b-a4b"),
                     rationale=judge["reasoning"],
                 )
 

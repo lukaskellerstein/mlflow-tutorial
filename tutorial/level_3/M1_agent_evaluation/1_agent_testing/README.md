@@ -12,7 +12,7 @@ Build a production-quality testing framework for LangGraph agents. You will crea
 - Completed: L2-5.2 (LangGraph Agent Observability)
 - Completed: L2-3.1 (Custom Metrics)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` model pulled
+- LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
@@ -63,7 +63,7 @@ After a test run, results are saved as a JSON baseline artifact. On subsequent r
 
 ### Step 1: Build the agent
 
-We create a LangGraph ReAct agent with two tools — `calculator` for math and `text_analyzer` for text statistics. The agent uses `gemma4:e2b` with `temperature=0.0` for maximum determinism during testing.
+We create a LangGraph ReAct agent with two tools — `calculator` for math and `text_analyzer` for text statistics. The agent uses `google/gemma-4-26b-a4b` with `temperature=0.0` for maximum determinism during testing.
 
 ```python
 @tool
@@ -77,7 +77,12 @@ def text_analyzer(text: str) -> str:
     ...
 
 agent = create_agent(
-    ChatOllama(model="gemma4:e2b", temperature=0.0),
+    ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    ),
     tools=[calculator, text_analyzer],
 )
 ```

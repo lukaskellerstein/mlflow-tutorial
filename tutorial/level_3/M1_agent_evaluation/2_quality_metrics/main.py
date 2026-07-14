@@ -15,7 +15,7 @@ import mlflow
 import pandas as pd
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langgraph.graph import END, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
 from mlflow.entities import AssessmentSource, Feedback
@@ -67,7 +67,12 @@ TOOLS = [calculator, dictionary_lookup, text_formatter]
 
 def build_agent(temperature: float = 0.7) -> Any:
     """Build a ReAct-style agent with the three tools."""
-    llm = ChatOllama(model="gemma4:e2b", temperature=temperature).bind_tools(TOOLS)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=temperature,
+    ).bind_tools(TOOLS)
 
     def agent_node(state: MessagesState) -> dict:
         return {"messages": [llm.invoke(state["messages"])]}
@@ -167,7 +172,12 @@ def reasoning_quality_scorer(inputs: dict, outputs: dict) -> Feedback:
     """LLM judge for reasoning coherence."""
     answer = str(outputs.get("answer", "")) if isinstance(outputs, dict) else str(outputs)
     question = inputs.get("query", "") if isinstance(inputs, dict) else str(inputs)
-    raw = ChatOllama(model="gemma4:e2b", temperature=0.0).invoke(
+    raw = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    ).invoke(
         JUDGE_PROMPT.format(question=question, response=answer)).content.strip()
     try:
         scores = json.loads(raw)
@@ -179,7 +189,7 @@ def reasoning_quality_scorer(inputs: dict, outputs: dict) -> Feedback:
             scores = {"score": 0.5, "rationale": "Parse error"}
     return Feedback(value=float(scores.get("score", 0.5)),
                     rationale=str(scores.get("rationale", "")),
-                    source=AssessmentSource(source_type="LLM_JUDGE", source_id="gemma4:e2b"))
+                    source=AssessmentSource(source_type="LLM_JUDGE", source_id="google/gemma-4-26b-a4b"))
 
 @scorer
 def response_quality_scorer(inputs: dict, outputs: dict, expectations: dict) -> Feedback:
@@ -274,7 +284,7 @@ def main() -> None:
     print(f"\n{'=' * 70}\n  Configuration A: temperature=0.3\n{'=' * 70}")
     agent_a = build_agent(temperature=0.3)
     with mlflow.start_run(run_name="config_a_temp_0.3"):
-        mlflow.log_params({"temperature": 0.3, "model": "gemma4:e2b",
+        mlflow.log_params({"temperature": 0.3, "model": "google/gemma-4-26b-a4b",
                            "num_test_cases": len(EVAL_CASES)})
         eval_a = run_evaluation(agent_a)
     ma = print_report(eval_a["results"], "Config A (temp=0.3)")
@@ -283,7 +293,7 @@ def main() -> None:
     print(f"\n{'=' * 70}\n  Configuration B: temperature=0.9\n{'=' * 70}")
     agent_b = build_agent(temperature=0.9)
     with mlflow.start_run(run_name="config_b_temp_0.9"):
-        mlflow.log_params({"temperature": 0.9, "model": "gemma4:e2b",
+        mlflow.log_params({"temperature": 0.9, "model": "google/gemma-4-26b-a4b",
                            "num_test_cases": len(EVAL_CASES)})
         eval_b = run_evaluation(agent_b)
     mb = print_report(eval_b["results"], "Config B (temp=0.9)")

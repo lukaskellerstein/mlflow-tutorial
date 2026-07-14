@@ -14,7 +14,7 @@ import json
 import mlflow
 import mlflow.langchain
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
 
 from test_framework import (
@@ -75,7 +75,12 @@ TOOLS = [calculator, text_analyzer]
 # ---------------------------------------------------------------------------
 def build_agent():
     """Create a LangGraph ReAct agent with calculator and text_analyzer tools."""
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
     return create_agent(llm, tools=TOOLS)
 
 
@@ -133,7 +138,7 @@ def main() -> None:
     print(f"\n--- Part 3: Running automated test suite ---")
     with mlflow.start_run(run_name="agent_test_suite") as parent_run:
         mlflow.log_params({
-            "agent_model": "gemma4:e2b",
+            "agent_model": "google/gemma-4-26b-a4b",
             "num_tests": len(TEST_SUITE),
             "tools": json.dumps([t.name for t in TOOLS]),
         })

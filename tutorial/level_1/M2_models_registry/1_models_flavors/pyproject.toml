@@ -5,6 +5,8 @@ description = "MLflow Models and Flavors"
 requires-python = ">=3.10"
 dependencies = [
     "mlflow>=2.0",
-    "scikit-learn>=1.0",
+    "langchain>=1.0",
+    "langchain-openai>=0.1",
+    "langgraph>=0.1",
     "pandas>=2.0",
 ]

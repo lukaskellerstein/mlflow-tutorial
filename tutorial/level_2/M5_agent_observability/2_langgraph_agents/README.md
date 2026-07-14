@@ -11,7 +11,7 @@ This lesson builds a research assistant agent using LangGraph's `StateGraph` and
 
 - Completed: L1-M5 (Tracing basics), L2-5.1 (LangChain Agent Tracking)
 - MLflow server running at http://127.0.0.1:5000
-- Ollama running with `gemma4:e2b` pulled
+- LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
 

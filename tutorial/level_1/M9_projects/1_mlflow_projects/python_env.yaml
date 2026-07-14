@@ -1,3 +1,0 @@
-python: "3.10"
-build_dependencies: [pip]
-dependencies: [mlflow>=2.0, scikit-learn>=1.0]

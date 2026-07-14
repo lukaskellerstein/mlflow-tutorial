@@ -18,7 +18,7 @@ import mlflow
 import pandas as pd
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent as create_react_agent
 
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
@@ -68,7 +68,12 @@ def calculate(expression: str) -> str:
 # ---------------------------------------------------------------------------
 def build_agent():
     """Create a ReAct agent with tools."""
-    llm = ChatOllama(model="gemma4:e2b", temperature=0.0)
+    llm = ChatOpenAI(
+        model="google/gemma-4-26b-a4b",
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        temperature=0.0,
+    )
     return create_react_agent(llm, [search_knowledge, calculate])
 
 

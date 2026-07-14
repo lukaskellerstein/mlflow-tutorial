@@ -1,10 +1,9 @@
 [project]
 name = "mlflow-tutorial-L2-M8-serving-deep-dive"
 version = "0.1.0"
-description = "Model Serving Deep Dive"
+description = "LLM Model Serving Deep Dive"
 requires-python = ">=3.10"
 dependencies = [
     "mlflow>=2.0",
-    "scikit-learn>=1.0",
-    "pandas>=2.0",
+    "openai>=1.0",
 ]
