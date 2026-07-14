@@ -1,4 +1,4 @@
-# L1-4.3 — LLM-as-Judge Evaluation
+# L1-M4.2 — LLM-as-Judge Evaluation
 
 **Level:** Essentials
 **Duration:** ~30 minutes
@@ -9,7 +9,7 @@ LLM-as-Judge is an evaluation technique where one LLM acts as an automated evalu
 
 ## Prerequisites
 
-- Completed: L1-4.1 (Traditional ML Evaluation), L1-4.2 (LLM Eval Basics)
+- Completed: L1-M4.1 (LLM Evaluation Basics)
 - MLflow server running at http://127.0.0.1:5000
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
@@ -63,31 +63,42 @@ EVAL_DATA = [
 
 ### Step 2: Generate Answers with the Student Model
 
-The student model receives each question and produces an answer:
+The student model receives each question and produces an answer using the OpenAI client connected to LMStudio:
 
 ```python
-student = ChatOpenAI(
-    base_url="http://localhost:1234/v1", api_key="lm-studio",
-    model="google/gemma-4-e4b", temperature=0.3,
-)
-model_answer = student.invoke(f"Answer concisely: {question}")
+client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
+def generate_answer(question: str) -> str:
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": f"Answer concisely: {question}"}],
+        temperature=0.3,
+        max_tokens=1024,
+    )
+    return response.choices[0].message.content.strip()
 ```
 
 We use a low temperature (0.3) for more consistent answers.
 
 ### Step 3: Judge Each Answer
 
-The judge model receives a structured prompt with the question, ground truth, and model answer. It returns a JSON object with a 1-5 score and justification:
+The judge uses the same client but with `temperature=0.0` for maximum consistency. It receives a structured prompt with the question, ground truth, and model answer, and returns a JSON object with a 1-5 score and justification:
 
 ```python
-judge_llm = ChatOpenAI(
-    base_url="http://localhost:1234/v1", api_key="lm-studio",
-    model="google/gemma-4-e4b", temperature=0.0,
-)
-verdict = judge_answer(judge_llm, question, ground_truth, model_answer)
+def judge_answer(question: str, ground_truth: str, model_answer: str) -> dict:
+    prompt = JUDGE_PROMPT.format(
+        question=question,
+        ground_truth=ground_truth,
+        model_answer=model_answer,
+    )
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.0,
+        max_tokens=1024,
+    )
+    # ... parse JSON from response
 ```
-
-The judge uses `temperature=0.0` for maximum consistency.
 
 ### Step 4: Log Results to MLflow
 
@@ -104,7 +115,7 @@ with mlflow.start_run(run_name="llm_as_judge_eval"):
 ## Running the Lesson
 
 ```bash
-cd tutorial/level_1/M4_evaluation/3_llm_as_judge
+cd tutorial/level_1/M4_evaluation/2_llm_as_judge
 uv sync
 uv run python main.py
 ```
@@ -137,7 +148,7 @@ Average judge score: 4.25 / 5
 Results logged to MLflow.
 ```
 
-In the MLflow UI, navigate to experiment `L1/M4_evaluation/3_llm_as_judge` to see:
+In the MLflow UI, navigate to experiment `L1/M4_evaluation/2_llm_as_judge` to see:
 - Per-question scores (`q1_score`, `q2_score`, etc.)
 - The average score metric
 - The full evaluation table artifact

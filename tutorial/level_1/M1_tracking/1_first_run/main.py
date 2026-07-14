@@ -24,7 +24,7 @@ def call_llm(
     client: OpenAI,
     prompt: str,
     temperature: float = 0.7,
-    max_tokens: int = 256,
+    max_tokens: int = 1024,
 ) -> dict:
     """Call the LLM and return the response with timing info."""
     start = time.time()
@@ -80,7 +80,7 @@ def main() -> None:
 
     prompt = "Explain what MLflow is in 2 sentences."
     temperature = 0.7
-    max_tokens = 256
+    max_tokens = 1024
 
     print(f"  Tracking URI : {MLFLOW_TRACKING_URI}")
     print(f"  Experiment   : {EXPERIMENT_NAME}")

@@ -184,14 +184,12 @@ tutorial/
   level_1/                   # Essentials — breadth across all features
     M1_tracking/             #   First run, tracking basics, search, system metrics
     M2_models_registry/      #   Models, flavors, registry, PyFunc
-    M3_autologging/          #   Traditional ML + LLM autologging
-    M4_evaluation/           #   ML eval, LLM eval, LLM-as-judge
-    M5_tracing/              #   Auto and manual tracing
-    M6_genai_features/       #   Prompts, scorers, judges, datasets
-    M7_data_datasets/        #   Dataset logging and lineage
-    M8_deployment/           #   Model serving, AI Gateway
-    M9_projects/             #   MLflow Projects
-    M10_auth/                #   Authentication and permissions
+    M3_tracing/              #   Autologging (auto-tracing) and manual tracing
+    M4_evaluation/           #   LLM eval basics, LLM-as-judge
+    M5_genai_features/       #   Prompts, scorers, judges, datasets
+    M6_data_datasets/        #   Dataset logging and lineage
+    M7_deployment/           #   Model serving, AI Gateway
+    M8_auth/                 #   Authentication and permissions
   level_2/                   # Practitioner — depth in each area
     M1_advanced_tracking/    #   Nested runs, async, artifacts, client API
     M2_advanced_models/      #   Signatures, custom PyFunc, registry workflows

@@ -1,5 +1,5 @@
 """
-L1-M4.2 — LLM Evaluation Basics
+L1-M4.1 — LLM Evaluation Basics
 
 Demonstrates how to evaluate LLM outputs using mlflow.genai.evaluate().
 Uses built-in deterministic scorers and a custom scorer to assess
@@ -8,25 +8,26 @@ a simple Q&A function powered by a local LMStudio model.
 
 import mlflow
 import pandas as pd
-from langchain_openai import ChatOpenAI
+from openai import OpenAI
 from mlflow.genai.scorers import ResponseLength, scorer
 
 # -- Configuration --
 mlflow.set_tracking_uri("http://127.0.0.1:5000")
-mlflow.set_experiment("L1/M4_evaluation/2_llm_eval_basics")
+mlflow.set_experiment("L1/M4_evaluation/1_llm_eval_basics")
 
-# -- Q&A function to evaluate --
-llm = ChatOpenAI(
-    model="google/gemma-4-e4b",
-    base_url="http://localhost:1234/v1",
-    api_key="lm-studio",
-    temperature=0.0,
-)
+# -- LLM client --
+client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
 
 def answer_question(question: str) -> str:
     """Ask the LLM a factual question and return its answer."""
-    return llm.invoke(question).content
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": question}],
+        temperature=0.0,
+        max_tokens=1024,
+    )
+    return response.choices[0].message.content
 
 
 # -- Custom scorer --
@@ -102,7 +103,7 @@ def main() -> None:
 
     print("\n" + "=" * 60)
     print("Done! See results in MLflow UI at http://127.0.0.1:5000")
-    print("Experiment: 'L1/M4_evaluation/2_llm_eval_basics'")
+    print("Experiment: 'L1/M4_evaluation/1_llm_eval_basics'")
     print("=" * 60)
 
 

@@ -30,7 +30,9 @@
       "Write",
       "WebSearch",
       "WebFetch",
-      "mcp__playwright-mlflow-tutor"
+      "mcp__playwright-mlflow-tutor",
+      "mcp__docs-langchain",
+      "mcp__reference-langchain"
     ],
     "deny": [
       "Bash(rm -rf /)",

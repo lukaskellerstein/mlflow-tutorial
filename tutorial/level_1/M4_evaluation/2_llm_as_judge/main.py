@@ -1,5 +1,5 @@
 """
-L1-4.3 — LLM-as-Judge Evaluation
+L1-M4.2 — LLM-as-Judge Evaluation
 
 Uses one LLM (the "judge") to evaluate the quality of answers
 produced by another LLM (the "student"). Both roles use the same
@@ -12,7 +12,13 @@ import re
 
 import mlflow
 import pandas as pd
-from langchain_openai import ChatOpenAI
+from openai import OpenAI
+
+# -- Configuration --
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_experiment("L1/M4_evaluation/2_llm_as_judge")
+
+client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
 # ---------------------------------------------------------------------------
 # Evaluation dataset: question, ground_truth pairs
@@ -60,25 +66,32 @@ Do NOT include any text outside the JSON object.
 """
 
 
-def generate_answer(student: ChatOpenAI, question: str) -> str:
+def generate_answer(question: str) -> str:
     """Ask the student model a question and return its answer."""
-    response = student.invoke(f"Answer concisely: {question}")
-    return response.content.strip()
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": f"Answer concisely: {question}"}],
+        temperature=0.3,
+        max_tokens=1024,
+    )
+    return response.choices[0].message.content.strip()
 
 
-def judge_answer(
-    judge: ChatOpenAI, question: str, ground_truth: str, model_answer: str
-) -> dict:
+def judge_answer(question: str, ground_truth: str, model_answer: str) -> dict:
     """Ask the judge model to score the student's answer."""
     prompt = JUDGE_PROMPT.format(
         question=question,
         ground_truth=ground_truth,
         model_answer=model_answer,
     )
-    response = judge.invoke(prompt)
-    text = response.content.strip()
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.0,
+        max_tokens=1024,
+    )
+    text = response.choices[0].message.content.strip()
 
-    # Extract JSON from the response (handle markdown fences)
     json_match = re.search(r"\{.*\}", text, re.DOTALL)
     if json_match:
         try:
@@ -90,26 +103,11 @@ def judge_answer(
         except (json.JSONDecodeError, ValueError):
             pass
 
-    # Fallback if parsing fails
     return {"score": 3, "justification": f"Could not parse judge response: {text[:100]}"}
 
 
 def main() -> None:
     """Run LLM-as-Judge evaluation and log results to MLflow."""
-
-    student = ChatOpenAI(
-        model="google/gemma-4-e4b",
-        base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
-        temperature=0.3,
-    )
-    judge_llm = ChatOpenAI(
-        model="google/gemma-4-e4b",
-        base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
-        temperature=0.0,
-    )
-
     results = []
 
     print()
@@ -123,10 +121,10 @@ def main() -> None:
 
         print(f"\n--- Q{i}: {question}")
 
-        model_answer = generate_answer(student, question)
+        model_answer = generate_answer(question)
         print(f"  Student answer : {model_answer[:120]}")
 
-        verdict = judge_answer(judge_llm, question, ground_truth, model_answer)
+        verdict = judge_answer(question, ground_truth, model_answer)
         print(f"  Judge score    : {verdict['score']}/5")
         print(f"  Justification  : {verdict['justification']}")
 
@@ -167,12 +165,9 @@ def main() -> None:
     print()
     print("Open the MLflow UI to review:")
     print("  http://127.0.0.1:5000")
-    print("  Experiment: L1/M4_evaluation/3_llm_as_judge")
+    print("  Experiment: L1/M4_evaluation/2_llm_as_judge")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
-    mlflow.set_experiment("L1/M4_evaluation/3_llm_as_judge")
-
     main()

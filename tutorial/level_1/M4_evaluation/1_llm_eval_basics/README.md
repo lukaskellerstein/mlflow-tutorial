@@ -1,4 +1,4 @@
-# L1-M4.2 — LLM Evaluation Basics
+# L1-M4.1 — LLM Evaluation Basics
 
 **Level:** Essentials
 **Duration:** ~30 minutes
@@ -9,7 +9,7 @@ Learn how to evaluate LLM outputs programmatically using `mlflow.genai.evaluate(
 
 ## Prerequisites
 
-- Completed: L1-M4.1 (Traditional ML Evaluation)
+- Completed: L1-M3 (Models & Registry)
 - MLflow server running at http://127.0.0.1:5000
 - LMStudio running locally with `google/gemma-4-e4b` model loaded
 
@@ -21,7 +21,7 @@ Unlike traditional ML models that output numbers or classes, LLMs produce free-f
 
 - **Deterministic checks** — does the output meet length, format, or keyword requirements?
 - **Custom scorers** — does the output contain the expected answer?
-- **LLM-as-judge** — use another LLM to assess quality (covered in L1-M4.3).
+- **LLM-as-judge** — use another LLM to assess quality (covered in L1-M4.2).
 
 ### The mlflow.genai.evaluate() API
 
@@ -75,12 +75,19 @@ eval_data = pd.DataFrame([
 
 ### Step 2: Define a predict function
 
-The predict function takes keyword arguments matching the keys inside `inputs` and returns a string:
+The predict function uses the OpenAI client to call the local LMStudio model:
 
 ```python
+client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
 def answer_question(question: str) -> str:
-    response = llm.invoke(question)
-    return response.content
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": question}],
+        temperature=0.0,
+        max_tokens=1024,
+    )
+    return response.choices[0].message.content
 ```
 
 ### Step 3: Choose scorers
@@ -111,7 +118,7 @@ MLflow will call `answer_question` for each row, then run every scorer against t
 ## Running the Lesson
 
 ```bash
-cd tutorial/level_1/M4_evaluation/2_llm_eval_basics
+cd tutorial/level_1/M4_evaluation/1_llm_eval_basics
 uv sync
 uv run python main.py
 ```
@@ -125,7 +132,7 @@ You should see console output showing:
 3. Aggregate metrics (pass rates for each scorer)
 4. A per-row results table showing each question, the LLM's answer, and scorer verdicts
 
-In the MLflow UI, navigate to experiment **L1/M4_evaluation/2_llm_eval_basics** to see:
+In the MLflow UI, navigate to experiment **L1/M4_evaluation/1_llm_eval_basics** to see:
 - The evaluation run with logged metrics
 - A results table with per-row scores
 - Traces for each LLM call
@@ -140,4 +147,4 @@ In the MLflow UI, navigate to experiment **L1/M4_evaluation/2_llm_eval_basics** 
 
 ## Next Steps
 
-In L1-M4.3 (LLM as Judge), you will use an LLM to judge the quality of another LLM's outputs using built-in scorers like `Correctness` and `RelevanceToQuery`. In Level 2, we will explore custom metrics, RAG evaluation, and human-in-the-loop assessment.
+In L1-M4.2 (LLM as Judge), you will use an LLM to judge the quality of another LLM's outputs with structured scoring and justifications. In Level 2, we will explore custom metrics, RAG evaluation, and human-in-the-loop assessment.

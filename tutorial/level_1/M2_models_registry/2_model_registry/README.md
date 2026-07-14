@@ -52,7 +52,7 @@ you can define any alias name and a model can have multiple aliases.
 
 ### Step 1: Define two LLM configurations
 
-We create two agent variants with different system prompts and temperatures:
+We create two model variants with different system prompts and temperatures:
 a concise assistant (low temperature, brief answers) and a detailed assistant
 (higher temperature, thorough answers).
 
@@ -71,11 +71,20 @@ configs = {
 
 ### Step 2: Run and log both models
 
-Each configuration is run on test questions and logged to its own MLflow run.
+Each configuration is wrapped in a `PythonModel` that calls LMStudio
+directly via the OpenAI SDK, then logged to its own MLflow run.
 
 ```python
-agent = create_agent(model=llm, system_prompt=cfg["system_prompt"])
-mlflow.langchain.log_model(lc_model=agent, name="model")
+class LLMAssistant(mlflow.pyfunc.PythonModel):
+    def __init__(self, system_prompt, temperature):
+        self.system_prompt = system_prompt
+        self.temperature = temperature
+
+    def predict(self, context, model_input, params=None):
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        # ... call the LLM with self.system_prompt and self.temperature
+
+mlflow.pyfunc.log_model(name="model", python_model=model, ...)
 ```
 
 ### Step 3: Register models
@@ -101,8 +110,8 @@ client.set_registered_model_alias("L1-llm-assistant", "champion", version)
 Load models by their alias and compare outputs on the same question.
 
 ```python
-champion = mlflow.langchain.load_model("models:/L1-llm-assistant@champion")
-result = champion.invoke({"messages": [{"role": "user", "content": "..."}]})
+champion = mlflow.pyfunc.load_model("models:/L1-llm-assistant@champion")
+result = champion.predict(pd.DataFrame({"question": ["What is an LLM?"]}))
 ```
 
 ## Running the Lesson
@@ -163,6 +172,6 @@ versions, aliases, and tags.
 
 ## Next Steps
 
-Continue to **L1-M2.3 PyFunc** to learn how to wrap arbitrary Python code
-as an MLflow model using `PythonModel`. In Level 2, we will explore advanced
-registry workflows including CI/CD promotion and model lifecycle automation.
+Continue to **L1-M3 Tracing** to learn how MLflow captures execution traces
+from LLM calls. In Level 2, we will explore advanced PyFunc models (wrapping
+RAG pipelines and agents) and registry workflows including CI/CD promotion.

@@ -7,8 +7,9 @@
 
 Learn how MLflow packages models into a portable, self-describing format. You
 will understand what *flavors* are, how *signatures* document input/output
-schemas, and how *input examples* make models self-documenting -- all
-demonstrated with LLM and agent examples.
+schemas, and how *input examples* make models self-documenting -- demonstrated
+by logging the same LLM two different ways: as a PyFunc model and with the
+OpenAI flavor.
 
 ## Prerequisites
 
@@ -24,7 +25,7 @@ An MLflow Model is a standard directory layout that stores everything needed
 to reproduce and serve a model:
 
 ```
-agent_model/
+model_artifact/
   MLmodel              # YAML manifest -- lists flavors, signature, etc.
   model artifacts      # Serialized model (pickle, graph, weights, etc.)
   conda.yaml           # Conda environment spec
@@ -45,10 +46,9 @@ Key flavors for LLM work:
 
 | Flavor | Use Case |
 |--------|----------|
-| `langchain` | LangChain chains, agents, and LangGraph graphs |
-| `openai` | Direct OpenAI API models |
-| `transformers` | Hugging Face Transformers |
 | `pyfunc` | Any Python code (custom models, API wrappers) |
+| `openai` | OpenAI-compatible chat/completion models (including LMStudio) |
+| `transformers` | Hugging Face Transformers |
 
 ### Model Signatures
 
@@ -68,80 +68,76 @@ immediately see what data the model expects.
 
 ## Step-by-Step
 
-### Step 1: Create a LangChain agent
+### Step 1: Log an LLM with the PyFunc flavor
 
-We set up a `ChatOpenAI` model connected to LMStudio and create an agent
-with two tools using `create_agent`.
-
-```python
-from langchain.agents import create_agent
-from langchain_core.tools import tool
-
-@tool
-def get_word_length(word: str) -> int:
-    """Returns the number of characters in a word."""
-    return len(word)
-
-agent = create_agent(
-    model=llm,
-    tools=[get_word_length, reverse_string],
-    system_prompt="You are a helpful assistant. Use tools when needed.",
-)
-```
-
-### Step 2: Log with the langchain flavor
-
-Inside an MLflow run, we infer the signature from sample input/output and
-log the agent with `mlflow.langchain.log_model()`.
+We wrap a direct OpenAI SDK call to LMStudio inside a `PythonModel` subclass.
+This is the most flexible approach -- it can wrap any Python code.
 
 ```python
-signature = infer_signature(sample_input, result)
-mlflow.langchain.log_model(
-    lc_model=agent,
-    name="agent_model",
-    signature=signature,
-    input_example=sample_input,
-)
-```
-
-### Step 3: Load and test
-
-We load the model back using its run URI and verify it still works.
-
-```python
-model_uri = f"runs:/{run_id}/agent_model"
-loaded_agent = mlflow.langchain.load_model(model_uri)
-result = loaded_agent.invoke(test_input)
-```
-
-### Step 4: Log with the pyfunc flavor
-
-For comparison, we wrap a raw LLM API call in a `PythonModel` and log
-it with `mlflow.pyfunc.log_model()`.
-
-```python
-class SimpleLLMModel(mlflow.pyfunc.PythonModel):
+class DirectLLMModel(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
         from openai import OpenAI
         client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
-        # ... call the LLM and return results
+        questions = model_input["question"].tolist()
+        answers = []
+        for q in questions:
+            resp = client.chat.completions.create(
+                model="google/gemma-4-e4b",
+                messages=[{"role": "user", "content": q}],
+            )
+            answers.append(resp.choices[0].message.content)
+        return answers
 
 mlflow.pyfunc.log_model(
     name="pyfunc_llm",
-    python_model=SimpleLLMModel(),
+    python_model=DirectLLMModel(),
     signature=pyfunc_signature,
     input_example=pyfunc_input,
 )
 ```
 
-### Step 5: Load the pyfunc model
+### Step 2: Load and test the PyFunc model
 
-The pyfunc model loads through the generic interface -- any MLflow model
-can be loaded this way regardless of its original flavor.
+Load through the generic `pyfunc` interface and call `predict()`.
 
 ```python
-loaded_pyfunc = mlflow.pyfunc.load_model(pyfunc_uri)
-result = loaded_pyfunc.predict(test_df)
+loaded = mlflow.pyfunc.load_model(f"runs:/{run_id}/pyfunc_llm")
+result = loaded.predict(pd.DataFrame({"question": ["What is MLflow?"]}))
+```
+
+### Step 3: Log an LLM with the OpenAI flavor
+
+The `openai` flavor is declarative -- just specify the model name, task, and
+a message template with `{variable}` placeholders.
+
+```python
+mlflow.openai.log_model(
+    model="google/gemma-4-e4b",
+    task="chat.completions",
+    name="openai_llm",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "{question}"},
+    ],
+)
+```
+
+The pyfunc wrapper reads `OPENAI_BASE_URL` and `OPENAI_API_KEY` from the
+environment at prediction time, so set them before loading.
+
+### Step 4: Load the OpenAI model two ways
+
+Load natively to get the raw config dict, or through the generic pyfunc
+interface. Both work because every flavor includes `python_function` as a
+base.
+
+```python
+# Native load -- returns the saved config as a dict
+raw = mlflow.openai.load_model(uri)
+
+# Generic pyfunc load -- works for any MLflow model
+model = mlflow.pyfunc.load_model(uri)
+result = model.predict(pd.DataFrame({"question": ["What is an API?"]}))
 ```
 
 ## Running the Lesson
@@ -155,10 +151,9 @@ uv run python main.py
 ## Expected Output
 
 You should see:
-- The agent running and answering questions using its tools
-- The inferred model signature for the langchain model
-- The agent loaded back from MLflow and producing new answers
-- A PyFunc-wrapped LLM model logged, loaded, and tested
+- A PyFunc model wrapping a direct LLM call, logged and loaded back
+- An OpenAI-flavor model logged declaratively, loaded natively (as a dict) and via pyfunc
+- Both models producing LLM responses when loaded through `mlflow.pyfunc.load_model()`
 
 In the MLflow UI at http://127.0.0.1:5000 you can:
 - Open each run and inspect the **Artifacts** tab
@@ -169,10 +164,11 @@ In the MLflow UI at http://127.0.0.1:5000 you can:
 
 - An MLflow Model is a portable directory with an `MLmodel` manifest.
 - **Flavors** let the same model be loaded natively or through the generic pyfunc interface.
-- The **langchain** flavor logs LangChain chains and agents with their tools and prompts.
-- The **pyfunc** flavor wraps any Python code -- useful for custom LLM integrations.
+- The **pyfunc** flavor wraps any Python code -- ideal for custom LLM wrappers with full control.
+- The **openai** flavor logs OpenAI-compatible models declaratively -- no custom code needed.
 - **Signatures** document and enforce the expected input/output schema.
 - **Input examples** make models self-documenting -- always include one.
+- Every model can be loaded via `mlflow.pyfunc.load_model()` regardless of its original flavor.
 
 ## Next Steps
 

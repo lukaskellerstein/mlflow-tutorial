@@ -5,7 +5,7 @@
 
 ## Overview
 
-This lesson dives deeper into MLflow's tracking capabilities using real LLM experiments. You will compare different temperature settings, log LLM responses as artifacts, and use step-based metrics to track token usage across multiple prompts.
+This lesson is the **catalog of MLflow tracking methods**. You will use every `log_*` function MLflow offers to record an LLM experiment — parameters, metrics, tags, text, dicts, tables, files, figures, images, and step-based metrics — all in a single run.
 
 ## Prerequisites
 
@@ -15,63 +15,89 @@ This lesson dives deeper into MLflow's tracking capabilities using real LLM expe
 
 ## Concepts
 
-### Why Track LLM Experiments?
+### The MLflow Tracking Toolbox
 
-When working with LLMs, you constantly tweak configurations — temperature, max tokens, system prompts, model choice. Without tracking, it's impossible to remember which settings produced the best results. MLflow tracking gives you:
+MLflow provides many ways to attach data to a run. Each method is suited to a different type of data:
 
-- **Reproducibility** — every configuration is recorded as parameters
-- **Comparison** — view runs side-by-side in the UI
-- **History** — step-based metrics show how token usage evolves across prompts
-- **Artifacts** — save the actual LLM responses for later review
-
-### Tracking APIs Used
-
-| API | Purpose |
-|-----|---------|
-| `mlflow.log_params()` | Log LLM configuration (model, temperature, max_tokens) |
-| `mlflow.log_metrics()` | Log numeric results (response time, token counts) |
-| `mlflow.log_metric(key, value, step=N)` | Log a metric at a specific step (for time-series) |
-| `mlflow.log_artifact()` | Save a file (response text, summary) to the run |
-| `mlflow.set_tags()` | Add metadata for organizing and filtering runs |
+| Method | Data Type | Where It Shows in UI |
+|--------|-----------|---------------------|
+| `log_param()` / `log_params()` | Config strings/numbers | Parameters tab |
+| `log_metric()` / `log_metrics()` | Numeric measurements | Metrics tab (charts) |
+| `log_metric(..., step=N)` | Time-series numerics | Metrics tab (line charts) |
+| `set_tag()` / `set_tags()` | Metadata labels | Tags section |
+| `log_text()` | Plain text content | Artifacts tab |
+| `log_dict()` | JSON/YAML dicts | Artifacts tab |
+| `log_table()` | Tabular data (DataFrames) | Artifacts tab (table view) |
+| `log_artifact()` | Any single file | Artifacts tab |
+| `log_artifacts()` | A directory of files | Artifacts tab (folder) |
+| `log_figure()` | Matplotlib/Plotly figures | Artifacts tab (rendered) |
+| `log_image()` | PIL/numpy images | Artifacts tab (rendered) |
 
 ## Step-by-Step
 
-### Step 1: Compare Temperatures
+### Step 1: Parameters and Metrics
 
-We run the same prompt at three temperatures (0.3, 0.7, 1.0) and create a separate MLflow run for each. This lets us compare side-by-side in the UI:
+Log LLM configuration as parameters and response statistics as metrics — both individually and in batch:
 
 ```python
-for temp in [0.3, 0.7, 1.0]:
-    with mlflow.start_run(run_name=f"temp_{temp}"):
-        mlflow.log_params({"model": MODEL, "temperature": temp, ...})
-        result = call_llm(client, prompt, temperature=temp)
-        mlflow.log_metrics({"response_time_seconds": ..., "total_tokens": ...})
+mlflow.log_param("model", MODEL)                    # single param
+mlflow.log_params({"temperature": 0.7, ...})        # batch params
+mlflow.log_metric("response_time", 2.1)             # single metric
+mlflow.log_metrics({"total_tokens": 85, ...})       # batch metrics
 ```
 
-Each run also saves the LLM response as a text artifact using `mlflow.log_artifact()`.
+### Step 2: Tags
 
-### Step 2: Step-Based Metrics
+Attach metadata labels for organizing and filtering runs:
 
-Step-based logging records a metric at sequential steps — useful for tracking how token usage accumulates across multiple prompts:
+```python
+mlflow.set_tag("model_family", "gemma")              # single tag
+mlflow.set_tags({"level": "1", "module": "tracking"}) # batch tags
+```
+
+### Step 3: Text and Dict Artifacts
+
+Save the raw LLM response as text, and the full call details as structured JSON:
+
+```python
+mlflow.log_text(result["content"], "response.txt")
+mlflow.log_dict({"prompt": ..., "response": ...}, "call_details.json")
+```
+
+### Step 4: Table
+
+Log tabular data (e.g., comparing temperatures) as a structured table:
+
+```python
+mlflow.log_table(data=pd.DataFrame(rows), artifact_file="comparison.json")
+```
+
+### Step 5: File Artifacts
+
+Save files and directories — useful for reports, configs, or collections of outputs:
+
+```python
+mlflow.log_artifact("summary.md")                      # single file
+mlflow.log_artifacts("responses/", artifact_path="responses")  # directory
+```
+
+### Step 6: Figure and Image
+
+Save visualizations — matplotlib charts and PIL-generated images:
+
+```python
+mlflow.log_figure(fig, "token_chart.png")      # matplotlib figure
+mlflow.log_image(img, artifact_file="card.png") # PIL image
+```
+
+### Step 7: Step-Based Metrics
+
+Track metrics across sequential steps — creates line charts in the UI:
 
 ```python
 for step, prompt in enumerate(prompts):
     result = call_llm(client, prompt)
-    mlflow.log_metric("cumulative_tokens", cumulative, step=step)
-```
-
-In the MLflow UI, this renders as a line chart showing token growth over steps.
-
-### Step 3: Summary Artifact
-
-We generate a Markdown file containing multiple LLM responses and save it as an artifact. This is useful for reviewing and comparing outputs later:
-
-```python
-with tempfile.TemporaryDirectory() as tmpdir:
-    path = os.path.join(tmpdir, "summary.md")
-    with open(path, "w") as f:
-        f.write(summary_content)
-    mlflow.log_artifact(path)
+    mlflow.log_metric("cumulative_tokens", total, step=step)
 ```
 
 ## Running the Lesson
@@ -86,31 +112,63 @@ uv run python main.py
 
 ```
 ============================================================
-Step 1: Comparing temperatures (0.3, 0.7, 1.0)
+Step 1: Parameters and Metrics
+============================================================
+  log_param() — logged 'model' and 'prompt' individually
+  log_params() — logged 'temperature' and 'max_tokens' as a batch
+  log_metric() — logged response_time=2.1s
+  log_metrics() — logged token counts (total=85)
+
+============================================================
+Step 2: Tags
+============================================================
+  set_tag() — tagged 'model_family'='gemma'
+  set_tags() — tagged level, module, lesson as a batch
+
+============================================================
+Step 3: Text and Dict Artifacts
+============================================================
+  log_text() — saved LLM response as 'response.txt'
+  log_dict() — saved structured call details as 'call_details.json'
+
+============================================================
+Step 4: Table (temperature comparison)
 ============================================================
   temp=0.3  tokens=  85  time=2.1s
   temp=0.7  tokens=  92  time=2.3s
   temp=1.0  tokens= 110  time=2.8s
+  log_table() — saved temperature comparison table
 
 ============================================================
-Step 2: Step-based metric logging across multiple prompts
+Step 5: File Artifacts
 ============================================================
-  Step 0  'What is a transformer model?'  tokens=45  cumulative=45
-  Step 1  'What is attention in machine learning?'  tokens=52  cumulative=97
+  log_artifact() — saved 'summary.md' (single file)
+  log_artifacts() — saved 'responses/' directory (3 files)
+
+============================================================
+Step 6: Figure and Image
+============================================================
+  log_figure() — saved matplotlib bar chart as 'token_chart.png'
+  log_image() — saved PIL-generated summary card as 'summary_card.png'
+
+============================================================
+Step 7: Step-based Metrics
+============================================================
+  Step 0: 'What is a transformer model?...'  tokens=45  cumulative=45
+  Step 1: 'What is attention in machine ...'  tokens=52  cumulative=97
   ...
-
-============================================================
-Step 3: Logging a summary artifact
-============================================================
-  Logged summary.md with 3 responses
 ```
+
+In the MLflow UI, the single run "all_logging_methods" contains everything: parameters, metrics with step charts, tags, and a rich set of artifacts (text, JSON, table, markdown, images, charts).
 
 ## Key Takeaways
 
-- Use separate runs to compare LLM configurations (temperature, model, prompts) side-by-side.
-- `log_artifact()` saves files (responses, summaries) attached to a run — reviewable in the UI.
-- Step-based `log_metric(..., step=N)` creates time-series charts — useful for tracking cumulative token usage or per-step latency.
-- `log_params()` and `log_metrics()` accept dictionaries for bulk logging.
+- MLflow provides **11+ logging methods** — each suited to a different data type.
+- `log_param` / `log_metric` / `set_tag` are the core three — config, numbers, and labels.
+- `log_text`, `log_dict`, `log_table` handle structured data without managing temp files.
+- `log_artifact` / `log_artifacts` upload any file or directory.
+- `log_figure` / `log_image` save visualizations that render inline in the UI.
+- Step-based `log_metric(..., step=N)` creates time-series line charts.
 
 ## Next Steps
 

@@ -153,34 +153,34 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-M2.3 — PyFunc — The Universal Model Wrapper
+## L1-M3: Tracing
+
+### L1-M3.1 — Autologging and Auto-Tracing
 **Duration:** 30 min
 **Topics:**
-- What is PyFunc and why it matters (universal interface)
-- `mlflow.pyfunc.log_model()` with custom `PythonModel` class
-- `predict()` interface
-- Wrapping arbitrary Python code as an MLflow model
-- Use case: wrapping an LLM prompt template + LMStudio call as a model
+- `mlflow.openai.autolog()` — trace OpenAI-compatible calls (LMStudio)
+- `mlflow.langchain.autolog()` — trace LangChain agents (`create_agent`)
+- `mlflow.autolog()` — the universal autolog (enables all 16+ GenAI integrations)
+- Other LLM integrations: `mlflow.anthropic.autolog()`, Mistral, Gemini, Bedrock, Groq, LiteLLM, CrewAI, DSPy, and more
+- What gets captured: inputs, outputs, latencies, token counts, model info
+- Searching and inspecting traces programmatically with `mlflow.search_traces()`
+- Trace structure: spans, parent-child relationships
 
 **Deliverables:**
-- Custom PyFunc model that wraps a prompt template + LLM call
+- Script showing autologging for LMStudio via OpenAI SDK, via LangChain agent, and via universal `mlflow.autolog()`, with traces visible in UI
 
 ---
 
-## L1-M3: Autologging
-
-### L1-M3.1 — LLM and GenAI Autologging
+### L1-M3.2 — Manual Tracing
 **Duration:** 30 min
 **Topics:**
-- `mlflow.autolog()` — the universal autolog
-- `mlflow.openai.autolog()` — trace OpenAI-compatible calls (LMStudio)
-- `mlflow.langchain.autolog()` — trace LangChain and LangGraph
-- Other LLM integrations: `mlflow.anthropic.autolog()`, Mistral, Gemini, Bedrock, Groq, LiteLLM
-- What gets captured: inputs, outputs, latencies, token counts, model info
-- Disabling/configuring autolog behavior
+- `@mlflow.trace` decorator — function-level tracing
+- `mlflow.start_span()` — manual span creation (context manager)
+- Adding metadata to spans: `span.set_inputs()`, `span.set_outputs()`, `span.set_attributes()`
+- Combining auto and manual tracing in a single trace tree
 
 **Deliverables:**
-- Script showing autologging for LMStudio via OpenAI SDK and via LangChain, with traces visible in UI
+- Application with both auto-traced LLM calls and manual spans for business logic
 
 ---
 
@@ -213,38 +213,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M5: Tracing
+## L1-M5: GenAI Features
 
-### L1-M5.1 — Automatic Tracing
-**Duration:** 30 min
-**Topics:**
-- What is tracing? (vs. logging — structured execution flow)
-- Auto-tracing with `mlflow.langchain.autolog()` — zero-code instrumentation
-- Trace structure: spans, parent-child relationships, inputs/outputs
-- Viewing traces in MLflow UI (Traces tab)
-- Trace search and filtering
-
-**Deliverables:**
-- Multi-step LangChain agent (`create_agent` with tools) with auto-traced execution visible in UI
-
----
-
-### L1-M5.2 — Manual Tracing
-**Duration:** 30 min
-**Topics:**
-- `@mlflow.trace` decorator — function-level tracing
-- `mlflow.start_span()` — manual span creation (context manager)
-- Adding metadata to spans: `span.set_inputs()`, `span.set_outputs()`, `span.set_attributes()`
-- Combining auto and manual tracing
-
-**Deliverables:**
-- Application with both auto-traced LLM calls and manual spans for business logic
-
----
-
-## L1-M6: GenAI Features
-
-### L1-M6.1 — Prompt Registry
+### L1-M5.1 — Prompt Registry
 **Duration:** 20 min
 **Topics:**
 - Registering prompts: `mlflow.genai.register_prompt()`
@@ -258,7 +229,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-M6.2 — GenAI Scorers and Judges
+### L1-M5.2 — GenAI Scorers and Judges
 **Duration:** 30 min
 **Topics:**
 - Built-in scorers overview
@@ -271,7 +242,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-M6.3 — Datasets and Labeling
+### L1-M5.3 — Datasets and Labeling
 **Duration:** 20 min
 **Topics:**
 - `mlflow.genai.datasets` — creating and managing evaluation datasets
@@ -284,9 +255,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M7: Data and Datasets
+## L1-M6: Data and Datasets
 
-### L1-M7.1 — Dataset Logging and Lineage
+### L1-M6.1 — Dataset Logging and Lineage
 **Duration:** 20 min
 **Topics:**
 - `mlflow.data` module — logging datasets alongside runs
@@ -300,9 +271,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M8: Deployment and Serving
+## L1-M7: Deployment and Serving
 
-### L1-M8.1 — Model Serving Basics
+### L1-M7.1 — Model Serving Basics
 **Duration:** 30 min
 **Topics:**
 - `mlflow models serve` — local REST API serving
@@ -316,7 +287,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-M8.2 — AI Gateway Overview
+### L1-M7.2 — AI Gateway Overview
 **Duration:** 20 min
 **Topics:**
 - What is the AI Gateway? (unified LLM endpoint management)
@@ -330,9 +301,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M9: Authentication and Administration
+## L1-M8: Authentication and Administration
 
-### L1-M9.1 — Authentication and Permissions
+### L1-M8.1 — Authentication and Permissions
 **Duration:** 15 min
 **Topics:**
 - Enabling authentication on the tracking server
@@ -352,14 +323,13 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 |--------|---------|---------------|
 | M1: Tracking | 4 lessons | ~1.5 hours |
 | M2: Models & Registry | 3 lessons | ~1.5 hours |
-| M3: Autologging | 1 lesson | ~30 min |
+| M3: Tracing | 2 lessons | ~1 hour |
 | M4: Evaluation | 2 lessons | ~1 hour |
-| M5: Tracing | 2 lessons | ~1 hour |
-| M6: GenAI Features | 3 lessons | ~1 hour |
-| M7: Data & Datasets | 1 lesson | ~20 min |
-| M8: Deployment & Serving | 2 lessons | ~50 min |
-| M9: Auth & Admin | 1 lesson | ~15 min |
-| **Total** | **19 lessons** | **~9-11 hours** |
+| M5: GenAI Features | 3 lessons | ~1 hour |
+| M6: Data & Datasets | 1 lesson | ~20 min |
+| M7: Deployment & Serving | 2 lessons | ~50 min |
+| M8: Auth & Admin | 1 lesson | ~15 min |
+| **Total** | **18 lessons** | **~8-10 hours** |
 
 ---
 ---
@@ -1148,6 +1118,9 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 ### Added
 - **L3-M2.3** SWE-Bench Evaluation Pipeline (standardized coding agent benchmark)
 
+### Consolidated
+- **L1-M3 (Autologging) + L1-M5 (Tracing)** merged into **L1-M3 Tracing** (autologging IS auto-tracing; keeping them separate was redundant). Modules M6–M9 renumbered to M5–M8.
+
 ### Kept (reframed for LLM focus)
 - **L2-M9.1** HuggingFace Transformers — reframed for LLM fine-tuning (not generic ML training)
 - **L3-M2.1** Claude Agent SDK — custom MLflow tracing integration
@@ -1187,26 +1160,23 @@ tutorial/
 │   │   └── 4_system_metrics/
 │   ├── M2_models_registry/
 │   │   ├── 1_models_flavors/
-│   │   ├── 2_model_registry/
-│   │   └── 3_pyfunc/
-│   ├── M3_autologging/
-│   │   └── 1_llm_genai/
+│   │   └── 2_model_registry/
+│   ├── M3_tracing/
+│   │   ├── 1_autologging/
+│   │   └── 2_manual_tracing/
 │   ├── M4_evaluation/
 │   │   ├── 1_llm_eval_basics/
 │   │   └── 2_llm_as_judge/
-│   ├── M5_tracing/
-│   │   ├── 1_auto_tracing/
-│   │   └── 2_manual_tracing/
-│   ├── M6_genai_features/
+│   ├── M5_genai_features/
 │   │   ├── 1_prompt_registry/
 │   │   ├── 2_scorers_judges/
 │   │   └── 3_datasets_labeling/
-│   ├── M7_data_datasets/
+│   ├── M6_data_datasets/
 │   │   └── 1_dataset_logging/
-│   ├── M8_deployment/
+│   ├── M7_deployment/
 │   │   ├── 1_model_serving/
 │   │   └── 2_ai_gateway/
-│   └── M9_auth/
+│   └── M8_auth/
 │       └── 1_auth_permissions/
 ├── level_2/
 │   ├── M1_advanced_tracking/
@@ -1278,11 +1248,10 @@ tutorial/
 | Search/Query API | Basics | Advanced filtering | — |
 | Models & Flavors | LLM flavors, PyFunc | Signatures, custom PyFunc | Plugins |
 | Model Registry | Basics | Lifecycle workflows | Enterprise |
-| Autologging (LLM/GenAI) | Overview | — | Custom autolog |
+| Tracing (Auto + Autolog) | OpenAI, LangChain, universal | LangGraph, Temporal | Production scale, custom autolog |
+| Tracing (Manual) | Decorator, start_span | OTel, analysis | Custom frameworks |
 | LLM Evaluation | Basics, LLM-as-judge | RAG eval, GenAI framework, custom metrics | Agent eval pipeline |
 | Human Evaluation | — | Labeling, assessments | Feedback loops |
-| Tracing (Auto) | Basics | LangGraph, Temporal | Production scale |
-| Tracing (Manual) | Basics | OTel, analysis | Custom frameworks |
 | Prompt Registry | Basics | A/B testing, optimization | — |
 | GenAI Scorers/Judges | Basics | Custom scorers | Agent-specific metrics |
 | Data/Datasets | Logging, lineage | — | Advanced management |
