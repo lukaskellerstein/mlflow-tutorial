@@ -240,16 +240,19 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-### L1-M4.4 — Datasets and Labeling
-**Duration:** 20 min
+### L1-M4.4 — Datasets
+**Duration:** 25 min
 **Topics:**
-- `mlflow.genai.datasets` — creating and managing evaluation datasets
-- Dataset schemas for different task types
-- `mlflow.genai.labeling` — human-in-the-loop labeling workflows
-- Building ground truth datasets
+- `mlflow.data` module — logging datasets alongside runs
+- Dataset constructors: `from_pandas()`, `from_numpy()`, `from_huggingface()`
+- Dataset schemas, digests, and profiling
+- Data lineage: `mlflow.log_input()` with context tags
+- Running LLM inference on evaluation datasets
+- `mlflow.log_table()` / `mlflow.load_table()` for results and labels
+- Human labeling workflows and building ground truth datasets
 
 **Deliverables:**
-- Create a GenAI evaluation dataset, add labels, use for evaluation
+- Create datasets with schema inspection, run LLM inference, add labels, query lineage
 
 ---
 
@@ -297,38 +300,6 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 
 ---
 
-## L1-M6: Data and Datasets
-
-### L1-M6.1 — Dataset Logging and Lineage
-**Duration:** 20 min
-**Topics:**
-- `mlflow.data` module — logging datasets alongside runs
-- Dataset sources: Pandas, HuggingFace, HTTP
-- Dataset schemas and profiling
-- Data lineage: connecting evaluation datasets to runs and models
-- `mlflow.log_input()` for tracking which data was used in evaluations
-
-**Deliverables:**
-- Log an LLM evaluation dataset, link it to an evaluation run
-
----
-
-## L1-M7: Authentication and Administration
-
-### L1-M7.1 — Authentication and Permissions
-**Duration:** 15 min
-**Topics:**
-- Enabling authentication on the tracking server
-- User management: creating users, setting permissions
-- Experiment and model permissions
-- API key authentication
-- When you need auth (multi-user, production) vs. when you don't (local dev)
-
-**Deliverables:**
-- Enable auth on local server, create a user, set experiment permissions
-
----
-
 ### Level 1 Summary
 
 | Module | Lessons | Estimated Time |
@@ -338,9 +309,7 @@ Each level builds on the previous. A user can stop after Level 1 and have a work
 | M3: Models | 3 lessons | ~1.5 hours |
 | M4: Evaluations | 4 lessons | ~2 hours |
 | M5: Prompt Engineering | 3 lessons | ~2 hours |
-| M6: Data & Datasets | 1 lesson | ~20 min |
-| M7: Auth & Admin | 1 lesson | ~15 min |
-| **Total** | **18 lessons** | **~9 hours** |
+| **Total** | **16 lessons** | **~8 hours** |
 
 ---
 ---
@@ -1162,15 +1131,11 @@ tutorial/
 │   │   ├── 1_llm_eval_basics/
 │   │   ├── 2_llm_as_judge/
 │   │   ├── 3_scorers_judges/
-│   │   └── 4_datasets_labeling/
-│   ├── M5_prompt_engineering/
-│   │   ├── 1_prompt_registry/
-│   │   ├── 2_prompt_management/
-│   │   └── 3_prompt_optimization/
-│   ├── M6_data_datasets/
-│   │   └── 1_dataset_logging/
-│   └── M7_auth/
-│       └── 1_auth_permissions/
+│   │   └── 4_datasets/
+│   └── M5_prompt_engineering/
+│       ├── 1_prompt_registry/
+│       ├── 2_prompt_management/
+│       └── 3_prompt_optimization/
 ├── level_2/
 │   ├── M1_advanced_tracking/
 │   │   ├── 1_nested_runs/

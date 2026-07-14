@@ -124,7 +124,7 @@ uv run python main.py
 ============================================================
 Step 1: Register a prompt template (version 1)
 ============================================================
-  Registered: L1_M6_explainer_prompt v1
+  Registered: L1_M5_explainer_prompt v1
   Template:   Explain {{topic}} to a {{audience}} in 2-3 sentences.
   Variables:  {'audience', 'topic'}
   ...

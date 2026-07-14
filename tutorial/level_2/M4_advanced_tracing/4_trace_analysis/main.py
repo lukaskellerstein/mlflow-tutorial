@@ -10,71 +10,56 @@ import time
 
 import mlflow
 import pandas as pd
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
 
 
 # ---------------------------------------------------------------------------
-# Part 1: Generate traces by running several LangChain chains
+# Part 1: Generate traces by running several LLM calls
 # ---------------------------------------------------------------------------
 
 def generate_traces(llm: ChatOpenAI) -> None:
-    """Run 4 different chains to produce varied traces for analysis."""
+    """Run 4 different LLM calls to produce varied traces for analysis."""
     print("=" * 60)
-    print("Part 1: Generating traces from LangChain chains")
+    print("Part 1: Generating traces from LLM calls")
     print("=" * 60)
 
-    # Chain A — simple question
-    simple_prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a helpful assistant. Answer in one sentence."),
-        ("human", "{question}"),
-    ])
-    simple_chain = simple_prompt | llm | StrOutputParser()
-
-    # Chain B — translation
-    translate_prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a translator. Translate the text to {language}."),
-        ("human", "{text}"),
-    ])
-    translate_chain = translate_prompt | llm | StrOutputParser()
-
-    # Chain C — summarization (longer output expected)
-    summarize_prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a concise technical writer."),
-        ("human", "Write a brief summary about {topic} in 3-4 sentences."),
-    ])
-    summarize_chain = summarize_prompt | llm | StrOutputParser()
-
-    # Chain D — multi-step: generate then title
-    title_prompt = ChatPromptTemplate.from_messages([
-        ("system", "You create short, catchy titles."),
-        ("human", "Create a title for this text:\n\n{text}"),
-    ])
-    title_chain = title_prompt | llm | StrOutputParser()
-
-    # Execute chains
-    chains = [
-        ("Simple Q&A", lambda: simple_chain.invoke(
-            {"question": "What is the speed of light?"})),
-        ("Translation", lambda: translate_chain.invoke(
-            {"text": "Hello, how are you today?", "language": "French"})),
-        ("Summarization", lambda: summarize_chain.invoke(
-            {"topic": "containerization with Docker and Podman"})),
-        ("Multi-step (summarize + title)", lambda: (
-            title_chain.invoke({"text": summarize_chain.invoke(
-                {"topic": "machine learning model deployment"})})
-        )),
+    calls = [
+        ("Simple Q&A", [
+            SystemMessage(content="You are a helpful assistant. Answer in one sentence."),
+            HumanMessage(content="What is the speed of light?"),
+        ]),
+        ("Translation", [
+            SystemMessage(content="You are a translator. Translate the text to French."),
+            HumanMessage(content="Hello, how are you today?"),
+        ]),
+        ("Summarization", [
+            SystemMessage(content="You are a concise technical writer."),
+            HumanMessage(content="Write a brief summary about containerization with Docker and Podman in 3-4 sentences."),
+        ]),
     ]
 
-    for name, run_fn in chains:
+    # Execute single-step calls
+    summarize_result = ""
+    for name, messages in calls:
         print(f"\n  Running: {name}")
-        result = run_fn()
+        response = llm.invoke(messages)
+        result = response.content
         print(f"  Result:  {result[:80]}...")
+        if name == "Summarization":
+            summarize_result = result
+
+    # Multi-step: use the summarization output to generate a title
+    print(f"\n  Running: Multi-step (summarize + title)")
+    title_response = llm.invoke([
+        SystemMessage(content="You create short, catchy titles."),
+        HumanMessage(content=f"Create a title for this text:\n\n{summarize_result}"),
+    ])
+    print(f"  Result:  {title_response.content[:80]}...")
 
     # Give async logging a moment to flush
     time.sleep(2)
-    print(f"\n  Generated {len(chains)} chain executions (5 total LLM calls)")
+    print(f"\n  Generated 4 LLM calls (5 total including multi-step)")
     print()
 
 

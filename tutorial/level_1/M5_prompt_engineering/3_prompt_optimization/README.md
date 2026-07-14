@@ -146,4 +146,4 @@ In the MLflow UI, expand the `prompt_optimization` parent run to see all eight n
 
 ## Next Steps
 
-Continue to L1-M6 (Data and Datasets) for dataset logging and lineage tracking. For deeper evaluation techniques, see L2-M3 (Deep Evaluation).
+For deeper evaluation techniques, see L2-M3 (Deep Evaluation). Dataset logging and lineage are covered in L1-M4.4 (Datasets).

@@ -1,9 +1,10 @@
 [project]
-name = "mlflow-tutorial-L1-M4-datasets-labeling"
+name = "mlflow-tutorial-L1-M4-datasets"
 version = "0.1.0"
-description = "Datasets and Labeling"
+description = "Datasets"
 requires-python = ">=3.10"
 dependencies = [
     "mlflow>=2.0",
+    "openai>=1.0",
     "pandas>=2.0",
 ]

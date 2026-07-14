@@ -1,13 +1,14 @@
-"""L1-M4.4 — Datasets and Labeling: create evaluation datasets, add human
-labels, and load labeled data back for evaluation workflows."""
+"""L1-M4.4 — Datasets: create evaluation datasets, inspect schemas,
+log with lineage, add human labels, and run LLM inference on datasets."""
 
 import pandas as pd
 
 import mlflow
 import mlflow.data
+from openai import OpenAI
 
 TRACKING_URI = "http://127.0.0.1:5000"
-EXPERIMENT_NAME = "L1/M4_evaluations/4_datasets_labeling"
+EXPERIMENT_NAME = "L1/M4_evaluations/4_datasets"
 
 QA_ROWS = [
     ("What is MLflow?", "An open-source platform for managing the ML lifecycle.", "overview", "easy"),
@@ -18,7 +19,7 @@ QA_ROWS = [
     ("What is MLflow Tracing?", "Captures execution flow of LLM and agent calls.", "tracing", "hard"),
 ]
 
-LABEL_ROWS = [  # (model_answer, human_label, notes)
+LABEL_ROWS = [
     ("MLflow is an open-source ML lifecycle platform.", "correct", "Accurate."),
     ("An experiment groups related runs together.", "correct", "Good."),
     ("Call mlflow.log_metric('accuracy', 0.95).", "correct", "Concrete example."),
@@ -26,6 +27,17 @@ LABEL_ROWS = [  # (model_answer, human_label, notes)
     ("Uses MLmodel format with flavors.", "correct", "Solid."),
     ("Records LLM call chains for debugging.", "partial", "Missing agent workflows."),
 ]
+
+
+def ask_llm(client: OpenAI, question: str) -> str:
+    """Send a question to the LLM and return the response text."""
+    response = client.chat.completions.create(
+        model="google/gemma-4-e4b",
+        messages=[{"role": "user", "content": question}],
+        temperature=0.3,
+        max_tokens=1024,
+    )
+    return response.choices[0].message.content.strip()
 
 
 def main() -> None:
@@ -48,7 +60,7 @@ def main() -> None:
         print(f"    {level}: {count}")
     print()
 
-    with mlflow.start_run(run_name="dataset_and_labels") as run:
+    with mlflow.start_run(run_name="datasets_demo") as run:
         run_id = run.info.run_id
 
         dataset = mlflow.data.from_pandas(
@@ -57,13 +69,48 @@ def main() -> None:
         )
         mlflow.log_input(dataset, context="evaluation")
         print(f"  Logged dataset — name: {dataset.name}, digest: {dataset.digest}")
+        print(f"  Schema: {dataset.schema}")
+        print()
+
+        hard_data = qa_data[qa_data["difficulty"] == "hard"].copy()
+        hard_dataset = mlflow.data.from_pandas(
+            hard_data, source="tutorial_qa_pairs",
+            name="qa_hard_subset", targets="ground_truth_answer",
+        )
+        mlflow.log_input(hard_dataset, context="evaluation_subset")
+        print(f"  Logged subset — name: {hard_dataset.name}, digest: {hard_dataset.digest}")
         print()
 
         # --------------------------------------------------------------
-        # Part 2: Adding Labels / Assessments
+        # Part 2: LLM Inference on the Dataset
         # --------------------------------------------------------------
         print("=" * 60)
-        print("Part 2: Adding Human Labels / Assessments")
+        print("Part 2: Running LLM Inference on the Dataset")
+        print("=" * 60)
+
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
+        llm_answers = []
+        for _, row in qa_data.iterrows():
+            answer = ask_llm(client, row["question"])
+            llm_answers.append(answer)
+            print(f"  Q: {row['question']}")
+            print(f"  A: {answer[:80]}...")
+            print()
+
+        results_df = qa_data.copy()
+        results_df["llm_answer"] = llm_answers
+        mlflow.log_table(results_df, artifact_file="inference_results.json")
+        mlflow.log_param("model", "google/gemma-4-e4b")
+        mlflow.log_param("temperature", 0.3)
+        print(f"  Logged inference results as 'inference_results.json'")
+        print()
+
+        # --------------------------------------------------------------
+        # Part 3: Adding Labels / Assessments
+        # --------------------------------------------------------------
+        print("=" * 60)
+        print("Part 3: Adding Human Labels / Assessments")
         print("=" * 60)
 
         labels_data = pd.DataFrame({
@@ -80,18 +127,28 @@ def main() -> None:
         print()
 
     # ------------------------------------------------------------------
-    # Part 3: Using Labeled Data for Evaluation
+    # Part 4: Querying Dataset Lineage
     # ------------------------------------------------------------------
     print("=" * 60)
-    print("Part 3: Loading Labeled Data Back")
+    print("Part 4: Querying Dataset Lineage")
     print("=" * 60)
 
     logged_run = mlflow.get_run(run_id)
     for ds_input in logged_run.inputs.dataset_inputs:
         ds = ds_input.dataset
-        print(f"  Dataset: {ds.name} (digest: {ds.digest})")
-        print(f"  Context: {ds_input.tags[0].value}")
-    print()
+        ctx = {t.key: t.value for t in ds_input.tags}.get("mlflow.data.context", "N/A")
+        print(f"  Dataset: {ds.name}")
+        print(f"    Digest:  {ds.digest}")
+        print(f"    Source:  {ds.source}")
+        print(f"    Context: {ctx}")
+        print()
+
+    # ------------------------------------------------------------------
+    # Part 5: Loading Labels Back for Analysis
+    # ------------------------------------------------------------------
+    print("=" * 60)
+    print("Part 5: Loading Labels Back for Analysis")
+    print("=" * 60)
 
     loaded_labels = mlflow.load_table("labels.json", run_ids=[run_id])
     total = len(loaded_labels)
@@ -110,7 +167,7 @@ def main() -> None:
     print("=" * 60)
     print(f"  Open MLflow UI at {TRACKING_URI}")
     print(f"  Experiment: {EXPERIMENT_NAME}")
-    print("  Check the Datasets tab and the labels.json artifact.")
+    print("  Check the Datasets tab, inference_results.json, and labels.json.")
     print("  In Level 2, we'll build full human-in-the-loop labeling pipelines.")
 
 

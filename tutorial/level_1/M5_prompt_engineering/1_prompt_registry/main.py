@@ -10,7 +10,7 @@ mlflow.set_experiment("L1/M5_prompt_engineering/1_prompt_registry")
 
 
 def main() -> None:
-    prompt_name = "L1_M6_explainer_prompt"
+    prompt_name = "L1_M5_explainer_prompt"
 
     # ── Step 1: Register a prompt (version 1) ────────────────
     print("=" * 60)

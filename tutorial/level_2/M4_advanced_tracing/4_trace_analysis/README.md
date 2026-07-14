@@ -31,8 +31,8 @@ Each trace contains:
 - **TraceData** — the actual `spans` list, plus `request` and `response` for the root span
 
 Each span has:
-- `name` — the operation name (e.g., `ChatOpenAI`, `StrOutputParser`)
-- `span_type` — the category (e.g., `LLM`, `CHAIN`, `PARSER`)
+- `name` — the operation name (e.g., `ChatOpenAI`)
+- `span_type` — the category (e.g., `LLM`, `CHAIN`)
 - `start_time_ns` / `end_time_ns` — nanosecond timestamps for duration calculation
 - `inputs` / `outputs` — the data flowing through the span
 - Attributes like `mlflow.chat.tokenUsage` for token counts
@@ -41,18 +41,20 @@ Each span has:
 
 ### Step 1: Generate Traces
 
-We run four different LangChain chains to produce a variety of traces with different complexities:
+We run four different LLM calls to produce a variety of traces with different complexities:
 
 ```python
 mlflow.langchain.autolog()
 llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.7)
 
-# Simple Q&A, translation, summarization, and a multi-step chain
-simple_chain = simple_prompt | llm | StrOutputParser()
-result = simple_chain.invoke({"question": "What is the speed of light?"})
+# Direct LLM invocation — simple Q&A
+response = llm.invoke([
+    SystemMessage(content="You are a helpful assistant. Answer in one sentence."),
+    HumanMessage(content="What is the speed of light?"),
+])
 ```
 
-Each chain invocation creates a separate trace with multiple spans.
+Each `llm.invoke()` call creates a separate trace with spans captured by autolog.
 
 ### Step 2: Retrieve Traces with `search_traces()`
 
@@ -118,7 +120,7 @@ uv run python main.py
 ## Expected Output
 
 ```
-Part 1: Generating traces from LangChain chains
+Part 1: Generating traces from LLM calls
   Running: Simple Q&A
   Result:  The speed of light in a vacuum is approximately 299,792,458 meters ...
   Running: Translation

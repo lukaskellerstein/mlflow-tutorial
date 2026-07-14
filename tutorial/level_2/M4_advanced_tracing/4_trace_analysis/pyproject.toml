@@ -5,7 +5,6 @@ description = "Trace-based Debugging and Analysis"
 requires-python = ">=3.10"
 dependencies = [
     "mlflow>=2.0",
-    "langchain>=0.3",
     "langchain-openai>=0.1",
     "langchain-core>=0.3",
     "pandas>=2.0",
