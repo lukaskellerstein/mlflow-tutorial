@@ -1,0 +1,9 @@
+[project]
+name = "mlflow-tutorial-L3-M3-3-enterprise-data-management"
+version = "0.1.0"
+description = "Enterprise Patterns and Data Management"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = ">=2.0"
+pandas = ">=2.0"

@@ -15,9 +15,9 @@ globs: ["tutorial/**/*.py"]
 
 ## Complexity by Level
 
-- **Level 1**: Simple, single-concept scripts. Minimal abstraction. One main function.
-- **Level 2**: Multi-step projects. Helper functions OK. Can import from local modules.
-- **Level 3**: Production-quality code. Classes, error handling, configuration. Can span multiple files.
+- **Level 1 (Models)**: End-to-end topic coverage. Helper functions OK. Merged lessons may use multiple parts.
+- **Level 2 (Agents)**: Agent-specific projects. Assumes L1 knowledge. Can import from local modules.
+- **Level 3 (Advanced)**: Production-quality code. Classes, error handling, configuration. Can span multiple files.
 
 ## MLFlow Connection
 

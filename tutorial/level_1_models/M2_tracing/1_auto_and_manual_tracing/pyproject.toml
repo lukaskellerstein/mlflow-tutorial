@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L1-M2-1-auto-and-manual-tracing"
+version = "0.1.0"
+description = "Auto-Tracing and Manual Tracing"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "openai>=1.0",
+    "langchain>=0.3",
+    "langchain-openai>=0.3",
+]

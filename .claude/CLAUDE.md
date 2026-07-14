@@ -5,9 +5,9 @@
 A comprehensive, three-level tutorial for MLFlow. The primary focus is **LLMs and AI agents** (not traditional ML training). Special emphasis on **evaluation (Evals) for AI agents** built with LangChain/LangGraph, DeepAgents, and Claude Agent SDK.
 
 The three levels:
-- **Level 1 — Essentials**: Breadth-first. Every major MLflow feature (~30 min lessons).
-- **Level 2 — Practitioner**: Real-world projects (~1-2 hour lessons).
-- **Level 3 — Expert**: Production patterns, custom integrations, advanced agent evaluation.
+- **Level 1 — Models**: Everything about models/LLMs end-to-end. Tracking, tracing, evaluation, deployment, prompt engineering, AI gateway, fine-tuning.
+- **Level 2 — AI Agents**: Agent frameworks (LangChain, LangGraph, Claude SDK, DeepAgents), agent evaluation/benchmarking, custom integrations.
+- **Level 3 — Advanced**: Production patterns, infrastructure (OpenTelemetry, Temporal, Grafana), extensibility, capstones.
 
 ## Source of Truth
 
@@ -26,7 +26,7 @@ The full syllabus — module structure, lesson topics, deliverables, time estima
 - **MLFlow**: latest 2.x+
 - **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK, DeepAgents
 - **Vector DB**: Qdrant (via Podman Compose)
-- **Workflow orchestration**: Temporal.io (via Podman Compose, Level 2)
+- **Workflow orchestration**: Temporal.io (via Podman Compose, Level 3)
 - **Observability**: Grafana + Prometheus (via Podman Compose, Level 3)
 - **Container runtime**: Podman (not Docker)
 
@@ -50,10 +50,12 @@ LMStudio runs natively (not in Podman) for Apple Silicon GPU access.
 ## Running a Lesson
 
 ```bash
-cd tutorial/<level>/<module>/<lesson>
+cd tutorial/<level_N_domain>/<module>/<lesson>
 uv sync
 uv run python main.py
 ```
+
+Level directories: `level_1_models/`, `level_2_agents/`, `level_3_advanced/`
 
 ## Key Commands
 

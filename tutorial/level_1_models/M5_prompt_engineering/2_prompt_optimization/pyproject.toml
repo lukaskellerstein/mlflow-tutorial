@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L1-M5-2-prompt-optimization"
+version = "0.1.0"
+description = "L1-M5.3 Prompt Optimization — systematic prompt improvement with MLflow tracking"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "pandas>=2.0",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+]

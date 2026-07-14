@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M4-2-genai-custom-metrics"
+version = "0.1.0"
+description = "GenAI Custom Metrics"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = {version = ">=2.0", extras = ["genai"]}
+openai = ">=1.0"
+pandas = ">=2.0"

@@ -1,0 +1,12 @@
+[project]
+name = "mlflow-tutorial-L2-M4-2-gaia"
+version = "0.1.0"
+description = "GAIA General Assistant Benchmark with MLflow"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = ">=2.0"
+langchain = ">=1.0"
+langchain-openai = ">=0.3"
+datasets = ">=2.0"
+pandas = ">=2.0"

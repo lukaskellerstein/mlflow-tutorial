@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L3-M1-1-production-tracing"
+version = "0.1.0"
+description = "Production Tracing Strategies — sampling, structured metadata, error tracing, and performance monitoring"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+]

@@ -80,7 +80,7 @@ globs: ["tutorial/**/*.py"]
 ### Experiment Naming
 Use hierarchical names matching the level/module structure:
 ```python
-mlflow.set_experiment("L1/M1_tracking/2_tracking_basics")
+mlflow.set_experiment("L1/M1_tracking/1_tracking_fundamentals")
 ```
 
 ### Run Naming

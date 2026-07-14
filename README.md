@@ -3,18 +3,18 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MLflow 2.x](https://img.shields.io/badge/MLflow-2.x+-0194E2.svg)](https://mlflow.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license)
-[![Lessons](https://img.shields.io/badge/lessons-67-orange.svg)](#course-structure)
+[![Lessons](https://img.shields.io/badge/lessons-42-orange.svg)](#course-structure)
 
-> A comprehensive, three-level hands-on tutorial for MLFlow — from platform basics through production AI agent evaluation.
+> A comprehensive, three-level hands-on tutorial for MLFlow — from model tracking through production AI agent evaluation.
 
-Learn MLflow by building. Each lesson is a standalone Python project you can run immediately. The tutorial emphasizes **LLMs and AI agents** — tracking experiments, evaluating model quality, tracing agent behavior, and shipping to production — all running locally with Ollama (no API costs).
+Learn MLflow by building. Each lesson is a standalone Python project you can run immediately. The tutorial emphasizes **LLMs and AI agents** — tracking experiments, evaluating model quality, tracing agent behavior, and shipping to production — all running locally with LMStudio (no API costs).
 
 ## Features
 
-- **67 self-contained lessons** across 3 progressive levels with working code
-- **Zero API costs** — all LLM inference runs locally via Ollama
+- **42 self-contained lessons** across 3 domain-based levels with working code
+- **Zero API costs** — all LLM inference runs locally via LMStudio
 - **Full infrastructure included** — one `podman compose up` starts everything
-- **Agent evaluation focus** — LangChain, LangGraph, Claude Agent SDK, Codex SDK, DeepAgents
+- **Agent evaluation focus** — LangChain, LangGraph, Claude Agent SDK, DeepAgents
 - **Production patterns** — Grafana dashboards, CI/CD quality gates, trace sampling
 - **Each lesson runs independently** — `uv sync && uv run python main.py`
 
@@ -23,7 +23,7 @@ Learn MLflow by building. Each lesson is a standalone Python project you can run
 ```mermaid
 graph TD
     subgraph Local Machine
-        OL[Ollama<br/>gemma4:e2b · gemma4:26b<br/>nomic-embed-text]
+        LMS[LMStudio<br/>gemma-4-e4b · gemma-4-26b-a4b<br/>nomic-embed-text]
         UV[uv<br/>Lesson Runner]
     end
 
@@ -35,16 +35,14 @@ graph TD
         TUI[Temporal UI<br/>:8080]
         GF[Grafana<br/>:3000]
         PR[Prometheus<br/>:9090]
-        ES[Elasticsearch]
     end
 
     UV -->|tracking & tracing| ML
-    UV -->|LLM calls| OL
+    UV -->|LLM calls| LMS
     UV -->|vectors| QD
     UV -->|workflows| TMP
     ML -->|metadata| PG
     TMP -->|state| PG
-    TMP -->|visibility| ES
     TUI --> TMP
     GF --> PR
     PR -->|scrape| ML
@@ -54,46 +52,41 @@ graph TD
 
 | Level | Focus | Modules | Lessons | Time |
 |-------|-------|---------|---------|------|
-| **Level 1 — Essentials** | Breadth: every major MLflow feature | 10 | 22 | ~10-12 hours |
-| **Level 2 — Practitioner** | Depth: real-world projects | 9 | 26 | ~25-30 hours |
-| **Level 3 — Expert** | Mastery: production agent evaluation | 5 | 19 | ~25-35 hours |
+| **Level 1 — Models** | Everything about models/LLMs end-to-end | 7 | 18 | ~16 hours |
+| **Level 2 — AI Agents** | Agent frameworks, evaluation, benchmarking | 4 | 13 | ~19 hours |
+| **Level 3 — Advanced** | Production patterns, infrastructure, capstones | 4 | 11 | ~19 hours |
 
 See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions and deliverables.
 
-### Level 1 — Essentials
+### Level 1 — Models
 
 | Module | Lessons | Topics |
 |--------|---------|--------|
-| M1 Tracking | 4 | First run, tracking basics, search API, system metrics |
-| M2 Tracing | 2 | Autologging (auto-tracing), manual tracing |
-| M3 Models | 3 | Model flavors, model registry, model serving |
-| M4 Evaluations | 4 | LLM eval basics, LLM-as-judge, scorers/judges, datasets |
-| M5 Prompt Engineering | 3 | Prompt registry, prompt management, prompt optimization |
-| M6 Data & Datasets | 1 | Dataset logging and lineage |
-| M7 Auth & Admin | 1 | Authentication and permissions |
+| M1 Tracking | 3 | Tracking fundamentals, search/query/MlflowClient, advanced patterns |
+| M2 Tracing | 2 | Auto and manual tracing, trace analysis |
+| M3 Models & Registry | 3 | Models/flavors/signatures, custom PyFunc, registry workflows |
+| M4 Evaluation | 4 | Evaluation fundamentals, GenAI/custom metrics, RAG evaluation, datasets/human-in-loop |
+| M5 Prompt Engineering | 2 | Prompt registry/management, prompt optimization |
+| M6 Deployment & Gateway | 3 | Model serving, batch prediction, AI gateway |
+| M7 Fine-Tuning | 1 | HuggingFace Transformers |
 
-### Level 2 — Practitioner
-
-| Module | Lessons | Topics |
-|--------|---------|--------|
-| M1 Advanced Tracking | 4 | Nested runs, async logging, artifacts, MlflowClient |
-| M2 Advanced Models | 3 | Signatures, custom PyFunc, registry workflows |
-| M3 Deep Evaluation | 4 | Custom metrics, RAG eval, GenAI framework, human-in-loop |
-| M4 Advanced Tracing | 4 | LangGraph, Temporal, OpenTelemetry, trace analysis |
-| M5 Agent Observability | 3 | LangChain agents, LangGraph agents, multi-agent systems |
-| M6 AI Gateway | 2 | Gateway overview, routing and configuration |
-| M7 Deployment | 2 | Serving deep dive, batch prediction |
-| M8 LLM Fine-Tuning | 1 | HuggingFace Transformers |
-
-### Level 3 — Expert
+### Level 2 — AI Agents
 
 | Module | Lessons | Topics |
 |--------|---------|--------|
-| M1 Agent Evaluation | 5 | Testing, quality metrics, architecture comparison, optimization, pipelines |
-| M2 Custom Integrations | 4 | Claude Agent SDK, Codex SDK, DeepAgents, custom autolog |
-| M3 Production | 4 | Production tracing, Grafana dashboards, feedback loops, CI/CD |
-| M4 Advanced Features | 4 | Plugins, enterprise, MCP, data management |
-| M5 Capstones | 2 | Full agent platform, cross-framework benchmark |
+| M1 Agent Frameworks | 3 | LangChain agents, LangGraph agents, multi-agent systems |
+| M2 Custom Integrations | 2 | Claude Agent SDK, DeepAgents |
+| M3 Agent Evaluation | 5 | Agent testing, quality metrics, architecture comparison, optimization, evaluation pipeline |
+| M4 Agent Benchmarks | 3 | SWE-Bench, GAIA, custom domain-specific benchmark |
+
+### Level 3 — Advanced
+
+| Module | Lessons | Topics |
+|--------|---------|--------|
+| M1 Production | 4 | Production tracing, Grafana dashboards, feedback loops, CI/CD |
+| M2 Advanced Tracing | 2 | OpenTelemetry export, Temporal workflow tracing |
+| M3 Extensibility | 3 | Custom autolog, plugins, enterprise data management |
+| M4 Capstones | 2 | Production AI agent platform, cross-framework benchmark |
 
 ## Quick Start
 
@@ -102,7 +95,7 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) package manager
 - [Podman](https://podman.io/) + [Podman Compose](https://github.com/containers/podman-compose)
-- [Ollama](https://ollama.ai/) installed natively (for Apple Silicon GPU access)
+- [LMStudio](https://lmstudio.ai/) installed natively (for Apple Silicon GPU access)
 
 ### 1. Start Podman machine
 
@@ -111,12 +104,13 @@ podman machine init
 podman machine start
 ```
 
-### 2. Pull Ollama models
+### 2. Load LMStudio models
 
 ```bash
-ollama pull gemma4:e2b          # Small 2B model (Level 1, fast tasks)
-ollama pull gemma4:26b          # Large MoE model (Level 2-3, agents, judges)
-ollama pull nomic-embed-text    # Embedding model (RAG / vector DB)
+lms load google/gemma-4-e4b           # Small 4B model (Level 1, fast tasks)
+lms load google/gemma-4-26b-a4b       # Large 26B MoE model (Level 2-3, agents, judges)
+# Also load: text-embedding-nomic-embed-text-v1.5 for RAG lessons
+lms server start
 ```
 
 ### 3. Start all infrastructure
@@ -129,7 +123,7 @@ podman compose up -d
 ### 4. Run your first lesson
 
 ```bash
-cd tutorial/level_1/M1_tracking/1_first_run
+cd tutorial/level_1_models/M1_tracking/1_tracking_fundamentals
 uv sync
 uv run python main.py
 ```
@@ -141,20 +135,20 @@ uv run python main.py
 | Service | URL | Notes |
 |---------|-----|-------|
 | MLflow UI | http://localhost:5000 | Tracking, models, traces |
+| LMStudio | http://localhost:1234 | OpenAI-compatible API |
 | Temporal UI | http://localhost:8080 | Workflow orchestration |
 | Qdrant | http://localhost:6333/dashboard | Vector database |
 | Grafana | http://localhost:3000 | Dashboards (admin/admin) |
 | Prometheus | http://localhost:9090 | Metrics collection |
 | PostgreSQL | localhost:5432 | MLflow + Temporal backend |
-| Ollama | localhost:11434 | Runs natively, not in Podman |
 
 ### LLM Models
 
 | Model | Size | Use Case |
 |-------|------|----------|
-| `gemma4:e2b` | 2B | Level 1 lessons, fast tasks, basic examples |
-| `gemma4:26b` | 26B MoE | Level 2-3, agents, LLM-as-judge |
-| `nomic-embed-text` | 137M | Embeddings for RAG and vector DB |
+| `google/gemma-4-e4b` | 4B | Level 1 lessons, fast tasks, basic examples |
+| `google/gemma-4-26b-a4b` | 26B MoE | Level 2-3, agents, LLM-as-judge |
+| `text-embedding-nomic-embed-text-v1.5` | 137M | Embeddings for RAG and vector DB |
 
 ### Infrastructure Management
 
@@ -168,38 +162,28 @@ podman compose down -v     # Stop and wipe all data
 ## Project Structure
 
 ```
-syllabus.md                  # Full syllabus — source of truth
-infra/                       # All infrastructure (Podman Compose)
-  compose.yml                #   Single file to start everything
-  mlflow/                    #   MLflow Dockerfile
-  temporal/                  #   Temporal config
-  grafana/                   #   Grafana provisioning
-  prometheus/                #   Prometheus config
-  postgres/                  #   PostgreSQL init script
+syllabus.md                        # Full syllabus -- source of truth
+infra/                             # All infrastructure (Podman Compose)
+  compose.yml                      #   Single file to start everything
 tutorial/
-  level_1/                   # Essentials — breadth across all features
-    M1_tracking/             #   First run, tracking basics, search, system metrics
-    M2_tracing/              #   Autologging (auto-tracing) and manual tracing
-    M3_models/               #   Models, flavors, registry, model serving
-    M4_evaluations/          #   LLM eval, LLM-as-judge, scorers, datasets
-    M5_prompt_engineering/   #   Prompt registry, management, optimization
-    M6_data_datasets/        #   Dataset logging and lineage
-    M7_auth/                 #   Authentication and permissions
-  level_2/                   # Practitioner — depth in each area
-    M1_advanced_tracking/    #   Nested runs, async, artifacts, client API
-    M2_advanced_models/      #   Signatures, custom PyFunc, registry workflows
-    M3_deep_evaluation/      #   Custom metrics, RAG eval, GenAI framework
-    M4_advanced_tracing/     #   LangGraph, Temporal, OpenTelemetry
-    M5_agent_observability/  #   LangChain/LangGraph agents, multi-agent
-    M6_ai_gateway/           #   Gateway overview, routing and configuration
-    M7_deployment/           #   Serving deep dive, batch prediction
-    M8_llm_finetuning/       #   HuggingFace Transformers
-  level_3/                   # Expert — mastery and production
-    M1_agent_evaluation/     #   Testing, metrics, comparison, optimization
-    M2_custom_integrations/  #   Claude SDK, Codex SDK, DeepAgents, autolog
-    M3_production/           #   Tracing at scale, Grafana, CI/CD
-    M4_advanced_features/    #   Plugins, enterprise, MCP, data management
-    M5_capstones/            #   Full production projects
+  level_1_models/                  # Models -- every MLflow feature end-to-end
+    M1_tracking/                   #   Fundamentals, search/query, advanced patterns
+    M2_tracing/                    #   Auto/manual tracing, trace analysis
+    M3_models_registry/            #   Flavors, custom PyFunc, registry workflows
+    M4_evaluation/                 #   Fundamentals, GenAI metrics, RAG, datasets
+    M5_prompt_engineering/         #   Registry/management, optimization
+    M6_deployment_gateway/         #   Serving, batch prediction, AI gateway
+    M7_finetuning/                 #   HuggingFace Transformers
+  level_2_agents/                  # AI Agents -- frameworks, eval, benchmarks
+    M1_agent_frameworks/           #   LangChain, LangGraph, multi-agent
+    M2_custom_integrations/        #   Claude Agent SDK, DeepAgents
+    M3_agent_evaluation/           #   Testing, metrics, comparison, optimization
+    M4_agent_benchmarks/           #   SWE-Bench, GAIA, custom benchmarks
+  level_3_advanced/                # Advanced -- production, infrastructure
+    M1_production/                 #   Tracing, Grafana, feedback, CI/CD
+    M2_advanced_tracing/           #   OpenTelemetry, Temporal
+    M3_extensibility/              #   Custom autolog, plugins, enterprise
+    M4_capstones/                  #   Full production projects
 ```
 
 Each lesson directory contains:
@@ -217,9 +201,8 @@ N_lesson_name/
 | Category | Technology |
 |----------|------------|
 | ML Platform | MLflow 2.x+ |
-| LLM Inference | Ollama (local, zero cost) |
-| Agent Frameworks | LangChain v1.0+, LangGraph, Claude Agent SDK, Codex SDK, DeepAgents |
-| Traditional ML | scikit-learn, XGBoost, PyTorch, HuggingFace Transformers |
+| LLM Inference | LMStudio (local, OpenAI-compatible API) |
+| Agent Frameworks | LangChain v1.0+, LangGraph, Claude Agent SDK, DeepAgents |
 | Vector Database | Qdrant |
 | Workflow Orchestration | Temporal.io |
 | Monitoring | Grafana + Prometheus |
@@ -234,7 +217,7 @@ Contributions are welcome! Each lesson is self-contained, making it straightforw
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/improve-lesson`)
 3. Ensure the lesson runs: `uv sync && uv run python main.py`
-4. Commit your changes (`git commit -m 'Improve L1-M4.2 LLM eval lesson'`)
+4. Commit your changes (`git commit -m 'Improve L1-M4.2 evaluation lesson'`)
 5. Push to the branch (`git push origin feature/improve-lesson`)
 6. Open a Pull Request
 

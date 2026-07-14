@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M3-1-models-flavors-signatures"
+version = "0.1.0"
+description = "Models, Flavors, and Signatures"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = ">=2.0"
+openai = ">=1.0"
+pandas = ">=2.0"

@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L2-M1-2-langgraph-agents"
+version = "0.1.0"
+description = "LangGraph Agents -- Tracing and Observability"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = ">=2.0"
+langchain-openai = ">=0.1"
+langchain-core = ">=0.2"
+langgraph = ">=0.1"

@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L3-M3-1-custom-autolog"
+version = "0.1.0"
+description = "Building Custom Autolog Integrations"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+]

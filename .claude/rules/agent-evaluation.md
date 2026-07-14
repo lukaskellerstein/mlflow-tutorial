@@ -1,5 +1,5 @@
 ---
-globs: ["tutorial/level_2/M5_agent_observability/**", "tutorial/level_3/M1_agent_evaluation/**", "tutorial/level_3/M2_custom_integrations/**", "tutorial/level_3/M5_capstones/**"]
+globs: ["tutorial/level_2_agents/**", "tutorial/level_3_advanced/M4_capstones/**"]
 ---
 
 # Agent Evaluation — Core Focus Area

@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M6-1-model-serving"
+version = "0.1.0"
+description = "Model Serving -- Basics through Docker Deployment"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = ">=2.0"
+openai = ">=1.0"
+pandas = ">=2.0"

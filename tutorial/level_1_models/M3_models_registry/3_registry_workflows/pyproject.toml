@@ -1,0 +1,6 @@
+[project]
+name = "mlflow-tutorial-L1-M3-3-registry-workflows"
+version = "0.1.0"
+description = "Registry Workflows"
+requires-python = ">=3.10"
+dependencies = ["mlflow>=2.0", "openai>=1.0", "pandas>=2.0"]

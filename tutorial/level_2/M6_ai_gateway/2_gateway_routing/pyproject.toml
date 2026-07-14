@@ -1,9 +1,0 @@
-[project]
-name = "mlflow-tutorial-L2-M6-gateway-routing"
-version = "0.1.0"
-description = "Gateway Configuration and Routing"
-requires-python = ">=3.10"
-dependencies = [
-    "mlflow>=2.0",
-    "pandas>=2.0",
-]

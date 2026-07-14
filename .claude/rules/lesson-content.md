@@ -11,7 +11,7 @@ Every lesson's README.md follows this structure:
 ```markdown
 # L<level>-<Module.Lesson> — <Lesson Title>
 
-**Level:** <Essentials | Practitioner | Expert>
+**Level:** <Models | AI Agents | Advanced>
 **Duration:** <estimated time>
 
 ## Overview
@@ -41,7 +41,7 @@ This section teaches the "why" — what problem does this solve?>
 ## Running the Lesson
 
 ```bash
-cd tutorial/level_<N>/<module>/<lesson>
+cd tutorial/<level_N_domain>/<module>/<lesson>
 uv sync
 uv run python main.py
 ```
@@ -59,24 +59,23 @@ For end-of-level lessons, point to the next level.>
 
 ## Writing Guidelines by Level
 
-### Level 1 — Essentials
-- Keep it short. One concept per lesson.
-- Show the simplest possible working example.
-- Don't go into edge cases or advanced options.
-- End with: "In Level 2, we'll explore this in more depth."
+### Level 1 — Models
+- Each topic is covered end-to-end (basic through advanced) in one place.
+- Merged lessons may be longer — use clear Part 1/Part 2 sections.
+- Show working examples for every concept.
+- Explain tradeoffs when covering advanced patterns.
 
-### Level 2 — Practitioner
-- Build real-world scenarios, not toy examples.
-- Explain tradeoffs and design decisions.
-- Include comparison tables (e.g., chunking strategies, model configurations).
-- Cross-reference Level 1 concepts: "In L1-M4.1 you saw basic evaluation. Now we'll build custom metrics."
+### Level 2 — AI Agents
+- Assumes L1 knowledge — no re-teaching tracking, tracing, or evaluation basics.
+- Focus on agent-specific patterns, frameworks, and evaluation.
+- Cross-reference L1 concepts: "In L1-M4.1 you learned evaluation. Now we'll apply it to agents."
+- Include agent trace analysis sections.
 
-### Level 3 — Expert
+### Level 3 — Advanced
 - Production-quality code with proper error handling.
 - Include architecture diagrams where appropriate.
 - Discuss scalability and performance implications.
-- For agent lessons, always include a section on interpreting traces in MLflow UI.
-- Capstone READMEs should include a "Architecture" section with system diagrams.
+- Capstone READMEs should include an "Architecture" section with system diagrams.
 
 ## General Guidelines
 

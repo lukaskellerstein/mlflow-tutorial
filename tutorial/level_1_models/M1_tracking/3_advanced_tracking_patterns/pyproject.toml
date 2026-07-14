@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M1-3-advanced-tracking-patterns"
+version = "0.1.0"
+description = "Advanced Tracking Patterns"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "openai>=1.0",
+    "pandas>=2.0",
+]

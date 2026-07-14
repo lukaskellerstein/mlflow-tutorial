@@ -1,0 +1,9 @@
+[project]
+name = "mlflow-tutorial-L1-M6-3-ai-gateway"
+version = "0.1.0"
+description = "AI Gateway -- Unified LLM Endpoint Management"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = ">=2.0"
+pandas = ">=2.0"

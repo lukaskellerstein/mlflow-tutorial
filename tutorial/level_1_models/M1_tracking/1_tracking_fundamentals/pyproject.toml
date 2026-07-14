@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L1-M1-1-tracking-fundamentals"
+version = "0.1.0"
+description = "Tracking Fundamentals"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "openai>=1.0",
+    "pandas>=2.0",
+    "matplotlib>=3.0",
+    "pillow>=10.0",
+    "psutil>=5.0",
+]

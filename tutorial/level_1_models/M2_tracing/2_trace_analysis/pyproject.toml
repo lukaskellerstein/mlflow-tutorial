@@ -1,0 +1,11 @@
+[project]
+name = "mlflow-tutorial-L1-M2-2-trace-analysis"
+version = "0.1.0"
+description = "Trace-based Debugging and Analysis"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+]

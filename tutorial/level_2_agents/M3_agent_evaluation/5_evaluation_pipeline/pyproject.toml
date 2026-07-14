@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L2-M3-5-evaluation-pipeline"
+version = "0.1.0"
+description = "End-to-End Agent Evaluation Pipeline"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langgraph>=0.2",
+    "langchain>=0.3",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+]

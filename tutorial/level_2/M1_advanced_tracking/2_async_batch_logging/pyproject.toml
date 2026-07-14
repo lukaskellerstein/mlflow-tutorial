@@ -1,9 +1,0 @@
-[project]
-name = "mlflow-tutorial-L2-M1-async-batch-logging"
-version = "0.1.0"
-description = "Async and Batch Logging"
-requires-python = ">=3.10"
-dependencies = [
-    "mlflow>=2.0",
-    "openai>=1.0",
-]

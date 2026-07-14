@@ -1,0 +1,13 @@
+[project]
+name = "mlflow-tutorial-L2-M3-4-agent-optimization"
+version = "0.1.0"
+description = "Agent Optimization — systematic prompt, temperature, and tool description tuning"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=2.0",
+    "langgraph>=0.2",
+    "langchain>=0.3",
+    "langchain-openai>=0.1",
+    "langchain-core>=0.3",
+    "pandas>=2.0",
+]

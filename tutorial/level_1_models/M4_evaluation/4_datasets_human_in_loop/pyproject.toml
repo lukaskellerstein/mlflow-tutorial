@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L1-M4-4-datasets-human-in-loop"
+version = "0.1.0"
+description = "Datasets and Human-in-the-Loop Evaluation"
+requires-python = ">=3.10"
+
+[project.dependencies]
+mlflow = ">=2.0"
+openai = ">=1.0"
+pandas = ">=2.0"

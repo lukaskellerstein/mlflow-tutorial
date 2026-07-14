@@ -1,9 +1,0 @@
-[project]
-name = "mlflow-tutorial-L1-M1-first-run"
-version = "0.1.0"
-description = "Your First MLflow Run"
-requires-python = ">=3.10"
-dependencies = [
-    "mlflow>=2.0",
-    "openai>=1.0",
-]

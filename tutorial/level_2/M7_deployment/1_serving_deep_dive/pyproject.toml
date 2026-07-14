@@ -1,9 +1,0 @@
-[project]
-name = "mlflow-tutorial-L2-M7-serving-deep-dive"
-version = "0.1.0"
-description = "LLM Model Serving Deep Dive"
-requires-python = ">=3.10"
-dependencies = [
-    "mlflow>=2.0",
-    "openai>=1.0",
-]
