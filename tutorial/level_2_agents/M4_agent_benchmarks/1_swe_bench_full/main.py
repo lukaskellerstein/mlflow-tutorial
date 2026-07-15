@@ -1,9 +1,10 @@
 """L2-M4.1 -- Full SWE-Bench Evaluation Pipeline.
 
-Builds a coding agent, runs it against SWE-Bench Verified instances,
-applies patches inside Docker/Podman containers, runs the repo test
-suite, and scores results using the same methodology as the SWE-Bench
-leaderboard. All results are tracked in MLflow.
+Uses a DeepAgents coding agent backed by a container sandbox to fix
+real GitHub issues from SWE-Bench Verified. The agent edits files
+directly inside the container, then we run the repo test suite and
+score results using the same methodology as the SWE-Bench leaderboard.
+All results are tracked in MLflow.
 """
 
 import json
@@ -38,7 +39,7 @@ def save_text_artifact(text: str, filename: str) -> None:
         mlflow.log_artifact(f.name)
 
 
-def run_instance(agent, instance: dict, config_name: str) -> dict:
+def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
     """Run the full evaluation pipeline for one SWE-Bench instance."""
     iid = instance["instance_id"]
     repo = instance["repo"]
@@ -85,13 +86,14 @@ def run_instance(agent, instance: dict, config_name: str) -> dict:
             )
             print(f"    Baseline: {base_passed} passed, {base_failed} failed (expect failures)")
 
-            # -- Step C: Run agent to generate a patch -------------------------
+            # -- Step C: Run DeepAgents agent to fix the bug -------------------
             print("    Running agent ...")
-            agent_mod.set_active_container(container_id)
+            agent = agent_mod.build_agent(temperature, container_id)
             try:
-                result = agent.invoke({
-                    "messages": [{"role": "user", "content": agent_mod.build_prompt(instance)}]
-                })
+                result = agent.invoke(
+                    {"messages": [{"role": "user", "content": agent_mod.build_prompt(instance)}]},
+                    config={"recursion_limit": 50},
+                )
                 agent_output = result["messages"][-1].content
             except Exception as e:
                 latency = time.perf_counter() - start
@@ -100,37 +102,25 @@ def run_instance(agent, instance: dict, config_name: str) -> dict:
                 harness.cleanup_container(container_id)
                 return _error_result(iid, repo, config_name, latency, f"agent error: {e}")
 
-            agent_patch = agent_mod.extract_patch(agent_output)
-            save_text_artifact(agent_patch or "(no patch)", "agent_patch")
+            # -- Step D: Capture diff and run tests ----------------------------
+            _, agent_diff, _ = harness.exec_in_container(
+                container_id, "cd /workspace/repo && git diff"
+            )
+            save_text_artifact(agent_diff or "(no changes)", "agent_diff")
             save_text_artifact(instance.get("patch", ""), "gold_patch")
 
-            if not agent_patch:
+            if not agent_diff.strip():
                 latency = time.perf_counter() - start
-                print("    No valid patch extracted from agent output.")
+                print("    Agent made no file changes.")
                 mlflow.log_metrics({"latency_s": round(latency, 2), "resolved": 0})
-                mlflow.set_tag("status", "patch_failed")
+                mlflow.set_tag("status", "no_changes")
                 harness.cleanup_container(container_id)
                 return _result(
-                    iid, repo, config_name, latency, "patch_failed",
-                    agent_patch="", test_output="No patch extracted",
+                    iid, repo, config_name, latency, "no_changes",
+                    agent_patch="", test_output="Agent made no file changes",
                 )
 
-            print(f"    Agent generated patch ({len(agent_patch)} bytes)")
-
-            # -- Step D: Apply agent patch and run tests -----------------------
-            print("    Applying agent patch ...")
-            patch_ok = harness.apply_patch(container_id, agent_patch)
-            if not patch_ok:
-                latency = time.perf_counter() - start
-                print("    Patch application failed (git apply rejected)")
-                mlflow.log_metrics({"latency_s": round(latency, 2), "resolved": 0})
-                mlflow.set_tag("status", "patch_failed")
-                save_text_artifact("git apply failed", "test_output")
-                harness.cleanup_container(container_id)
-                return _result(
-                    iid, repo, config_name, latency, "patch_failed",
-                    agent_patch=agent_patch, test_output="git apply failed",
-                )
+            print(f"    Agent edited files ({len(agent_diff)} bytes diff)")
 
             print(f"    Running {len(f2p_tests)} FAIL_TO_PASS tests ...")
             f2p_passed, f2p_failed, f2p_output = harness.run_tests(
@@ -172,7 +162,7 @@ def run_instance(agent, instance: dict, config_name: str) -> dict:
                 iid, repo, config_name, latency, status,
                 resolved=resolved, f2p_passed=f2p_passed, f2p_total=len(f2p_tests),
                 p2p_passed=p2p_passed, p2p_total=len(p2p_tests),
-                agent_patch=agent_patch, test_output=test_output,
+                agent_patch=agent_diff, test_output=test_output,
             )
 
         except Exception as e:
@@ -213,7 +203,6 @@ def run_config(
     print(f"Config: {name}  (temperature={temperature})")
     print("=" * 60)
 
-    agent = agent_mod.build_agent(temperature)
     results: list[dict] = []
 
     with mlflow.start_run(run_name=f"config_{name}", nested=True):
@@ -225,7 +214,7 @@ def run_config(
 
         for i, inst in enumerate(instances):
             print(f"\n  [{i + 1}/{len(instances)}] Instance: {inst['instance_id']}")
-            results.append(run_instance(agent, inst, name))
+            results.append(run_instance(temperature, inst, name))
 
         df = pd.DataFrame(results)
         resolution_rate = df["resolved"].mean()
@@ -304,10 +293,13 @@ def main() -> None:
     for inst in instances:
         print(f"    {inst['instance_id']}")
 
-    print("\nStep 3: Enabling MLflow autolog ...")
+    llm_cfg = agent_mod.load_llm_config()
+    print(f"\nStep 3: LLM provider: {llm_cfg['provider']} / {llm_cfg['model']}")
+
+    print("\nStep 4: Enabling MLflow autolog ...")
     mlflow.langchain.autolog()
 
-    print("\nStep 4: Running evaluation ...")
+    print("\nStep 5: Running evaluation ...")
     configs = [("precise", 0.3), ("creative", 0.7)]
     all_results: list[dict] = []
 
@@ -317,6 +309,8 @@ def main() -> None:
             "sample_size": len(instances),
             "repo_filter": SAMPLE_REPO,
             "container_runtime": harness.CONTAINER_RUNTIME,
+            "llm_provider": llm_cfg["provider"],
+            "llm_model": llm_cfg["model"],
         })
         mlflow.set_tag("task", "swe_bench_full_evaluation")
 

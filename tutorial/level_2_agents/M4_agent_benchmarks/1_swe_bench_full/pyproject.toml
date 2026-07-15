@@ -2,11 +2,12 @@
 name = "mlflow-tutorial-L2-M4-1-swe-bench-full"
 version = "0.1.0"
 description = "Full SWE-Bench Evaluation with Docker-Based Test Execution"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "mlflow>=2.0",
-    "langchain>=1.0",
+    "deepagents>=0.6",
     "langchain-openai>=0.3",
     "datasets>=2.0",
     "pandas>=2.0",
+    "pyyaml>=6.0",
 ]

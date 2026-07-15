@@ -53,7 +53,7 @@ graph TD
 | Level | Focus | Modules | Lessons | Time |
 |-------|-------|---------|---------|------|
 | **Level 1 — Models** | Everything about models/LLMs end-to-end | 7 | 18 | ~16 hours |
-| **Level 2 — AI Agents** | Agent frameworks, evaluation, benchmarking | 4 | 13 | ~19 hours |
+| **Level 2 — AI Agents** | Agent frameworks, evaluation, benchmarking | 4 | 13 | ~19.5 hours |
 | **Level 3 — Advanced** | Production patterns, infrastructure, capstones | 4 | 11 | ~19 hours |
 
 See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions and deliverables.

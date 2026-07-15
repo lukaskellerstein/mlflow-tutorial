@@ -31,7 +31,7 @@ Clone repo at exact commit → Install dependencies → Apply test patch
 ```
 
 An instance is **resolved** only if:
-1. The agent's patch applies cleanly via `git apply`
+1. The agent edited the source files (captured via `git diff`)
 2. ALL `FAIL_TO_PASS` tests now pass (the bug is fixed)
 3. ALL `PASS_TO_PASS` tests still pass (no regressions)
 
@@ -65,8 +65,9 @@ Containers provide isolated, reproducible environments for each evaluation.
 
 ```
 main.py (orchestrator)
-  ├── agent.py (LangChain agent with container-bound tools)
-  │     └── Tools execute commands inside the container via podman exec
+  ├── agent.py (DeepAgents agent with container sandbox)
+  │     ├── ContainerSandbox(BaseSandbox) — wraps podman exec
+  │     └── create_deep_agent() — auto-generates ls, read, write, edit, grep, glob, execute tools
   └── harness.py (container lifecycle + test execution + scoring)
         └── Manages podman run / exec / cp / stop / rm
 ```
@@ -77,12 +78,11 @@ For each instance, the pipeline:
 2. **Clones the repo** at the exact `base_commit` and installs dependencies
 3. **Applies the test patch** (adds the verification tests from the dataset)
 4. **Baseline check** — runs `FAIL_TO_PASS` tests to confirm they actually fail
-5. **Runs the agent** — the agent uses tools (`read_file`, `search_code`, `list_files`) that execute inside the container to explore the codebase
-6. **Extracts the patch** from the agent's response
-7. **Applies the patch** via `git apply`
-8. **Runs tests** — both `FAIL_TO_PASS` (should now pass) and `PASS_TO_PASS` (should still pass)
-9. **Scores** — resolved, applied, or failed
-10. **Logs everything** to MLflow with nested runs
+5. **Runs the DeepAgents agent** — the agent uses sandbox tools (read, edit, grep, execute, etc.) to explore and **edit files directly** inside the container
+6. **Captures the diff** via `git diff` (the agent's changes are already applied)
+7. **Runs tests** — both `FAIL_TO_PASS` (should now pass) and `PASS_TO_PASS` (should still pass)
+8. **Scores** — resolved, applied, or no_changes
+9. **Logs everything** to MLflow with nested runs
 
 ### Why This Lesson Uses sympy
 
@@ -114,39 +114,39 @@ ds = datasets.load_dataset("princeton-nlp/SWE-bench_Verified", split="test")
 instances = select_instances(ds, "sympy/sympy", SAMPLE_SIZE)
 ```
 
-### Step 3: Agent Explores and Generates a Patch
+### Step 3: Agent Explores and Fixes the Bug
 
-The agent has three tools that execute inside the container:
+The agent uses DeepAgents with a `ContainerSandbox` that wraps `podman exec`. DeepAgents auto-generates all file tools (read, write, edit, grep, glob, ls, execute) from just 4 sandbox methods:
 
 ```python
-@tool
-def read_file(path: str) -> str:
-    """Read a file from the repository."""
-    rc, out, err = exec_in_container(container_id, f"cat /workspace/repo/{path}")
-    return out
+from deepagents import create_deep_agent
+from deepagents.backends.sandbox import BaseSandbox
 
-@tool
-def search_code(pattern: str) -> str:
-    """Search for a pattern using grep."""
-    rc, out, err = exec_in_container(
-        container_id, f"cd /workspace/repo && grep -rn '{pattern}' --include='*.py'"
-    )
-    return out
+class ContainerSandbox(BaseSandbox):
+    def execute(self, command, *, timeout=None):
+        rc, stdout, stderr = exec_in_container(self._container_id, command)
+        return ExecuteResponse(output=stdout + stderr, exit_code=rc, truncated=False)
+    # + id, upload_files, download_files
+
+sandbox = ContainerSandbox(container_id)
+agent = create_deep_agent(model=llm, backend=sandbox, system_prompt=SYSTEM_PROMPT)
+result = agent.invoke(
+    {"messages": [{"role": "user", "content": prompt}]},
+    config={"recursion_limit": 50},
+)
 ```
 
-The agent is created with `create_agent` from LangChain v1.0+:
+The agent **edits files directly** in the container (like a real coding agent), then we capture the diff:
 
 ```python
-from langchain.agents import create_agent
-
-agent = create_agent(model=llm, tools=TOOLS, system_prompt=SYSTEM_PROMPT)
-result = agent.invoke({"messages": [{"role": "user", "content": prompt}]})
+_, agent_diff, _ = harness.exec_in_container(container_id, "cd /workspace/repo && git diff")
 ```
 
-### Step 4: Apply Patch and Run Tests
+### Step 4: Run Tests
+
+Files are already modified by the agent — no `git apply` step needed:
 
 ```python
-harness.apply_patch(container_id, agent_patch)
 f2p_passed, f2p_failed, output = harness.run_tests(container_id, f2p_tests, repo)
 ```
 
@@ -207,8 +207,7 @@ Config: precise  (temperature=0.3)
     Baseline check: running 2 FAIL_TO_PASS tests ...
     Baseline: 0 passed, 2 failed (expect failures)
     Running agent ...
-    Agent generated patch (312 bytes)
-    Applying agent patch ...
+    Agent edited files (312 bytes diff)
     Running 2 FAIL_TO_PASS tests ...
     FAIL_TO_PASS: 0/2 passed
     Running 5 PASS_TO_PASS tests ...
@@ -250,9 +249,10 @@ The local model will likely score 0% — SWE-Bench tasks require deep codebase u
 ## Key Takeaways
 
 - **SWE-Bench resolution rate** requires actually running tests inside containers — string-matching diffs is not real evaluation.
+- **DeepAgents + BaseSandbox** gives the agent full file operations (read, write, edit, grep, execute) from just 4 methods — no need to hand-roll individual tools.
+- **Direct editing** is how real coding agents (Claude Code, Devin) work — the agent modifies files in place rather than generating diffs.
 - **Container isolation** ensures each instance is evaluated in a reproducible environment with the exact repo state and dependencies.
-- **The scoring formula is simple**: did the patch fix the failing tests without breaking passing tests? That binary outcome, aggregated across instances, is the leaderboard number.
-- **MLflow tracks the full pipeline**: per-instance metrics, agent patches, gold patches, and test output are all logged as artifacts for post-hoc analysis.
+- **MLflow tracks the full pipeline**: per-instance metrics, agent diffs, gold patches, and test output are all logged as artifacts for post-hoc analysis.
 - **Agent capability matters**: the gap between 0% (local small model) and 49% (Claude 3.5 Sonnet) shows that SWE-Bench tests real software engineering ability, not just code generation.
 
 ## Next Steps
