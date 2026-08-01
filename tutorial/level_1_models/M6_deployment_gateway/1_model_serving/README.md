@@ -67,6 +67,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
 
     def load_context(self, context):
         from openai import OpenAI
+
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
     def predict(self, context, model_input, params=None):

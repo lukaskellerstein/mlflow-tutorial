@@ -71,30 +71,40 @@ def run_instance(
 ) -> dict:
     """Run the agent on one GAIA instance and log to MLflow."""
     with mlflow.start_run(run_name=f"{config_name}_{task_id[:8]}", nested=True):
-        mlflow.log_params({
-            "task_id": task_id,
-            "level": level,
-            "config": config_name,
-        })
+        mlflow.log_params(
+            {
+                "task_id": task_id,
+                "level": level,
+                "config": config_name,
+            }
+        )
         start = time.perf_counter()
         try:
-            result = agent.invoke({"messages": [{"role": "user", "content": build_prompt(question)}]})
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": build_prompt(question)}]}
+            )
             latency = time.perf_counter() - start
             answer = result["messages"][-1].content
             answer_short = answer.strip().split("\n")[-1].strip()
             exact_match = expected.lower().strip() in answer_short.lower()
-            mlflow.log_metrics({
-                "latency_s": round(latency, 2),
-                "exact_match": int(exact_match),
-                "response_length": len(answer),
-                "num_messages": len(result["messages"]),
-            })
+            mlflow.log_metrics(
+                {
+                    "latency_s": round(latency, 2),
+                    "exact_match": int(exact_match),
+                    "response_length": len(answer),
+                    "num_messages": len(result["messages"]),
+                }
+            )
             mlflow.set_tag("status", "success")
             print(f"  [{task_id[:8]}] L{level} match={exact_match} latency={latency:.1f}s")
             record = {
-                "task_id": task_id, "level": level, "config": config_name,
-                "latency_s": round(latency, 2), "exact_match": exact_match,
-                "response_length": len(answer), "status": "success",
+                "task_id": task_id,
+                "level": level,
+                "config": config_name,
+                "latency_s": round(latency, 2),
+                "exact_match": exact_match,
+                "response_length": len(answer),
+                "status": "success",
             }
         except Exception as exc:
             latency = time.perf_counter() - start
@@ -103,16 +113,18 @@ def run_instance(
             mlflow.set_tag("error", str(exc)[:200])
             print(f"  [{task_id[:8]}] ERROR: {exc}")
             record = {
-                "task_id": task_id, "level": level, "config": config_name,
-                "latency_s": round(latency, 2), "exact_match": False,
-                "response_length": 0, "status": f"error: {exc}",
+                "task_id": task_id,
+                "level": level,
+                "config": config_name,
+                "latency_s": round(latency, 2),
+                "exact_match": False,
+                "response_length": 0,
+                "status": f"error: {exc}",
             }
     return record
 
 
-def run_config(
-    name: str, temperature: float, instances: list[dict]
-) -> list[dict]:
+def run_config(name: str, temperature: float, instances: list[dict]) -> list[dict]:
     """Run the agent across all GAIA instances for a given config."""
     print(f"\n{'=' * 60}")
     print(f"Config: {name}  (temperature={temperature})")
@@ -129,27 +141,33 @@ def run_config(
     results: list[dict] = []
 
     with mlflow.start_run(run_name=f"config_{name}", nested=True):
-        mlflow.log_params({
-            "temperature": temperature,
-            "model": "google/gemma-4-26b-a4b",
-            "sample_size": len(instances),
-        })
+        mlflow.log_params(
+            {
+                "temperature": temperature,
+                "model": "google/gemma-4-26b-a4b",
+                "sample_size": len(instances),
+            }
+        )
         for inst in instances:
-            results.append(run_instance(
-                agent,
-                question=inst["Question"],
-                expected=inst.get("Final answer", ""),
-                level=inst.get("Level", 1),
-                task_id=inst.get("task_id", "unknown"),
-                config_name=name,
-            ))
+            results.append(
+                run_instance(
+                    agent,
+                    question=inst["Question"],
+                    expected=inst.get("Final answer", ""),
+                    level=inst.get("Level", 1),
+                    task_id=inst.get("task_id", "unknown"),
+                    config_name=name,
+                )
+            )
 
         df = pd.DataFrame(results)
-        mlflow.log_metrics({
-            "accuracy": round(float(df["exact_match"].mean()), 3),
-            "avg_latency_s": round(float(df["latency_s"].mean()), 2),
-            "success_rate": round((df["status"] == "success").mean(), 3),
-        })
+        mlflow.log_metrics(
+            {
+                "accuracy": round(float(df["exact_match"].mean()), 3),
+                "avg_latency_s": round(float(df["latency_s"].mean()), 2),
+                "success_rate": round((df["status"] == "success").mean(), 3),
+            }
+        )
         csv_path = f"/tmp/gaia_{name}.csv"
         df.to_csv(csv_path, index=False)
         mlflow.log_artifact(csv_path)

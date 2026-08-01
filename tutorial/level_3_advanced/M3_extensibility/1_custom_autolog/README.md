@@ -78,6 +78,7 @@ def _make_chat_wrapper(original_fn):
         if _state.log_metrics:
             mlflow.log_metrics({"chat_latency_s": time.time() - start})
         return result
+
     return wrapper
 ```
 

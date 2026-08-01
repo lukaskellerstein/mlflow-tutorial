@@ -45,13 +45,20 @@ We run four different LLM calls to produce a variety of traces with different co
 
 ```python
 mlflow.langchain.autolog()
-llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.7)
+llm = ChatOpenAI(
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    model="google/gemma-4-e4b",
+    temperature=0.7,
+)
 
 # Direct LLM invocation — simple Q&A
-response = llm.invoke([
-    SystemMessage(content="You are a helpful assistant. Answer in one sentence."),
-    HumanMessage(content="What is the speed of light?"),
-])
+response = llm.invoke(
+    [
+        SystemMessage(content="You are a helpful assistant. Answer in one sentence."),
+        HumanMessage(content="What is the speed of light?"),
+    ]
+)
 ```
 
 Each `llm.invoke()` call creates a separate trace with spans captured by autolog.
@@ -63,8 +70,8 @@ Use `mlflow.search_traces()` to programmatically fetch all traces from an experi
 ```python
 traces = mlflow.search_traces(
     experiment_ids=[experiment.experiment_id],
-    return_type="list",   # returns list of Trace objects
-    flush=True,           # ensure async writes are flushed
+    return_type="list",  # returns list of Trace objects
+    flush=True,  # ensure async writes are flushed
 )
 ```
 
@@ -103,10 +110,12 @@ Create a summary DataFrame and log it as an MLflow artifact:
 with mlflow.start_run(run_name="trace_analysis_report"):
     report_df.to_csv("trace_analysis_report.csv", index=False)
     mlflow.log_artifact("trace_analysis_report.csv")
-    mlflow.log_metrics({
-        "total_traces": len(report_df),
-        "avg_duration_ms": report_df["total_duration_ms"].mean(),
-    })
+    mlflow.log_metrics(
+        {
+            "total_traces": len(report_df),
+            "avg_duration_ms": report_df["total_duration_ms"].mean(),
+        }
+    )
 ```
 
 ## Running the Lesson

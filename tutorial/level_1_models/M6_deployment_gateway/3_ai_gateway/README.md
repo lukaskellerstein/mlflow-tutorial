@@ -68,7 +68,8 @@ routes:
 ```python
 endpoint = {
     "name": "team-chat",
-    "provider": "openai", "model": "gpt-4o",
+    "provider": "openai",
+    "model": "gpt-4o",
     "fallbacks": [
         {"provider": "openai", "model": "gpt-4o-mini"},
         {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},

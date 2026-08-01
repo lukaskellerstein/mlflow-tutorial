@@ -125,22 +125,29 @@ def part1_basic_agent() -> dict:
     )
 
     with mlflow.start_run(run_name="basic_deep_agent") as run:
-        mlflow.log_params({
-            "agent_type": "deep_agent",
-            "model": "google/gemma-4-26b-a4b",
-            "custom_tools": "search_knowledge_base, get_industry_stats",
-            "built_in_tools": "write_todos, ls, read_file, write_file, edit_file, glob, grep, task",
-        })
+        mlflow.log_params(
+            {
+                "agent_type": "deep_agent",
+                "model": "google/gemma-4-26b-a4b",
+                "custom_tools": "search_knowledge_base, get_industry_stats",
+                "built_in_tools": "write_todos, ls, read_file, write_file, edit_file, glob, grep, task",
+            }
+        )
 
         start = time.time()
         result = agent.invoke(
-            {"messages": [
-                {"role": "user", "content": (
-                    "Use write_todos to plan your work, then: "
-                    "research microservices architecture using the knowledge base "
-                    "and get industry statistics. Save a summary to /research.md."
-                )},
-            ]},
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Use write_todos to plan your work, then: "
+                            "research microservices architecture using the knowledge base "
+                            "and get industry statistics. Save a summary to /research.md."
+                        ),
+                    },
+                ]
+            },
             config={"recursion_limit": 50},
         )
         duration = round(time.time() - start, 2)
@@ -148,11 +155,13 @@ def part1_basic_agent() -> dict:
         tool_calls = count_tool_calls(result["messages"])
         total_steps = len(result["messages"])
 
-        mlflow.log_metrics({
-            "duration_s": duration,
-            "total_steps": total_steps,
-            "total_tool_calls": sum(tool_calls.values()),
-        })
+        mlflow.log_metrics(
+            {
+                "duration_s": duration,
+                "total_steps": total_steps,
+                "total_tool_calls": sum(tool_calls.values()),
+            }
+        )
         for tool_name, count in tool_calls.items():
             mlflow.log_metric(f"tool_{tool_name}", count)
 
@@ -173,8 +182,12 @@ def part1_basic_agent() -> dict:
                 print(f"      ... ({content.count(chr(10)) - 5} more lines)")
 
         print(f"\n  Duration: {duration}s | Steps: {total_steps} | Tool calls: {tool_calls}")
-        summary = {"run_id": run.info.run_id, "duration": duration,
-                   "steps": total_steps, "tool_calls": tool_calls}
+        summary = {
+            "run_id": run.info.run_id,
+            "duration": duration,
+            "steps": total_steps,
+            "tool_calls": tool_calls,
+        }
     return summary
 
 
@@ -221,25 +234,32 @@ def part2_subagent_orchestration() -> dict:
     )
 
     with mlflow.start_run(run_name="subagent_orchestration") as run:
-        mlflow.log_params({
-            "agent_type": "deep_agent_orchestrator",
-            "model": "google/gemma-4-26b-a4b",
-            "subagents": "researcher, analyst",
-            "pattern": "orchestrator -> researcher -> analyst",
-        })
+        mlflow.log_params(
+            {
+                "agent_type": "deep_agent_orchestrator",
+                "model": "google/gemma-4-26b-a4b",
+                "subagents": "researcher, analyst",
+                "pattern": "orchestrator -> researcher -> analyst",
+            }
+        )
 
         start = time.time()
         result = None
 
         print("\n  Streaming orchestration steps:")
         for step in agent.stream(
-            {"messages": [
-                {"role": "user", "content": (
-                    "Research and analyze microservices vs monolith architecture. "
-                    "Have the researcher gather facts, then the analyst produce "
-                    "a comparison. Save the final analysis as /analysis.md."
-                )},
-            ]},
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Research and analyze microservices vs monolith architecture. "
+                            "Have the researcher gather facts, then the analyst produce "
+                            "a comparison. Save the final analysis as /analysis.md."
+                        ),
+                    },
+                ]
+            },
             stream_mode="values",
             config={"recursion_limit": 50},
         ):
@@ -264,12 +284,14 @@ def part2_subagent_orchestration() -> dict:
         total_steps = len(result["messages"])
         task_calls = tool_calls.get("task", 0)
 
-        mlflow.log_metrics({
-            "duration_s": duration,
-            "total_steps": total_steps,
-            "total_tool_calls": sum(tool_calls.values()),
-            "subagent_handoffs": task_calls,
-        })
+        mlflow.log_metrics(
+            {
+                "duration_s": duration,
+                "total_steps": total_steps,
+                "total_tool_calls": sum(tool_calls.values()),
+                "subagent_handoffs": task_calls,
+            }
+        )
 
         print("\n  Files:")
         for path, file_data in result.get("files", {}).items():
@@ -281,9 +303,13 @@ def part2_subagent_orchestration() -> dict:
         print(f"\n  Duration: {duration}s | Steps: {total_steps}")
         print(f"  Sub-agent handoffs (task calls): {task_calls}")
         print(f"  Tool calls: {tool_calls}")
-        summary = {"run_id": run.info.run_id, "duration": duration,
-                   "steps": total_steps, "tool_calls": tool_calls,
-                   "handoffs": task_calls}
+        summary = {
+            "run_id": run.info.run_id,
+            "duration": duration,
+            "steps": total_steps,
+            "tool_calls": tool_calls,
+            "handoffs": task_calls,
+        }
     return summary
 
 
@@ -307,64 +333,81 @@ def part3_comparison(multi_metrics: dict) -> None:
     )
 
     with mlflow.start_run(run_name="single_agent_baseline"):
-        mlflow.log_params({
-            "agent_type": "deep_agent_single",
-            "model": "google/gemma-4-26b-a4b",
-            "subagents": "none",
-        })
+        mlflow.log_params(
+            {
+                "agent_type": "deep_agent_single",
+                "model": "google/gemma-4-26b-a4b",
+                "subagents": "none",
+            }
+        )
 
         start = time.time()
         result = agent.invoke(
-            {"messages": [
-                {"role": "user", "content": (
-                    "Research and analyze microservices vs monolith architecture. "
-                    "Use the tools to gather facts, then produce a comparison "
-                    "analysis. Save it as /analysis.md."
-                )},
-            ]},
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Research and analyze microservices vs monolith architecture. "
+                            "Use the tools to gather facts, then produce a comparison "
+                            "analysis. Save it as /analysis.md."
+                        ),
+                    },
+                ]
+            },
             config={"recursion_limit": 50},
         )
         duration = round(time.time() - start, 2)
         tool_calls = count_tool_calls(result["messages"])
         total_steps = len(result["messages"])
 
-        mlflow.log_metrics({
-            "duration_s": duration,
-            "total_steps": total_steps,
-            "total_tool_calls": sum(tool_calls.values()),
-            "subagent_handoffs": 0,
-        })
+        mlflow.log_metrics(
+            {
+                "duration_s": duration,
+                "total_steps": total_steps,
+                "total_tool_calls": sum(tool_calls.values()),
+                "subagent_handoffs": 0,
+            }
+        )
 
-        single_metrics = {"duration": duration, "steps": total_steps,
-                          "tool_calls": sum(tool_calls.values()), "handoffs": 0}
+        single_metrics = {
+            "duration": duration,
+            "steps": total_steps,
+            "tool_calls": sum(tool_calls.values()),
+            "handoffs": 0,
+        }
 
-    comparison = pd.DataFrame([
-        {
-            "approach": "multi_agent (orchestrator + subagents)",
-            "duration_s": multi_metrics["duration"],
-            "total_steps": multi_metrics["steps"],
-            "tool_calls": sum(multi_metrics["tool_calls"].values()),
-            "subagent_handoffs": multi_metrics["handoffs"],
-        },
-        {
-            "approach": "single_agent",
-            "duration_s": single_metrics["duration"],
-            "total_steps": single_metrics["steps"],
-            "tool_calls": single_metrics["tool_calls"],
-            "subagent_handoffs": 0,
-        },
-    ])
+    comparison = pd.DataFrame(
+        [
+            {
+                "approach": "multi_agent (orchestrator + subagents)",
+                "duration_s": multi_metrics["duration"],
+                "total_steps": multi_metrics["steps"],
+                "tool_calls": sum(multi_metrics["tool_calls"].values()),
+                "subagent_handoffs": multi_metrics["handoffs"],
+            },
+            {
+                "approach": "single_agent",
+                "duration_s": single_metrics["duration"],
+                "total_steps": single_metrics["steps"],
+                "tool_calls": single_metrics["tool_calls"],
+                "subagent_handoffs": 0,
+            },
+        ]
+    )
     print("\n  Comparison:")
     print(comparison.to_string(index=False))
 
     with mlflow.start_run(run_name="approach_comparison"):
         mlflow.set_tag("run_type", "comparison")
-        mlflow.log_metrics({
-            "multi_agent_duration_s": multi_metrics["duration"],
-            "single_agent_duration_s": single_metrics["duration"],
-            "multi_agent_steps": multi_metrics["steps"],
-            "single_agent_steps": single_metrics["steps"],
-        })
+        mlflow.log_metrics(
+            {
+                "multi_agent_duration_s": multi_metrics["duration"],
+                "single_agent_duration_s": single_metrics["duration"],
+                "multi_agent_steps": multi_metrics["steps"],
+                "single_agent_steps": single_metrics["steps"],
+            }
+        )
         mlflow.log_table(comparison, artifact_file="comparison.json")
 
 

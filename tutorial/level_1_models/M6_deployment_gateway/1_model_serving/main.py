@@ -29,18 +29,19 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
     column and optional 'temperature' and 'max_tokens' columns.
     """
 
-    def __init__(self, model_name: str = "google/gemma-4-e4b",
-                 default_temperature: float = 0.7):
+    def __init__(self, model_name: str = "google/gemma-4-e4b", default_temperature: float = 0.7):
         self.model_name = model_name
         self.default_temperature = default_temperature
         self.client = None
 
     def load_context(self, context: PythonModelContext) -> None:
         from openai import OpenAI
+
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
-    def predict(self, context: PythonModelContext,
-                model_input: pd.DataFrame, params: dict | None = None) -> list:
+    def predict(
+        self, context: PythonModelContext, model_input: pd.DataFrame, params: dict | None = None
+    ) -> list:
         answers = []
         for _, row in model_input.iterrows():
             temp = float(row.get("temperature") or self.default_temperature)
@@ -50,7 +51,10 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant. Give clear, concise answers."},
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant. Give clear, concise answers.",
+                    },
                     {"role": "user", "content": row["question"]},
                 ],
                 temperature=temp,
@@ -69,11 +73,13 @@ def part1_log_model(temperature: float, run_name: str) -> str:
     print(f"Part 1: Log LLM Model (temperature={temperature})")
     print("=" * 60)
 
-    input_example = pd.DataFrame({
-        "question": ["What is machine learning?"],
-        "temperature": [temperature],
-        "max_tokens": [256],
-    })
+    input_example = pd.DataFrame(
+        {
+            "question": ["What is machine learning?"],
+            "temperature": [temperature],
+            "max_tokens": [256],
+        }
+    )
     output_example = [
         "Machine learning is a branch of AI that enables computers "
         "to learn from data without being explicitly programmed."
@@ -113,13 +119,15 @@ def part2_test_locally(model_uri: str) -> None:
     print(f"  Loading model from: {model_uri}")
     model = mlflow.pyfunc.load_model(model_uri)
 
-    test_questions = pd.DataFrame({
-        "question": [
-            "What is MLflow?",
-            "Explain REST APIs in one sentence.",
-            "What is Python used for?",
-        ]
-    })
+    test_questions = pd.DataFrame(
+        {
+            "question": [
+                "What is MLflow?",
+                "Explain REST APIs in one sentence.",
+                "What is Python used for?",
+            ]
+        }
+    )
 
     print(f"  Running {len(test_questions)} test questions...\n")
     predictions = model.predict(test_questions)
@@ -229,13 +237,16 @@ def part5_monitoring() -> None:
         print(f"  curl http://localhost:5001{path}")
 
     print("\n  Monitoring best practices:")
-    for i, tip in enumerate([
-        "Track request latency (p50, p95, p99) via reverse proxy.",
-        "Log prediction counts and error rates to Prometheus.",
-        "Monitor token usage per request to control LLM costs.",
-        "Alert on latency spikes or error rate above threshold.",
-        "Track model version staleness for timely updates.",
-    ], 1):
+    for i, tip in enumerate(
+        [
+            "Track request latency (p50, p95, p99) via reverse proxy.",
+            "Log prediction counts and error rates to Prometheus.",
+            "Monitor token usage per request to control LLM costs.",
+            "Alert on latency spikes or error rate above threshold.",
+            "Track model version staleness for timely updates.",
+        ],
+        1,
+    ):
         print(f"    {i}. {tip}")
 
     print("""

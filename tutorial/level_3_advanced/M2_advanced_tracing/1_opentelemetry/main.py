@@ -26,6 +26,7 @@ mlflow.set_experiment("L3/M2_advanced_tracing/1_opentelemetry")
 
 # ── Helper classes ────────────────────────────────────────
 
+
 class _NoOpExporter(SpanExporter):
     def export(self, spans):
         return SpanExportResult.SUCCESS
@@ -49,20 +50,21 @@ class PrintingSpanProcessor(SimpleSpanProcessor):
     def on_end(self, span) -> None:
         self.ended += 1
         dur_ms = ((span.end_time or 0) - (span.start_time or 0)) / 1_000_000
-        print(f"    [Processor] ENDED:   {span.name!r} ({dur_ms:.1f}ms, {span.status.status_code.name})")
+        print(
+            f"    [Processor] ENDED:   {span.name!r} ({dur_ms:.1f}ms, {span.status.status_code.name})"
+        )
 
 
 def _remove_processor(tp, target) -> None:
     """Remove a specific processor instance from a TracerProvider."""
-    if hasattr(tp, '_active_span_processor'):
+    if hasattr(tp, "_active_span_processor"):
         proc = tp._active_span_processor
-        if hasattr(proc, '_span_processors'):
-            proc._span_processors = tuple(
-                sp for sp in proc._span_processors if sp is not target
-            )
+        if hasattr(proc, "_span_processors"):
+            proc._span_processors = tuple(sp for sp in proc._span_processors if sp is not target)
 
 
 # ── Part 1: MLflow tracing IS OpenTelemetry ───────────────
+
 
 def part1_otel_foundation() -> None:
     print("=" * 60)
@@ -81,13 +83,16 @@ def part1_otel_foundation() -> None:
     tp = mlflow_provider.get()
     print(f"\n  TracerProvider type: {type(tp).__name__}")
     print(f"  Is OTel SDK TracerProvider? {isinstance(tp, TracerProvider)}")
-    if hasattr(tp, '_active_span_processor') and hasattr(tp._active_span_processor, '_span_processors'):
+    if hasattr(tp, "_active_span_processor") and hasattr(
+        tp._active_span_processor, "_span_processors"
+    ):
         for i, sp in enumerate(tp._active_span_processor._span_processors):
             print(f"  Registered processor [{i}]: {type(sp).__name__}")
     print()
 
 
 # ── Part 2: Custom SpanProcessor ──────────────────────────
+
 
 def part2_custom_span_processor() -> None:
     print("=" * 60)
@@ -118,6 +123,7 @@ def part2_custom_span_processor() -> None:
 
 # ── Part 3: Export concepts ───────────────────────────────
 
+
 def part3_export_concepts() -> None:
     print("=" * 60)
     print("Part 3: Exporting Traces to OTel Backends")
@@ -143,6 +149,7 @@ def part3_export_concepts() -> None:
 
 
 # ── Part 4: Combining MLflow + custom OTel spans ─────────
+
 
 def part4_combined_tracing() -> None:
     print("=" * 60)
@@ -171,8 +178,11 @@ def part4_combined_tracing() -> None:
         return [{**r, "score": len(r["name"]) * r["value"]} for r in records]
 
     data = [
-        {"name": "alpha", "value": 10}, {"name": "beta", "value": 20},
-        {"name": "", "value": 30}, {"name": "delta", "value": 40}, {"value": 50},
+        {"name": "alpha", "value": 10},
+        {"name": "beta", "value": 20},
+        {"name": "", "value": 30},
+        {"name": "delta", "value": 40},
+        {"value": 50},
     ]
     result = pipeline(data)
     print(f"  Processed {result['processed']}/{len(data)} records")
@@ -182,6 +192,7 @@ def part4_combined_tracing() -> None:
 
 
 # ── Main ──────────────────────────────────────────────────
+
 
 def main() -> None:
     print("=" * 60)

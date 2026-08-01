@@ -55,6 +55,7 @@ class TraceSampler:
 @dataclass
 class TraceRecord:
     """Captured data from a single traced LLM call."""
+
     request_id: str
     prompt: str
     response: str
@@ -83,21 +84,25 @@ def traced_llm_call(
     try:
         with mlflow.start_span(name="llm_call") as span:
             span.set_inputs({"prompt": prompt})
-            span.set_attributes({
-                "request_id": request_id,
-                "user_id": metadata.get("user_id", "unknown"),
-                "environment": metadata.get("environment", "dev"),
-                "app_version": metadata.get("app_version", "0.0.0"),
-            })
+            span.set_attributes(
+                {
+                    "request_id": request_id,
+                    "user_id": metadata.get("user_id", "unknown"),
+                    "environment": metadata.get("environment", "dev"),
+                    "app_version": metadata.get("app_version", "0.0.0"),
+                }
+            )
             result = llm.invoke([{"role": "user", "content": prompt}])
             response_text = str(result.content)
             duration_ms = (time.perf_counter() - start) * 1000
             token_est = _estimate_tokens(prompt) + _estimate_tokens(response_text)
             span.set_outputs({"response": response_text[:200]})
-            span.set_attributes({
-                "duration_ms": round(duration_ms, 1),
-                "token_estimate": token_est,
-            })
+            span.set_attributes(
+                {
+                    "duration_ms": round(duration_ms, 1),
+                    "token_estimate": token_est,
+                }
+            )
             # Tag the trace for filtering
             mlflow.set_trace_tag(span.trace_id, "request_id", request_id)
             mlflow.set_trace_tag(span.trace_id, "environment", metadata.get("environment", "dev"))
@@ -218,7 +223,10 @@ def run_part1_sampling(llm: ChatOpenAI) -> list[TraceRecord]:
         ("sample_all (dev)", lambda r: sampler.sample_all()),
         ("sample_percentage 50% (staging)", lambda r: sampler.sample_percentage(0.5)),
         ("sample_errors_only (prod)", lambda r: sampler.sample_errors_only(r.error is not None)),
-        ("sample_slow_requests >500ms (prod)", lambda r: sampler.sample_slow_requests(r.duration_ms, 500)),
+        (
+            "sample_slow_requests >500ms (prod)",
+            lambda r: sampler.sample_slow_requests(r.duration_ms, 500),
+        ),
     ]
 
     prompt = PROMPTS[0]
@@ -264,7 +272,7 @@ def run_part2_metadata(llm: ChatOpenAI) -> list[TraceRecord]:
             "app_version": "2.1.0",
             "session_id": f"sess_{uuid.uuid4().hex[:8]}",
         }
-        print(f"\n  Request {i+1}: user={metadata['user_id']}, env={metadata['environment']}")
+        print(f"\n  Request {i + 1}: user={metadata['user_id']}, env={metadata['environment']}")
         rec = traced_llm_call(llm, prompt, metadata)
         records.append(rec)
         print(f"    Duration: {rec.duration_ms}ms | Tokens: ~{rec.token_estimate}")
@@ -294,22 +302,26 @@ def run_part3_error_tracing(llm: ChatOpenAI) -> list[TraceRecord]:
     # Simulated error: bad model name
     print("\n  3b. Simulated error (invalid model):")
     bad_llm = ChatOpenAI(
-            model="nonexistent_model_xyz",
-            base_url="http://localhost:1234/v1",
-            api_key=SecretStr("lm-studio"),
-            temperature=0.0,
-        )
+        model="nonexistent_model_xyz",
+        base_url="http://localhost:1234/v1",
+        api_key=SecretStr("lm-studio"),
+        temperature=0.0,
+    )
     meta = {**metadata_base, "request_id": str(uuid.uuid4()), "user_id": "user_test"}
     rec = traced_llm_call(bad_llm, "This should fail", meta)
     records.append(rec)
     print(f"    Status: ERROR | Type: {rec.error_type}")
-    print(f"    Error: {rec.error[:80]}..." if rec.error and len(rec.error) > 80 else f"    Error: {rec.error}")
+    print(
+        f"    Error: {rec.error[:80]}..."
+        if rec.error and len(rec.error) > 80
+        else f"    Error: {rec.error}"
+    )
 
     # Error aggregation
     error_records = [r for r in records if r.error]
     ok_records = [r for r in records if not r.error]
     print(f"\n  Error summary: {len(error_records)} errors / {len(records)} total")
-    print(f"  Success rate: {len(ok_records)/max(len(records),1):.0%}")
+    print(f"  Success rate: {len(ok_records) / max(len(records), 1):.0%}")
     if error_records:
         print("  Error types:")
         error_types: dict[str, int] = {}
@@ -345,23 +357,29 @@ def run_part4_performance(all_records: list[TraceRecord]) -> None:
 
     # Log performance summary to MLflow
     with mlflow.start_run(run_name="performance_summary"):
-        mlflow.log_params({
-            "total_requests": summary["total_requests"],
-            "sampled_requests": summary["sampled_requests"],
-        })
-        mlflow.log_metrics({
-            "sampling_rate": summary["sampling_rate"],
-            "error_rate": summary["error_rate"],
-            "p50_latency_ms": summary["p50_ms"],
-            "p95_latency_ms": summary["p95_ms"],
-            "p99_latency_ms": summary["p99_ms"],
-            "total_token_estimate": summary["total_token_estimate"],
-            "avg_tokens_per_request": summary["avg_tokens_per_request"],
-        })
-        mlflow.set_tags({
-            "run_type": "performance_summary",
-            "environment": "tutorial",
-        })
+        mlflow.log_params(
+            {
+                "total_requests": summary["total_requests"],
+                "sampled_requests": summary["sampled_requests"],
+            }
+        )
+        mlflow.log_metrics(
+            {
+                "sampling_rate": summary["sampling_rate"],
+                "error_rate": summary["error_rate"],
+                "p50_latency_ms": summary["p50_ms"],
+                "p95_latency_ms": summary["p95_ms"],
+                "p99_latency_ms": summary["p99_ms"],
+                "total_token_estimate": summary["total_token_estimate"],
+                "avg_tokens_per_request": summary["avg_tokens_per_request"],
+            }
+        )
+        mlflow.set_tags(
+            {
+                "run_type": "performance_summary",
+                "environment": "tutorial",
+            }
+        )
 
         # Save records as CSV artifact
         rows = [
@@ -385,7 +403,7 @@ def run_part4_performance(all_records: list[TraceRecord]) -> None:
     print("Production Tracing Strategy Comparison")
     print("=" * 60)
     print(f"  {'Strategy':<30} {'Use Case':<15} {'Overhead':<10} {'Coverage'}")
-    print(f"  {'-'*30} {'-'*15} {'-'*10} {'-'*15}")
+    print(f"  {'-' * 30} {'-' * 15} {'-' * 10} {'-' * 15}")
     strategies = [
         ("sample_all (100%)", "Dev / Test", "High", "Complete"),
         ("sample_percentage (1-10%)", "Staging", "Low", "Statistical"),

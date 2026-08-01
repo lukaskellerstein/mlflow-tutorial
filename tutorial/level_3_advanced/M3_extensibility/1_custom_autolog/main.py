@@ -99,11 +99,13 @@ def _make_chat_wrapper(original_fn: Callable) -> Callable:
         # Create an MLflow trace span for this call
         with mlflow.start_span(name="SimpleChat.chat") as span:
             span.set_inputs({"message": message})
-            span.set_attributes({
-                "simplechat.model": self.model,
-                "simplechat.temperature": self.temperature,
-                "simplechat.method": "chat",
-            })
+            span.set_attributes(
+                {
+                    "simplechat.model": self.model,
+                    "simplechat.temperature": self.temperature,
+                    "simplechat.method": "chat",
+                }
+            )
 
             result = original_fn(self, message)
             elapsed = time.time() - start
@@ -114,11 +116,14 @@ def _make_chat_wrapper(original_fn: Callable) -> Callable:
         # Log metrics if enabled
         if _state.log_metrics:
             call_num = self.call_count
-            mlflow.log_metrics({
-                "chat_latency_s": round(elapsed, 3),
-                "chat_input_chars": len(message),
-                "chat_output_chars": len(result),
-            }, step=call_num)
+            mlflow.log_metrics(
+                {
+                    "chat_latency_s": round(elapsed, 3),
+                    "chat_input_chars": len(message),
+                    "chat_output_chars": len(result),
+                },
+                step=call_num,
+            )
 
         # Fire registered callbacks
         for cb in _state.callbacks:
@@ -141,12 +146,14 @@ def _make_chat_with_history_wrapper(original_fn: Callable) -> Callable:
 
         with mlflow.start_span(name="SimpleChat.chat_with_history") as span:
             span.set_inputs({"messages": messages, "turn_count": len(messages)})
-            span.set_attributes({
-                "simplechat.model": self.model,
-                "simplechat.temperature": self.temperature,
-                "simplechat.method": "chat_with_history",
-                "simplechat.history_length": len(messages),
-            })
+            span.set_attributes(
+                {
+                    "simplechat.model": self.model,
+                    "simplechat.temperature": self.temperature,
+                    "simplechat.method": "chat_with_history",
+                    "simplechat.history_length": len(messages),
+                }
+            )
 
             result = original_fn(self, messages)
             elapsed = time.time() - start
@@ -157,12 +164,15 @@ def _make_chat_with_history_wrapper(original_fn: Callable) -> Callable:
         if _state.log_metrics:
             call_num = self.call_count
             total_input_chars = sum(len(m["content"]) for m in messages)
-            mlflow.log_metrics({
-                "history_latency_s": round(elapsed, 3),
-                "history_turns": len(messages),
-                "history_input_chars": total_input_chars,
-                "history_output_chars": len(result),
-            }, step=call_num)
+            mlflow.log_metrics(
+                {
+                    "history_latency_s": round(elapsed, 3),
+                    "history_turns": len(messages),
+                    "history_input_chars": total_input_chars,
+                    "history_output_chars": len(result),
+                },
+                step=call_num,
+            )
 
         for cb in _state.callbacks:
             try:
@@ -184,12 +194,14 @@ def _make_batch_chat_wrapper(original_fn: Callable) -> Callable:
 
         with mlflow.start_span(name="SimpleChat.batch_chat") as span:
             span.set_inputs({"messages": messages, "batch_size": len(messages)})
-            span.set_attributes({
-                "simplechat.model": self.model,
-                "simplechat.temperature": self.temperature,
-                "simplechat.method": "batch_chat",
-                "simplechat.batch_size": len(messages),
-            })
+            span.set_attributes(
+                {
+                    "simplechat.model": self.model,
+                    "simplechat.temperature": self.temperature,
+                    "simplechat.method": "batch_chat",
+                    "simplechat.batch_size": len(messages),
+                }
+            )
 
             result = original_fn(self, messages)
             elapsed = time.time() - start
@@ -199,11 +211,14 @@ def _make_batch_chat_wrapper(original_fn: Callable) -> Callable:
 
         if _state.log_metrics:
             call_num = self.call_count
-            mlflow.log_metrics({
-                "batch_latency_s": round(elapsed, 3),
-                "batch_size": len(messages),
-                "batch_avg_latency_s": round(elapsed / max(len(messages), 1), 3),
-            }, step=call_num)
+            mlflow.log_metrics(
+                {
+                    "batch_latency_s": round(elapsed, 3),
+                    "batch_size": len(messages),
+                    "batch_avg_latency_s": round(elapsed / max(len(messages), 1), 3),
+                },
+                step=call_num,
+            )
 
         for cb in _state.callbacks:
             try:
@@ -346,11 +361,13 @@ def main() -> None:
 
         # Call 2: chat with history
         print("\n  [Call 2] chat_with_history()")
-        r2 = bot.chat_with_history([
-            {"role": "user", "content": "What is Python?"},
-            {"role": "assistant", "content": "Python is a programming language."},
-            {"role": "user", "content": "Name one popular Python framework. Be brief."},
-        ])
+        r2 = bot.chat_with_history(
+            [
+                {"role": "user", "content": "What is Python?"},
+                {"role": "assistant", "content": "Python is a programming language."},
+                {"role": "user", "content": "Name one popular Python framework. Be brief."},
+            ]
+        )
         print(f"    Response: {r2[:80]}")
 
         # Call 3: another chat

@@ -82,20 +82,46 @@ def build_agent():
 # ---------------------------------------------------------------------------
 def create_eval_dataset() -> pd.DataFrame:
     """Create the evaluation dataset with inputs, expected outputs, and metadata."""
-    return pd.DataFrame([
-        {"input": "What is Python?", "expected": "high-level programming language",
-         "category": "knowledge", "needs_tool": "search_knowledge"},
-        {"input": "What is MLflow used for?", "expected": "ML lifecycle",
-         "category": "knowledge", "needs_tool": "search_knowledge"},
-        {"input": "Explain LangGraph.", "expected": "stateful",
-         "category": "knowledge", "needs_tool": "search_knowledge"},
-        {"input": "What is 25 * 4?", "expected": "100",
-         "category": "math", "needs_tool": "calculate"},
-        {"input": "Calculate 144 / 12.", "expected": "12",
-         "category": "math", "needs_tool": "calculate"},
-        {"input": "What is Docker?", "expected": "containerization",
-         "category": "knowledge", "needs_tool": "search_knowledge"},
-    ])
+    return pd.DataFrame(
+        [
+            {
+                "input": "What is Python?",
+                "expected": "high-level programming language",
+                "category": "knowledge",
+                "needs_tool": "search_knowledge",
+            },
+            {
+                "input": "What is MLflow used for?",
+                "expected": "ML lifecycle",
+                "category": "knowledge",
+                "needs_tool": "search_knowledge",
+            },
+            {
+                "input": "Explain LangGraph.",
+                "expected": "stateful",
+                "category": "knowledge",
+                "needs_tool": "search_knowledge",
+            },
+            {
+                "input": "What is 25 * 4?",
+                "expected": "100",
+                "category": "math",
+                "needs_tool": "calculate",
+            },
+            {
+                "input": "Calculate 144 / 12.",
+                "expected": "12",
+                "category": "math",
+                "needs_tool": "calculate",
+            },
+            {
+                "input": "What is Docker?",
+                "expected": "containerization",
+                "category": "knowledge",
+                "needs_tool": "search_knowledge",
+            },
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -127,8 +153,10 @@ class AgentEvaluationPipeline:
         """Load or create the evaluation dataset."""
         print("\n  [Step 1/5] Loading evaluation dataset...")
         self.dataset = create_eval_dataset()
-        print(f"    Loaded {len(self.dataset)} test cases "
-              f"({self.dataset['category'].nunique()} categories)")
+        print(
+            f"    Loaded {len(self.dataset)} test cases "
+            f"({self.dataset['category'].nunique()} categories)"
+        )
         return self.dataset
 
     # -- Step 2 ------------------------------------------------------------ #
@@ -146,35 +174,38 @@ class AgentEvaluationPipeline:
                 answer = response["messages"][-1].content
 
                 # Detect which tools were called
-                tools_used = [
-                    m.name for m in response["messages"]
-                    if hasattr(m, "name") and m.name
-                ]
+                tools_used = [m.name for m in response["messages"] if hasattr(m, "name") and m.name]
 
-                self.results.append({
-                    "input": row["input"],
-                    "expected": row["expected"],
-                    "output": answer,
-                    "category": row["category"],
-                    "needs_tool": row["needs_tool"],
-                    "tools_used": tools_used,
-                    "latency_s": round(latency, 2),
-                    "error": None,
-                })
+                self.results.append(
+                    {
+                        "input": row["input"],
+                        "expected": row["expected"],
+                        "output": answer,
+                        "category": row["category"],
+                        "needs_tool": row["needs_tool"],
+                        "tools_used": tools_used,
+                        "latency_s": round(latency, 2),
+                        "error": None,
+                    }
+                )
             except Exception as e:
-                self.results.append({
-                    "input": row["input"],
-                    "expected": row["expected"],
-                    "output": "",
-                    "category": row["category"],
-                    "needs_tool": row["needs_tool"],
-                    "tools_used": [],
-                    "latency_s": round(time.time() - start, 2),
-                    "error": str(e),
-                })
+                self.results.append(
+                    {
+                        "input": row["input"],
+                        "expected": row["expected"],
+                        "output": "",
+                        "category": row["category"],
+                        "needs_tool": row["needs_tool"],
+                        "tools_used": [],
+                        "latency_s": round(time.time() - start, 2),
+                        "error": str(e),
+                    }
+                )
             status = "OK" if not self.results[-1]["error"] else "ERR"
-            print(f"    [{status}] Test {idx + 1}/{len(self.dataset)}: "
-                  f"{row['input'][:40]}... ({self.results[-1]['latency_s']}s)")
+            print(
+                f"    [{status}] Test {idx + 1}/{len(self.dataset)}: "
+                f"{row['input'][:40]}... ({self.results[-1]['latency_s']}s)"
+            )
         return self.results
 
     # -- Step 3 ------------------------------------------------------------ #
@@ -246,8 +277,7 @@ class AgentEvaluationPipeline:
 
         for name, g in gates.items():
             status = "PASS" if g["passed"] else "FAIL"
-            print(f"    [{status}] {name}: {g['actual']:.3f} "
-                  f"(threshold: {g['threshold']})")
+            print(f"    [{status}] {name}: {g['actual']:.3f} (threshold: {g['threshold']})")
 
         print(f"\n    Overall: {'ALL GATES PASSED' if all_passed else 'SOME GATES FAILED'}")
         return self.gate_results
@@ -278,8 +308,9 @@ class AgentEvaluationPipeline:
         for i, r in enumerate(self.results, 1):
             c = "Y" if r.get("score_correct") else "N"
             t = "Y" if r.get("score_tool_correct") else "N"
-            lines.append(f"    {i}. correct={c} tool={t} "
-                         f"latency={r['latency_s']}s | {r['input'][:45]}")
+            lines.append(
+                f"    {i}. correct={c} tool={t} latency={r['latency_s']}s | {r['input'][:45]}"
+            )
         lines.append("=" * 60)
         report = "\n".join(lines)
         print(report)
@@ -303,18 +334,24 @@ class AgentEvaluationPipeline:
             self.run_agent()
             for i, r in enumerate(self.results):
                 with mlflow.start_run(run_name=f"test_{i + 1}", nested=True):
-                    mlflow.log_params({
-                        "input": r["input"][:250],
-                        "category": r["category"],
-                        "needs_tool": r["needs_tool"],
-                    })
-                    mlflow.log_metrics({
-                        "latency_s": r["latency_s"],
-                    })
-                    mlflow.set_tags({
-                        "error": str(r["error"]) if r["error"] else "none",
-                        "tools_used": ",".join(r["tools_used"]) if r["tools_used"] else "none",
-                    })
+                    mlflow.log_params(
+                        {
+                            "input": r["input"][:250],
+                            "category": r["category"],
+                            "needs_tool": r["needs_tool"],
+                        }
+                    )
+                    mlflow.log_metrics(
+                        {
+                            "latency_s": r["latency_s"],
+                        }
+                    )
+                    mlflow.set_tags(
+                        {
+                            "error": str(r["error"]) if r["error"] else "none",
+                            "tools_used": ",".join(r["tools_used"]) if r["tools_used"] else "none",
+                        }
+                    )
 
             # Step 3: score
             self.score_results()
@@ -351,8 +388,7 @@ class AgentEvaluationPipeline:
 
 
 # ── Part 2: Regression detection ──────────────────────────────────
-def detect_regressions(current: dict, baseline: dict,
-                       threshold: float = 0.1) -> list[dict]:
+def detect_regressions(current: dict, baseline: dict, threshold: float = 0.1) -> list[dict]:
     """Compare current metrics to a baseline and detect regressions.
 
     A regression is detected when a metric drops by more than *threshold*
@@ -364,22 +400,26 @@ def detect_regressions(current: dict, baseline: dict,
         base_val = baseline.get(metric, 0)
         delta = cur_val - base_val
         if delta < -threshold:
-            regressions.append({
-                "metric": metric,
-                "baseline": base_val,
-                "current": cur_val,
-                "delta": round(delta, 3),
-            })
+            regressions.append(
+                {
+                    "metric": metric,
+                    "baseline": base_val,
+                    "current": cur_val,
+                    "delta": round(delta, 3),
+                }
+            )
     # Latency regression: increase beyond threshold (in seconds)
     cur_lat = current.get("avg_latency_s", 0)
     base_lat = baseline.get("avg_latency_s", 0)
     if base_lat > 0 and cur_lat > base_lat * 1.5:
-        regressions.append({
-            "metric": "avg_latency_s",
-            "baseline": base_lat,
-            "current": cur_lat,
-            "delta": round(cur_lat - base_lat, 2),
-        })
+        regressions.append(
+            {
+                "metric": "avg_latency_s",
+                "baseline": base_lat,
+                "current": cur_lat,
+                "delta": round(cur_lat - base_lat, 2),
+            }
+        )
     return regressions
 
 
@@ -407,27 +447,26 @@ def run_regression_check(current_metrics: dict) -> None:
     regressions = detect_regressions(current_metrics, baseline)
 
     with mlflow.start_run(run_name="regression_check"):
-        mlflow.log_params({
-            f"baseline_{k}": v for k, v in baseline.items()
-        })
-        mlflow.log_params({
-            f"current_{k}": current_metrics.get(k, 0) for k in baseline
-        })
+        mlflow.log_params({f"baseline_{k}": v for k, v in baseline.items()})
+        mlflow.log_params({f"current_{k}": current_metrics.get(k, 0) for k in baseline})
         mlflow.set_tag("regression_detected", str(len(regressions) > 0))
         mlflow.log_metric("regressions_found", len(regressions))
 
         if regressions:
             print(f"\n  REGRESSIONS DETECTED ({len(regressions)}):")
             for reg in regressions:
-                print(f"    {reg['metric']}: {reg['baseline']:.3f} -> "
-                      f"{reg['current']:.3f} (delta: {reg['delta']})")
+                print(
+                    f"    {reg['metric']}: {reg['baseline']:.3f} -> "
+                    f"{reg['current']:.3f} (delta: {reg['delta']})"
+                )
                 mlflow.set_tag(f"regression_{reg['metric']}", str(reg["delta"]))
         else:
             print("\n  No regressions detected.")
 
         # Log regression report
-        report = json.dumps({"baseline": baseline, "current": current_metrics,
-                             "regressions": regressions}, indent=2)
+        report = json.dumps(
+            {"baseline": baseline, "current": current_metrics, "regressions": regressions}, indent=2
+        )
         report_path = "/tmp/regression_report.json"
         with open(report_path, "w") as f:
             f.write(report)

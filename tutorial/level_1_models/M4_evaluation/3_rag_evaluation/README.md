@@ -104,10 +104,12 @@ def retrieval_precision(inputs, outputs, expectations) -> Feedback:
     precision = hits / len(retrieved)
     return Feedback(value=precision, rationale=f"Precision={precision:.2f}")
 
+
 @scorer(name="retrieval_recall")
 def retrieval_recall(inputs, outputs, expectations) -> Feedback:
     """Fraction of expected docs that were actually retrieved."""
     ...
+
 
 @scorer(name="context_used")
 def context_used(inputs, outputs) -> Feedback:

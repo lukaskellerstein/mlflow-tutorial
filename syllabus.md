@@ -67,6 +67,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L1-M1: Tracking
 
 ### L1-M1.1 -- Tracking Fundamentals and Logging
+
 **Duration:** 45 min
 **Topics:**
 - MLflow's pillars: Tracking, Models, Registry, Evaluation, Deployment
@@ -88,6 +89,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M1.2 -- Search, Query API, and MlflowClient
+
 **Duration:** 45 min
 **Topics:**
 - `mlflow.search_runs()` -- filtering and sorting runs
@@ -105,6 +107,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M1.3 -- Advanced Tracking Patterns
+
 **Duration:** 60 min
 **Topics:**
 - Nested runs for LLM configuration sweeps (temperature, model variants, prompt variants)
@@ -128,6 +131,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L1-M2: Tracing
 
 ### L1-M2.1 -- Auto-Tracing and Manual Tracing
+
 **Duration:** 45 min
 **Topics:**
 - `mlflow.openai.autolog()` -- trace OpenAI-compatible calls (LMStudio)
@@ -148,6 +152,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M2.2 -- Trace Analysis and Debugging
+
 **Duration:** 45 min
 **Topics:**
 - Using traces to find latency bottlenecks in LLM pipelines
@@ -165,6 +170,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L1-M3: Models and Registry
 
 ### L1-M3.1 -- Models, Flavors, and Signatures
+
 **Duration:** 60 min
 **Topics:**
 - What is an MLflow Model? (the `MLmodel` file, flavors, signatures)
@@ -183,6 +189,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M3.2 -- Custom PyFunc Models
+
 **Duration:** 60 min
 **Topics:**
 - `PythonModel` subclassing
@@ -198,6 +205,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M3.3 -- Model Registry Workflows
+
 **Duration:** 45 min
 **Topics:**
 - Registering models: `mlflow.register_model()`
@@ -216,6 +224,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L1-M4: Evaluation
 
 ### L1-M4.1 -- Evaluation Fundamentals
+
 **Duration:** 60 min
 **Topics:**
 - `mlflow.evaluate()` for LLMs -- `model_type="question-answering"`, `"text-summarization"`, `"text"`
@@ -237,6 +246,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M4.2 -- GenAI Framework and Custom Metrics
+
 **Duration:** 60 min
 **Topics:**
 - `mlflow.genai.evaluation` -- the full framework
@@ -256,6 +266,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M4.3 -- RAG System Evaluation
+
 **Duration:** 60 min
 **Topics:**
 - Building a RAG system with LangChain + Qdrant
@@ -272,6 +283,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M4.4 -- Datasets and Human-in-the-Loop
+
 **Duration:** 60 min
 **Topics:**
 - `mlflow.data` module -- logging datasets alongside runs
@@ -293,6 +305,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L1-M5: Prompt Engineering
 
 ### L1-M5.1 -- Prompt Registry and Management
+
 **Duration:** 45 min
 **Topics:**
 - Registering prompts: `mlflow.genai.register_prompt()`
@@ -311,6 +324,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M5.2 -- Prompt Optimization
+
 **Duration:** 60 min
 **Topics:**
 - Systematic prompt improvement workflow
@@ -327,6 +341,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L1-M6: Deployment and Gateway
 
 ### L1-M6.1 -- Model Serving
+
 **Duration:** 60 min
 **Topics:**
 - `mlflow models serve` -- local REST API serving
@@ -345,6 +360,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M6.2 -- Batch Prediction
+
 **Duration:** 45 min
 **Topics:**
 - `mlflow models predict` for batch LLM inference
@@ -359,6 +375,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L1-M6.3 -- AI Gateway
+
 **Duration:** 60 min
 **Topics:**
 - What is the AI Gateway? (unified LLM endpoint management)
@@ -378,6 +395,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L1-M7: Fine-Tuning
 
 ### L1-M7.1 -- HuggingFace Transformers + MLflow
+
 **Duration:** 60 min
 **Topics:**
 - `mlflow.transformers.autolog()` -- auto-logging for fine-tuning
@@ -420,6 +438,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L2-M1: Agent Frameworks
 
 ### L2-M1.1 -- LangChain Agent Tracking
+
 **Duration:** 90 min
 **Topics:**
 - Creating agents with LangChain v1+ (`create_agent` from `langchain.agents`)
@@ -439,6 +458,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M1.2 -- LangGraph Agent Observability
+
 **Duration:** 90 min
 **Topics:**
 - Building agents with LangGraph (`StateGraph`, nodes, edges, `ToolNode`)
@@ -458,6 +478,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M1.3 -- Multi-Agent Systems
+
 **Duration:** 90 min
 **Topics:**
 - Multi-agent patterns: collaboration, supervision, swarm
@@ -479,6 +500,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L2-M2: Custom Agent Integrations
 
 ### L2-M2.1 -- Claude Agent SDK + MLflow
+
 **Duration:** 90 min
 **Topics:**
 - Claude Agent SDK architecture and lifecycle
@@ -497,6 +519,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M2.2 -- DeepAgents + MLflow
+
 **Duration:** 90 min
 **Topics:**
 - DeepAgents architecture: `create_deep_agent()` built on top of `create_agent()`
@@ -517,6 +540,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L2-M3: Agent Evaluation
 
 ### L2-M3.1 -- Agent Testing Framework
+
 **Duration:** 90 min
 **Topics:**
 - `mlflow.genai.agent_tester` -- automated agent test generation
@@ -534,6 +558,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M3.2 -- Agent Quality Metrics
+
 **Duration:** 90 min
 **Topics:**
 - Designing metrics for agent-specific behaviors:
@@ -553,6 +578,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M3.3 -- Agent Architecture Comparison
+
 **Duration:** 90 min
 **Topics:**
 - Systematic comparison of agent architectures:
@@ -571,6 +597,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M3.4 -- Agent Optimization
+
 **Duration:** 90 min
 **Topics:**
 - `mlflow.genai.optimize` for agent instruction tuning
@@ -586,6 +613,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M3.5 -- Agent Evaluation Pipeline
+
 **Duration:** 90 min
 **Topics:**
 - Designing a complete evaluation pipeline:
@@ -608,6 +636,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L2-M4: Agent Benchmarks
 
 ### L2-M4.1 -- SWE-Bench Evaluation
+
 **Duration:** 90 min
 **Topics:**
 - SWE-Bench: the standardized benchmark for coding agents
@@ -616,7 +645,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 - Integrating SWE-Bench evaluation with MLflow tracking
 - Logging per-instance results, pass rates, and error analysis
 - Comparing agent configurations on SWE-Bench
-- Reference: https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified
+- Reference: <https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified>
 
 **Deliverables:**
 - SWE-Bench evaluation pipeline integrated with MLflow
@@ -626,6 +655,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M4.2 -- GAIA Benchmark
+
 **Duration:** 90 min
 **Topics:**
 - GAIA: General AI Assistants benchmark
@@ -643,6 +673,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L2-M4.3 -- Custom Domain-Specific Benchmark
+
 **Duration:** 90 min
 **Topics:**
 - Designing domain-specific evaluation benchmarks
@@ -683,6 +714,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L3-M1: Production Operations
 
 ### L3-M1.1 -- Production Tracing at Scale
+
 **Duration:** 90 min
 **Topics:**
 - High-volume trace collection strategies
@@ -698,6 +730,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L3-M1.2 -- Grafana Dashboards for MLflow
+
 **Duration:** 120 min
 **Topics:**
 - Exporting MLflow metrics to Prometheus
@@ -716,6 +749,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L3-M1.3 -- Feedback Loops and Continuous Improvement
+
 **Duration:** 90 min
 **Topics:**
 - Collecting user feedback on agent responses
@@ -732,6 +766,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L3-M1.4 -- CI/CD for AI Applications
+
 **Duration:** 90 min
 **Topics:**
 - Automated evaluation in CI pipelines (GitHub Actions)
@@ -750,6 +785,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L3-M2: Advanced Tracing
 
 ### L3-M2.1 -- OpenTelemetry Integration
+
 **Duration:** 60 min
 **Topics:**
 - MLflow's OpenTelemetry (OTel) foundation
@@ -764,6 +800,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L3-M2.2 -- Temporal.io Workflow Tracing
+
 **Duration:** 90 min
 **Topics:**
 - Temporal.io workflow and activity basics
@@ -782,6 +819,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L3-M3: Extensibility
 
 ### L3-M3.1 -- Custom Autolog Integrations
+
 **Duration:** 120 min
 **Topics:**
 - MLflow autolog architecture: how it works internally
@@ -798,6 +836,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L3-M3.2 -- MLflow Plugins
+
 **Duration:** 90 min
 **Topics:**
 - MLflow plugin system architecture
@@ -813,6 +852,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L3-M3.3 -- Enterprise Patterns and Data Management
+
 **Duration:** 90 min
 **Topics:**
 - Workspace isolation and multi-tenancy
@@ -835,6 +875,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## L3-M4: Capstones
 
 ### L3-M4.1 -- Capstone: Production AI Agent Platform
+
 **Duration:** 2.5 hours
 **Topics:**
 - Build a complete AI agent platform with:
@@ -855,6 +896,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 
 ### L3-M4.2 -- Capstone: Agent Framework Benchmark
+
 **Duration:** 2.5 hours
 **Topics:**
 - Build a standardized benchmark comparing agent frameworks:

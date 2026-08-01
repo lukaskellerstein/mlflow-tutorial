@@ -63,6 +63,7 @@ def contains_expected(inputs, outputs, expectations) -> bool:
     expected = expectations.get("expected_response", "")
     return expected.lower() in outputs.lower()
 
+
 results = mlflow.genai.evaluate(
     data=eval_data,
     predict_fn=answer_question,

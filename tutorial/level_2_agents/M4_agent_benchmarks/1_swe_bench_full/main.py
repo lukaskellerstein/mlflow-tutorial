@@ -23,6 +23,7 @@ SAMPLE_REPO = "sympy/sympy"
 
 # -- Helpers -------------------------------------------------------------------
 
+
 def select_instances(ds, repo: str, count: int) -> list[dict]:
     """Filter dataset to instances from a specific repo."""
     instances = [ds[i] for i in range(len(ds)) if ds[i]["repo"] == repo]
@@ -43,17 +44,19 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
     iid = instance["instance_id"]
     repo = instance["repo"]
     f2p_tests = json.loads(instance["FAIL_TO_PASS"])
-    p2p_tests = json.loads(instance["PASS_TO_PASS"])[:harness.MAX_P2P_TESTS]
+    p2p_tests = json.loads(instance["PASS_TO_PASS"])[: harness.MAX_P2P_TESTS]
 
     with mlflow.start_run(run_name=f"{config_name}_{iid}", nested=True):
-        mlflow.log_params({
-            "instance_id": iid,
-            "repo": repo,
-            "base_commit": instance["base_commit"][:8],
-            "config": config_name,
-            "f2p_test_count": len(f2p_tests),
-            "p2p_test_count": len(p2p_tests),
-        })
+        mlflow.log_params(
+            {
+                "instance_id": iid,
+                "repo": repo,
+                "base_commit": instance["base_commit"][:8],
+                "config": config_name,
+                "f2p_test_count": len(f2p_tests),
+                "p2p_test_count": len(p2p_tests),
+            }
+        )
         start = time.perf_counter()
 
         # -- Step A: Start container and setup repo ----------------------------
@@ -80,9 +83,7 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
                 harness.apply_patch(container_id, instance["test_patch"], "test.patch")
 
             print(f"    Baseline check: running {len(f2p_tests)} FAIL_TO_PASS tests ...")
-            base_passed, base_failed, _base_out = harness.run_tests(
-                container_id, f2p_tests, repo
-            )
+            base_passed, base_failed, _base_out = harness.run_tests(container_id, f2p_tests, repo)
             print(f"    Baseline: {base_passed} passed, {base_failed} failed (expect failures)")
 
             # -- Step C: Run DeepAgents agent to fix the bug -------------------
@@ -116,30 +117,27 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
                 mlflow.set_tag("status", "no_changes")
                 harness.cleanup_container(container_id)
                 return _result(
-                    iid, repo, config_name, latency, "no_changes",
-                    agent_patch="", test_output="Agent made no file changes",
+                    iid,
+                    repo,
+                    config_name,
+                    latency,
+                    "no_changes",
+                    agent_patch="",
+                    test_output="Agent made no file changes",
                 )
 
             print(f"    Agent edited files ({len(agent_diff)} bytes diff)")
 
             print(f"    Running {len(f2p_tests)} FAIL_TO_PASS tests ...")
-            f2p_passed, f2p_failed, f2p_output = harness.run_tests(
-                container_id, f2p_tests, repo
-            )
+            f2p_passed, f2p_failed, f2p_output = harness.run_tests(container_id, f2p_tests, repo)
             print(f"    FAIL_TO_PASS: {f2p_passed}/{len(f2p_tests)} passed")
 
             print(f"    Running {len(p2p_tests)} PASS_TO_PASS tests ...")
-            p2p_passed, p2p_failed, p2p_output = harness.run_tests(
-                container_id, p2p_tests, repo
-            )
+            p2p_passed, p2p_failed, p2p_output = harness.run_tests(container_id, p2p_tests, repo)
             print(f"    PASS_TO_PASS: {p2p_passed}/{len(p2p_tests)} passed")
 
             # -- Step E: Score -------------------------------------------------
-            resolved = (
-                f2p_passed == len(f2p_tests)
-                and f2p_failed == 0
-                and p2p_failed == 0
-            )
+            resolved = f2p_passed == len(f2p_tests) and f2p_failed == 0 and p2p_failed == 0
             status = "resolved" if resolved else "applied"
             latency = time.perf_counter() - start
 
@@ -147,22 +145,32 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
 
             test_output = f"=== FAIL_TO_PASS ===\n{f2p_output}\n=== PASS_TO_PASS ===\n{p2p_output}"
             save_text_artifact(test_output, "test_output")
-            mlflow.log_metrics({
-                "latency_s": round(latency, 2),
-                "resolved": int(resolved),
-                "f2p_passed": f2p_passed,
-                "f2p_total": len(f2p_tests),
-                "p2p_passed": p2p_passed,
-                "p2p_total": len(p2p_tests),
-            })
+            mlflow.log_metrics(
+                {
+                    "latency_s": round(latency, 2),
+                    "resolved": int(resolved),
+                    "f2p_passed": f2p_passed,
+                    "f2p_total": len(f2p_tests),
+                    "p2p_passed": p2p_passed,
+                    "p2p_total": len(p2p_tests),
+                }
+            )
             mlflow.set_tag("status", status)
 
             harness.cleanup_container(container_id)
             return _result(
-                iid, repo, config_name, latency, status,
-                resolved=resolved, f2p_passed=f2p_passed, f2p_total=len(f2p_tests),
-                p2p_passed=p2p_passed, p2p_total=len(p2p_tests),
-                agent_patch=agent_diff, test_output=test_output,
+                iid,
+                repo,
+                config_name,
+                latency,
+                status,
+                resolved=resolved,
+                f2p_passed=f2p_passed,
+                f2p_total=len(f2p_tests),
+                p2p_passed=p2p_passed,
+                p2p_total=len(p2p_tests),
+                agent_patch=agent_diff,
+                test_output=test_output,
             )
 
         except Exception as e:
@@ -177,12 +185,13 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
     )
 
 
-def _result(
-    iid: str, repo: str, config: str, latency: float, status: str, **kwargs
-) -> dict:
+def _result(iid: str, repo: str, config: str, latency: float, status: str, **kwargs) -> dict:
     return {
-        "instance_id": iid, "repo": repo, "config": config,
-        "latency_s": round(latency, 2), "status": status,
+        "instance_id": iid,
+        "repo": repo,
+        "config": config,
+        "latency_s": round(latency, 2),
+        "status": status,
         "resolved": kwargs.get("resolved", False),
         "f2p_passed": kwargs.get("f2p_passed", 0),
         "f2p_total": kwargs.get("f2p_total", 0),
@@ -193,15 +202,11 @@ def _result(
     }
 
 
-def _error_result(
-    iid: str, repo: str, config: str, latency: float, error: str
-) -> dict:
+def _error_result(iid: str, repo: str, config: str, latency: float, error: str) -> dict:
     return _result(iid, repo, config, latency, "error", test_output=error)
 
 
-def run_config(
-    name: str, temperature: float, instances: list[dict]
-) -> list[dict]:
+def run_config(name: str, temperature: float, instances: list[dict]) -> list[dict]:
     """Run all instances for one configuration."""
     print(f"\n{'=' * 60}")
     print(f"Config: {name}  (temperature={temperature})")
@@ -210,11 +215,13 @@ def run_config(
     results: list[dict] = []
 
     with mlflow.start_run(run_name=f"config_{name}", nested=True):
-        mlflow.log_params({
-            "temperature": temperature,
-            "model": "google/gemma-4-26b-a4b",
-            "sample_size": len(instances),
-        })
+        mlflow.log_params(
+            {
+                "temperature": temperature,
+                "model": "google/gemma-4-26b-a4b",
+                "sample_size": len(instances),
+            }
+        )
 
         for i, inst in enumerate(instances):
             print(f"\n  [{i + 1}/{len(instances)}] Instance: {inst['instance_id']}")
@@ -222,10 +229,12 @@ def run_config(
 
         df = pd.DataFrame(results)
         resolution_rate = float(df["resolved"].mean())
-        mlflow.log_metrics({
-            "resolution_rate": round(resolution_rate, 3),
-            "avg_latency_s": round(float(df["latency_s"].mean()), 2),
-        })
+        mlflow.log_metrics(
+            {
+                "resolution_rate": round(resolution_rate, 3),
+                "avg_latency_s": round(float(df["latency_s"].mean()), 2),
+            }
+        )
 
         csv_path = f"/tmp/swe_bench_full_{name}.csv"
         df.drop(columns=["agent_patch", "test_output"], errors="ignore").to_csv(
@@ -281,6 +290,7 @@ def print_summary(all_results: list[dict]) -> None:
 
 # -- Main ----------------------------------------------------------------------
 
+
 def main() -> None:
     print("=" * 60)
     print("L2-M4.1 -- Full SWE-Bench Evaluation Pipeline")
@@ -308,14 +318,16 @@ def main() -> None:
     all_results: list[dict] = []
 
     with mlflow.start_run(run_name="swe_bench_full_eval"):
-        mlflow.log_params({
-            "dataset": "SWE-bench_Verified",
-            "sample_size": len(instances),
-            "repo_filter": SAMPLE_REPO,
-            "container_runtime": harness.CONTAINER_RUNTIME,
-            "llm_provider": llm_cfg["provider"],
-            "llm_model": llm_cfg["model"],
-        })
+        mlflow.log_params(
+            {
+                "dataset": "SWE-bench_Verified",
+                "sample_size": len(instances),
+                "repo_filter": SAMPLE_REPO,
+                "container_runtime": harness.CONTAINER_RUNTIME,
+                "llm_provider": llm_cfg["provider"],
+                "llm_model": llm_cfg["model"],
+            }
+        )
         mlflow.set_tag("task", "swe_bench_full_evaluation")
 
         for name, temp in configs:

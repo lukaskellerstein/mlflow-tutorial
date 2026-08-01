@@ -18,6 +18,7 @@ SAMPLE_SIZE = 5
 
 # -- Tools for the coding agent ------------------------------------------------
 
+
 @tool
 def analyze_code(problem: str) -> str:
     """Analyze a coding problem and identify the root cause."""
@@ -26,6 +27,7 @@ def analyze_code(problem: str) -> str:
         "Key areas: error handling, edge cases, type checking. "
         "Approach: trace the failing path and apply a minimal fix."
     )
+
 
 @tool
 def generate_patch(analysis: str, repo: str) -> str:
@@ -37,6 +39,7 @@ def generate_patch(analysis: str, repo: str) -> str:
         " def fixed_function():\n"
         "-    pass  # buggy\n+    return True  # corrected\n"
     )
+
 
 TOOLS = [analyze_code, generate_patch]
 
@@ -57,6 +60,7 @@ def build_prompt(instance: dict) -> str:
         f"## Hints\n{hints}"
     )
 
+
 def run_instance(agent, instance: dict, config_name: str) -> dict:
     """Run the agent on one SWE-Bench instance and log to MLflow."""
     iid, repo = instance["instance_id"], instance["repo"]
@@ -64,53 +68,85 @@ def run_instance(agent, instance: dict, config_name: str) -> dict:
         mlflow.log_params({"instance_id": iid, "repo": repo, "config": config_name})
         start = time.perf_counter()
         try:
-            result = agent.invoke({"messages": [{"role": "user", "content": build_prompt(instance)}]})
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": build_prompt(instance)}]}
+            )
             latency = time.perf_counter() - start
             last_msg = result["messages"][-1].content
             patch_ok = "+++" in last_msg or "---" in last_msg
-            mlflow.log_metrics({"latency_s": round(latency, 2),
-                                "patch_generated": int(patch_ok),
-                                "response_length": len(last_msg)})
+            mlflow.log_metrics(
+                {
+                    "latency_s": round(latency, 2),
+                    "patch_generated": int(patch_ok),
+                    "response_length": len(last_msg),
+                }
+            )
             mlflow.set_tag("status", "success")
             print(f"  [{iid}] latency={latency:.1f}s patch={patch_ok}")
-            record = {"instance_id": iid, "repo": repo, "config": config_name,
-                      "latency_s": round(latency, 2), "patch_generated": patch_ok,
-                      "response_length": len(last_msg), "status": "success"}
+            record = {
+                "instance_id": iid,
+                "repo": repo,
+                "config": config_name,
+                "latency_s": round(latency, 2),
+                "patch_generated": patch_ok,
+                "response_length": len(last_msg),
+                "status": "success",
+            }
         except Exception as exc:
             latency = time.perf_counter() - start
             mlflow.log_metrics({"latency_s": round(latency, 2), "patch_generated": 0})
             mlflow.set_tag("status", "error")
             mlflow.set_tag("error", str(exc)[:200])
             print(f"  [{iid}] ERROR: {exc}")
-            record = {"instance_id": iid, "repo": repo, "config": config_name,
-                      "latency_s": round(latency, 2), "patch_generated": False,
-                      "response_length": 0, "status": f"error: {exc}"}
+            record = {
+                "instance_id": iid,
+                "repo": repo,
+                "config": config_name,
+                "latency_s": round(latency, 2),
+                "patch_generated": False,
+                "response_length": 0,
+                "status": f"error: {exc}",
+            }
     return record
+
 
 def run_config(name: str, temperature: float, instances: list[dict]) -> list[dict]:
     """Run the agent across all instances for a given config."""
     print(f"\n{'=' * 60}")
     print(f"Config: {name}  (temperature={temperature})")
     print("=" * 60)
-    llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio",
-                     model="google/gemma-4-26b-a4b", temperature=temperature,
-                     max_tokens=1024)  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
+    llm = ChatOpenAI(
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        model="google/gemma-4-26b-a4b",
+        temperature=temperature,
+        max_tokens=1024,
+    )  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     agent = create_agent(model=llm, tools=TOOLS, system_prompt=SYSTEM_PROMPT)
     results: list[dict] = []
     with mlflow.start_run(run_name=f"config_{name}", nested=True):
-        mlflow.log_params({"temperature": temperature,
-                           "model": "google/gemma-4-26b-a4b",
-                           "sample_size": len(instances)})
+        mlflow.log_params(
+            {
+                "temperature": temperature,
+                "model": "google/gemma-4-26b-a4b",
+                "sample_size": len(instances),
+            }
+        )
         for inst in instances:
             results.append(run_instance(agent, inst, name))
         df = pd.DataFrame(results)
-        mlflow.log_metrics({"avg_latency_s": round(float(df["latency_s"].mean()), 2),
-                            "patch_rate": round(float(df["patch_generated"].mean()), 2),
-                            "total_response_chars": int(df["response_length"].sum())})
+        mlflow.log_metrics(
+            {
+                "avg_latency_s": round(float(df["latency_s"].mean()), 2),
+                "patch_rate": round(float(df["patch_generated"].mean()), 2),
+                "total_response_chars": int(df["response_length"].sum()),
+            }
+        )
         csv_path = f"/tmp/swe_bench_{name}.csv"
         df.to_csv(csv_path, index=False)
         mlflow.log_artifact(csv_path)
     return results
+
 
 def print_summary(all_results: list[dict]) -> None:
     """Print a comparison table across configurations."""
@@ -127,7 +163,9 @@ def print_summary(all_results: list[dict]) -> None:
     print(summary.to_string())
     print()
 
+
 # -- Main ----------------------------------------------------------------------
+
 
 def main() -> None:
     print("=" * 60)
@@ -158,6 +196,7 @@ def main() -> None:
     print("=" * 60)
     print("Done. View results at http://127.0.0.1:5555")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     mlflow.set_tracking_uri("http://127.0.0.1:5555")

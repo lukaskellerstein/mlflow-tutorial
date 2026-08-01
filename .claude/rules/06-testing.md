@@ -49,7 +49,7 @@ Read the output. An exit code of 0 is not the test — the test is whether the
 lesson *taught* what it claims: the run logged, the metric recorded, the trace
 captured, the model registered.
 
-**Verify in the MLflow UI** with Playwright against http://localhost:5555:
+**Verify in the MLflow UI** with Playwright against <http://localhost:5555>:
 
 1. Open a browser via `mcp__playwright-mlflow-tutor__browser_navigate`.
 2. Go to the experiment, open the run, and confirm the params, metrics, artifacts

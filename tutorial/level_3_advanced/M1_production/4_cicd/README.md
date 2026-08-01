@@ -51,10 +51,10 @@ The `QualityGate` class holds configurable thresholds. Start with reasonable def
 ```python
 @dataclass
 class QualityGate:
-    min_accuracy: float = 0.7        # 70% of test cases must pass
-    max_latency_p95_ms: float = 5000 # P95 latency under 5 seconds
-    min_consistency: float = 0.6     # 60% consistency across retries
-    max_error_rate: float = 0.1      # Under 10% error rate
+    min_accuracy: float = 0.7  # 70% of test cases must pass
+    max_latency_p95_ms: float = 5000  # P95 latency under 5 seconds
+    min_consistency: float = 0.6  # 60% consistency across retries
+    max_error_rate: float = 0.1  # Under 10% error rate
 ```
 
 ### Step 2: Run the Evaluation Harness

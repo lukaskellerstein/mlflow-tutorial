@@ -74,9 +74,7 @@ class FeedbackCollector:
         rng = random.Random(seed)
 
         # Decide sentiment bucket
-        bucket = rng.choices(
-            ["positive", "neutral", "negative"], weights=[0.5, 0.3, 0.2]
-        )[0]
+        bucket = rng.choices(["positive", "neutral", "negative"], weights=[0.5, 0.3, 0.2])[0]
 
         if bucket == "positive":
             rating = rng.randint(4, 5)
@@ -106,9 +104,7 @@ class FeedbackCollector:
 # ---------------------------------------------------------------------------
 def log_feedback_to_mlflow(fb: UserFeedback) -> None:
     """Persist a UserFeedback record as MLflow feedback assessments."""
-    source = AssessmentSource(
-        source_type=AssessmentSourceType.HUMAN, source_id="simulated_user"
-    )
+    source = AssessmentSource(source_type=AssessmentSourceType.HUMAN, source_id="simulated_user")
 
     # Thumbs up / down
     mlflow.log_feedback(
@@ -255,12 +251,14 @@ def run_iteration(
     feedbacks: list[UserFeedback] = []
 
     with mlflow.start_run(run_name=run_name, nested=True):
-        mlflow.log_params({
-            "iteration": iteration,
-            "system_prompt": system_prompt[:250],
-            "model": "google/gemma-4-26b-a4b",
-            "num_questions": len(QUESTIONS),
-        })
+        mlflow.log_params(
+            {
+                "iteration": iteration,
+                "system_prompt": system_prompt[:250],
+                "model": "google/gemma-4-26b-a4b",
+                "num_questions": len(QUESTIONS),
+            }
+        )
 
         for idx, question in enumerate(QUESTIONS):
             print(f"    [{idx + 1}/{len(QUESTIONS)}] {question[:50]}...", flush=True)
@@ -287,16 +285,20 @@ def run_iteration(
         analysis = analyze_feedback(feedbacks)
 
         # Log aggregate metrics to the run
-        mlflow.log_metrics({
-            "avg_rating": analysis["avg_rating"],
-            "satisfaction_rate": analysis["satisfaction_rate"],
-            "low_rated_count": analysis["low_rated_count"],
-            "high_rated_count": analysis["high_rated_count"],
-        })
-        mlflow.set_tags({
-            "iteration": str(iteration),
-            "prompt_version": f"v{iteration}",
-        })
+        mlflow.log_metrics(
+            {
+                "avg_rating": analysis["avg_rating"],
+                "satisfaction_rate": analysis["satisfaction_rate"],
+                "low_rated_count": analysis["low_rated_count"],
+                "high_rated_count": analysis["high_rated_count"],
+            }
+        )
+        mlflow.set_tags(
+            {
+                "iteration": str(iteration),
+                "prompt_version": f"v{iteration}",
+            }
+        )
 
     return feedbacks, analysis
 
@@ -321,7 +323,6 @@ def main() -> None:
     mlflow.langchain.autolog(log_traces=True)
 
     with mlflow.start_run(run_name="feedback_loop_experiment"):
-
         # --- Iteration 1: baseline prompt ------------------------------------
         print("\n--- Iteration 1: Baseline prompt (v1) ---")
         fb1, analysis1 = run_iteration(
@@ -343,37 +344,49 @@ def main() -> None:
         print("=" * 60)
         delta_rating = analysis2["avg_rating"] - analysis1["avg_rating"]
         delta_sat = analysis2["satisfaction_rate"] - analysis1["satisfaction_rate"]
-        print(f"  Avg rating:        {analysis1['avg_rating']} -> {analysis2['avg_rating']}  ({delta_rating:+.2f})")
-        print(f"  Satisfaction rate:  {analysis1['satisfaction_rate']:.0%} -> {analysis2['satisfaction_rate']:.0%}  ({delta_sat:+.0%})")
-        print(f"  Low-rated:         {analysis1['low_rated_count']} -> {analysis2['low_rated_count']}")
+        print(
+            f"  Avg rating:        {analysis1['avg_rating']} -> {analysis2['avg_rating']}  ({delta_rating:+.2f})"
+        )
+        print(
+            f"  Satisfaction rate:  {analysis1['satisfaction_rate']:.0%} -> {analysis2['satisfaction_rate']:.0%}  ({delta_sat:+.0%})"
+        )
+        print(
+            f"  Low-rated:         {analysis1['low_rated_count']} -> {analysis2['low_rated_count']}"
+        )
 
-        mlflow.log_metrics({
-            "delta_avg_rating": delta_rating,
-            "delta_satisfaction_rate": delta_sat,
-            "final_avg_rating": analysis2["avg_rating"],
-            "final_satisfaction_rate": analysis2["satisfaction_rate"],
-        })
+        mlflow.log_metrics(
+            {
+                "delta_avg_rating": delta_rating,
+                "delta_satisfaction_rate": delta_sat,
+                "final_avg_rating": analysis2["avg_rating"],
+                "final_satisfaction_rate": analysis2["satisfaction_rate"],
+            }
+        )
 
         # --- Build full feedback DataFrame -----------------------------------
         all_fb = fb1 + fb2
-        df = pd.DataFrame([
-            {
-                "trace_id": fb.trace_id,
-                "question": fb.question,
-                "thumbs_up": fb.thumbs_up,
-                "rating": fb.rating,
-                "comment": fb.comment,
-                "iteration": 1 if fb in fb1 else 2,
-            }
-            for fb in all_fb
-        ])
+        df = pd.DataFrame(
+            [
+                {
+                    "trace_id": fb.trace_id,
+                    "question": fb.question,
+                    "thumbs_up": fb.thumbs_up,
+                    "rating": fb.rating,
+                    "comment": fb.comment,
+                    "iteration": 1 if fb in fb1 else 2,
+                }
+                for fb in all_fb
+            ]
+        )
         csv_path = "/tmp/feedback_report.csv"
         df.to_csv(csv_path, index=False)
         mlflow.log_artifact(csv_path, artifact_path="feedback")
 
         # Log summary table
         mlflow.log_table(
-            data=cast(pd.DataFrame, df[["question", "rating", "thumbs_up", "comment", "iteration"]]),
+            data=cast(
+                pd.DataFrame, df[["question", "rating", "thumbs_up", "comment", "iteration"]]
+            ),
             artifact_file="feedback/summary_table.json",
         )
 

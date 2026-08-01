@@ -71,10 +71,12 @@ def calculator(expression: str) -> str:
     """Evaluate a mathematical expression."""
     ...
 
+
 @tool
 def text_analyzer(text: str) -> str:
     """Analyze text and return word count, char count, etc."""
     ...
+
 
 agent = create_agent(
     ChatOpenAI(

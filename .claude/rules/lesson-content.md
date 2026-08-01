@@ -36,6 +36,7 @@ This section teaches the "why" — what problem does this solve?>
 ```
 
 ### Step 2: <Action>
+
 ...
 
 ## Running the Lesson
@@ -47,14 +48,18 @@ uv run python main.py
 ```
 
 ## Expected Output
+
 <Show what the user should see in the terminal and in MLFlow UI>
 
 ## Key Takeaways
+
 - <3-5 bullet points summarizing what was learned>
 
 ## Next Steps
+
 <Point to the next lesson and preview what it covers.
 For end-of-level lessons, point to the next level.>
+
 ```
 
 ## Writing Guidelines by Level

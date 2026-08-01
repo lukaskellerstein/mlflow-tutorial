@@ -10,7 +10,7 @@ The MLflow Prompt Registry provides centralized, versioned storage for prompt te
 ## Prerequisites
 
 - Completed: L1-M4 (Evaluations)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts

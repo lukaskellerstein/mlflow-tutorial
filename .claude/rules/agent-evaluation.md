@@ -70,6 +70,7 @@ For frameworks without native MLFlow support (Claude Agent SDK, DeepAgents), use
 ```python
 import mlflow
 
+
 @mlflow.trace
 def run_agent(input_text: str) -> str:
     with mlflow.start_span(name="agent_call") as span:

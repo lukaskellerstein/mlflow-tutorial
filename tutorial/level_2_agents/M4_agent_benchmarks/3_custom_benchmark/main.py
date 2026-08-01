@@ -100,7 +100,12 @@ BENCHMARK_DATASET = [
 
 ORDERS_DB = {
     "#12345": {"status": "shipped", "delivery": "2024-03-10", "total": 89.99, "item": "Headphones"},
-    "#67890": {"status": "processing", "delivery": "2024-03-15", "total": 149.99, "item": "Keyboard"},
+    "#67890": {
+        "status": "processing",
+        "delivery": "2024-03-15",
+        "total": 149.99,
+        "item": "Keyboard",
+    },
 }
 
 
@@ -128,12 +133,14 @@ def check_refund_policy(reason: str, order_total: float) -> str:
 @tool
 def escalate_ticket(order_id: str, summary: str, priority: str = "high") -> str:
     """Escalate a support ticket to a human supervisor."""
-    return json.dumps({
-        "ticket_id": f"ESC-{order_id.replace('#', '')}",
-        "status": "escalated",
-        "priority": priority,
-        "summary": summary[:200],
-    })
+    return json.dumps(
+        {
+            "ticket_id": f"ESC-{order_id.replace('#', '')}",
+            "status": "escalated",
+            "priority": priority,
+            "summary": summary[:200],
+        }
+    )
 
 
 TOOLS = [check_order, check_refund_policy, escalate_ticket]
@@ -155,35 +162,41 @@ def evaluate_response(response: str, task: dict) -> dict:
 def run_task(agent, task: dict, config_name: str) -> dict:
     """Run the agent on one benchmark task and log to MLflow."""
     with mlflow.start_run(run_name=f"{config_name}_{task['task_id']}", nested=True):
-        mlflow.log_params({
-            "task_id": task["task_id"],
-            "category": task["category"],
-            "difficulty": task["difficulty"],
-            "config": config_name,
-        })
+        mlflow.log_params(
+            {
+                "task_id": task["task_id"],
+                "category": task["category"],
+                "difficulty": task["difficulty"],
+                "config": config_name,
+            }
+        )
         start = time.perf_counter()
         try:
             result = agent.invoke({"messages": [{"role": "user", "content": task["input"]}]})
             latency = time.perf_counter() - start
             answer = result["messages"][-1].content
             scores = evaluate_response(answer, task)
-            tool_calls = [
-                m.name for m in result["messages"]
-                if hasattr(m, "name") and m.name
-            ]
-            mlflow.log_metrics({
-                "latency_s": round(latency, 2),
-                "answer_correct": int(scores["answer_correct"]),
-                "num_tool_calls": len(tool_calls),
-                "response_length": len(answer),
-            })
+            tool_calls = [m.name for m in result["messages"] if hasattr(m, "name") and m.name]
+            mlflow.log_metrics(
+                {
+                    "latency_s": round(latency, 2),
+                    "answer_correct": int(scores["answer_correct"]),
+                    "num_tool_calls": len(tool_calls),
+                    "response_length": len(answer),
+                }
+            )
             mlflow.set_tag("status", "success")
-            print(f"  [{task['task_id']}] D{task['difficulty']} "
-                  f"correct={scores['answer_correct']} latency={latency:.1f}s")
+            print(
+                f"  [{task['task_id']}] D{task['difficulty']} "
+                f"correct={scores['answer_correct']} latency={latency:.1f}s"
+            )
             record = {
-                **task, "config": config_name, "latency_s": round(latency, 2),
+                **task,
+                "config": config_name,
+                "latency_s": round(latency, 2),
                 "answer_correct": scores["answer_correct"],
-                "num_tool_calls": len(tool_calls), "status": "success",
+                "num_tool_calls": len(tool_calls),
+                "status": "success",
             }
         except Exception as exc:
             latency = time.perf_counter() - start
@@ -191,8 +204,11 @@ def run_task(agent, task: dict, config_name: str) -> dict:
             mlflow.set_tag("status", "error")
             print(f"  [{task['task_id']}] ERROR: {exc}")
             record = {
-                **task, "config": config_name, "latency_s": round(latency, 2),
-                "answer_correct": False, "num_tool_calls": 0,
+                **task,
+                "config": config_name,
+                "latency_s": round(latency, 2),
+                "answer_correct": False,
+                "num_tool_calls": 0,
                 "status": f"error: {exc}",
             }
     return record
@@ -205,25 +221,33 @@ def run_benchmark(config_name: str, temperature: float) -> list[dict]:
     print("=" * 60)
 
     llm = ChatOpenAI(
-        base_url="http://localhost:1234/v1", api_key="lm-studio",
-        model="google/gemma-4-26b-a4b", temperature=temperature, max_tokens=1024,  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+        model="google/gemma-4-26b-a4b",
+        temperature=temperature,
+        max_tokens=1024,  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     )
     agent = create_agent(model=llm, tools=TOOLS, system_prompt=SYSTEM_PROMPT)
     results: list[dict] = []
 
     with mlflow.start_run(run_name=f"config_{config_name}", nested=True):
-        mlflow.log_params({
-            "temperature": temperature, "model": "google/gemma-4-26b-a4b",
-            "num_tasks": len(BENCHMARK_DATASET),
-        })
+        mlflow.log_params(
+            {
+                "temperature": temperature,
+                "model": "google/gemma-4-26b-a4b",
+                "num_tasks": len(BENCHMARK_DATASET),
+            }
+        )
         for task in BENCHMARK_DATASET:
             results.append(run_task(agent, task, config_name))
 
         df = pd.DataFrame(results)
-        mlflow.log_metrics({
-            "overall_accuracy": round(float(df["answer_correct"].mean()), 3),
-            "avg_latency_s": round(float(df["latency_s"].mean()), 2),
-        })
+        mlflow.log_metrics(
+            {
+                "overall_accuracy": round(float(df["answer_correct"].mean()), 3),
+                "avg_latency_s": round(float(df["latency_s"].mean()), 2),
+            }
+        )
         for cat in df["category"].unique():
             cat_df = df[df["category"] == cat]
             mlflow.log_metric(f"accuracy_{cat}", round(float(cat_df["answer_correct"].mean()), 3))
@@ -236,6 +260,7 @@ def run_benchmark(config_name: str, temperature: float) -> list[dict]:
 
 
 # -- Step 5: Statistical analysis ---------------------------------------------
+
 
 def analyze_results(all_results: list[dict]) -> None:
     """Print statistical analysis of benchmark results."""
@@ -265,12 +290,15 @@ def analyze_results(all_results: list[dict]) -> None:
         latencies = df[df["config"] == config]["latency_s"].tolist()
         if len(latencies) >= 2:
             print(f"\n--- Latency Stats ({config}) ---")
-            print(f"  mean={statistics.mean(latencies):.2f}s "
-                  f"stdev={statistics.stdev(latencies):.2f}s "
-                  f"min={min(latencies):.2f}s max={max(latencies):.2f}s")
+            print(
+                f"  mean={statistics.mean(latencies):.2f}s "
+                f"stdev={statistics.stdev(latencies):.2f}s "
+                f"min={min(latencies):.2f}s max={max(latencies):.2f}s"
+            )
 
 
 # -- Main ---------------------------------------------------------------------
+
 
 def main() -> None:
     print("=" * 60)
@@ -292,11 +320,13 @@ def main() -> None:
     all_results: list[dict] = []
 
     with mlflow.start_run(run_name="custom_benchmark"):
-        mlflow.log_params({
-            "domain": "customer_support",
-            "num_tasks": len(BENCHMARK_DATASET),
-            "num_categories": len(TASK_TAXONOMY),
-        })
+        mlflow.log_params(
+            {
+                "domain": "customer_support",
+                "num_tasks": len(BENCHMARK_DATASET),
+                "num_categories": len(TASK_TAXONOMY),
+            }
+        )
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"taxonomy": TASK_TAXONOMY, "dataset": BENCHMARK_DATASET}, f, indent=2)
             mlflow.log_artifact(f.name, "benchmark_definition")

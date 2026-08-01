@@ -55,7 +55,10 @@ We define three task categories for a customer support agent, each with increasi
 TASK_TAXONOMY = {
     "order_lookup": {"difficulty": 1, "required_tools": ["check_order"]},
     "refund_request": {"difficulty": 2, "required_tools": ["check_order", "check_refund_policy"]},
-    "complex_complaint": {"difficulty": 3, "required_tools": ["check_order", "check_refund_policy", "escalate_ticket"]},
+    "complex_complaint": {
+        "difficulty": 3,
+        "required_tools": ["check_order", "check_refund_policy", "escalate_ticket"],
+    },
 }
 ```
 

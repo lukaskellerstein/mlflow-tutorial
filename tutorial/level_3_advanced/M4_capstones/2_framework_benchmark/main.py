@@ -43,17 +43,17 @@ LLM = ChatOpenAI(
 
 KNOWLEDGE: dict[str, str] = {
     "python": "Python is a high-level programming language created by Guido van Rossum, "
-              "known for readability and a vast ecosystem of libraries.",
+    "known for readability and a vast ecosystem of libraries.",
     "mlflow": "MLflow is an open-source platform for the ML lifecycle providing "
-              "tracking, model registry, evaluation, and deployment capabilities.",
+    "tracking, model registry, evaluation, and deployment capabilities.",
     "docker": "Docker is a containerization platform that packages applications "
-              "and dependencies into lightweight, portable containers.",
+    "and dependencies into lightweight, portable containers.",
     "kubernetes": "Kubernetes is an open-source container orchestration system that "
-                  "automates deployment, scaling, and management of containers.",
+    "automates deployment, scaling, and management of containers.",
     "langchain": "LangChain is a framework for building LLM-powered applications "
-                 "with abstractions for chains, agents, memory, and tools.",
+    "with abstractions for chains, agents, memory, and tools.",
     "langgraph": "LangGraph builds stateful multi-actor LLM applications using "
-                 "graph-based workflows with nodes, edges, and state management.",
+    "graph-based workflows with nodes, edges, and state management.",
 }
 
 
@@ -92,15 +92,18 @@ TOOLS = [lookup, calculate]
 
 # ── Agent implementations ─────────────────────────────────
 
+
 def build_simple_chain() -> Callable[[str], dict]:
     """Approach A: prompt -> LLM -> answer (no tools)."""
 
     def run(question: str) -> dict:
         start = time.time()
-        response = LLM.invoke([
-            {"role": "system", "content": "Answer the question concisely in 1-2 sentences."},
-            {"role": "user", "content": question},
-        ])
+        response = LLM.invoke(
+            [
+                {"role": "system", "content": "Answer the question concisely in 1-2 sentences."},
+                {"role": "user", "content": question},
+            ]
+        )
         elapsed = time.time() - start
         answer = str(response.content)
         return {
@@ -119,8 +122,8 @@ def build_react_agent() -> Callable[[str], dict]:
         model=LLM,
         tools=TOOLS,
         prompt="You are a helpful assistant. Use the provided tools when the "
-               "question is about a technology topic or requires calculation. "
-               "Answer concisely.",
+        "question is about a technology topic or requires calculation. "
+        "Answer concisely.",
     )
 
     def run(question: str) -> dict:
@@ -131,9 +134,7 @@ def build_react_agent() -> Callable[[str], dict]:
         answer = messages[-1].content if messages else ""
         tc = sum(1 for m in messages if m.type == "tool")
         tokens = sum(
-            len(m.content.split())
-            for m in messages
-            if hasattr(m, "content") and m.content
+            len(m.content.split()) for m in messages if hasattr(m, "content") and m.content
         )
         return {
             "answer": answer,
@@ -157,14 +158,18 @@ def build_stategraph_agent() -> Callable[[str], dict]:
     def classify_node(state: GraphState) -> dict:
         user_msg = state["messages"][-1]
         q = user_msg.content if hasattr(user_msg, "content") else str(user_msg)
-        resp = LLM.invoke([
-            {"role": "system",
-             "content": "Classify the following question into exactly one category. "
-                        "Reply with ONLY the category name, nothing else.\n"
-                        "Categories: tech_lookup, math, general"},
-            {"role": "user", "content": q},
-        ])
-        cat = str(resp.content).strip().lower().replace("'", "").replace('"', '')
+        resp = LLM.invoke(
+            [
+                {
+                    "role": "system",
+                    "content": "Classify the following question into exactly one category. "
+                    "Reply with ONLY the category name, nothing else.\n"
+                    "Categories: tech_lookup, math, general",
+                },
+                {"role": "user", "content": q},
+            ]
+        )
+        cat = str(resp.content).strip().lower().replace("'", "").replace('"', "")
         if "tech" in cat or "lookup" in cat:
             cat = "tech_lookup"
         elif "math" in cat or "calc" in cat:
@@ -190,11 +195,16 @@ def build_stategraph_agent() -> Callable[[str], dict]:
     def process_math(state: GraphState) -> dict:
         user_msg = state["messages"][0]
         q = user_msg.content if hasattr(user_msg, "content") else str(user_msg)
-        resp = LLM.invoke([
-            {"role": "system", "content": "Extract ONLY the math expression from this question. "
-                                          "Reply with just the expression, nothing else."},
-            {"role": "user", "content": q},
-        ])
+        resp = LLM.invoke(
+            [
+                {
+                    "role": "system",
+                    "content": "Extract ONLY the math expression from this question. "
+                    "Reply with just the expression, nothing else.",
+                },
+                {"role": "user", "content": q},
+            ]
+        )
         expr = str(resp.content).strip()
         result = calculate.invoke(expr)
         return {"context": f"Calculation result: {result}"}
@@ -232,12 +242,14 @@ def build_stategraph_agent() -> Callable[[str], dict]:
 
     def run(question: str) -> dict:
         start = time.time()
-        result = compiled.invoke({
-            "messages": [{"role": "user", "content": question}],
-            "category": "",
-            "context": "",
-            "answer": "",
-        })
+        result = compiled.invoke(
+            {
+                "messages": [{"role": "user", "content": question}],
+                "category": "",
+                "context": "",
+                "answer": "",
+            }
+        )
         elapsed = time.time() - start
         answer = result.get("answer", "")
         tool_calls = 1 if result.get("context", "") else 0
@@ -252,6 +264,7 @@ def build_stategraph_agent() -> Callable[[str], dict]:
 
 
 # ── Benchmark Suite ───────────────────────────────────────
+
 
 @dataclass
 class TestCase:
@@ -298,12 +311,14 @@ class BenchmarkSuite:
         self.results = []
 
         with mlflow.start_run(run_name="benchmark") as parent:
-            mlflow.set_tags({
-                "benchmark_type": "framework_comparison",
-                "num_agents": str(len(self.agents)),
-                "num_test_cases": str(len(self.test_cases)),
-                "model": "google/gemma-4-26b-a4b",
-            })
+            mlflow.set_tags(
+                {
+                    "benchmark_type": "framework_comparison",
+                    "num_agents": str(len(self.agents)),
+                    "num_test_cases": str(len(self.test_cases)),
+                    "model": "google/gemma-4-26b-a4b",
+                }
+            )
 
             for agent_entry in self.agents:
                 print(f"\n{'─' * 70}")
@@ -312,17 +327,17 @@ class BenchmarkSuite:
                 print(f"{'─' * 70}")
 
                 with mlflow.start_run(run_name=agent_entry.name, nested=True):
-                    mlflow.log_params({
-                        "agent": agent_entry.name,
-                        "model": "google/gemma-4-26b-a4b",
-                        "num_cases": len(self.test_cases),
-                    })
+                    mlflow.log_params(
+                        {
+                            "agent": agent_entry.name,
+                            "model": "google/gemma-4-26b-a4b",
+                            "num_cases": len(self.test_cases),
+                        }
+                    )
 
                     agent_rows: list[dict] = []
                     for i, tc in enumerate(self.test_cases, 1):
-                        with mlflow.start_run(
-                            run_name=f"case_{i}_{tc.category}", nested=True
-                        ):
+                        with mlflow.start_run(run_name=f"case_{i}_{tc.category}", nested=True):
                             try:
                                 result = agent_entry.run_fn(tc.question)
                             except Exception as e:
@@ -336,9 +351,7 @@ class BenchmarkSuite:
                             correctness = self._score_correctness(
                                 result["answer"], tc.expected_keyword
                             )
-                            tool_score = self._score_tool_usage(
-                                result["tool_calls"], tc.needs_tool
-                            )
+                            tool_score = self._score_tool_usage(result["tool_calls"], tc.needs_tool)
 
                             row = {
                                 "agent": agent_entry.name,
@@ -355,23 +368,24 @@ class BenchmarkSuite:
                             agent_rows.append(row)
                             self.results.append(row)
 
-                            mlflow.log_params({
-                                "question": tc.question[:250],
-                                "category": tc.category,
-                                "needs_tool": str(tc.needs_tool),
-                            })
-                            mlflow.log_metrics({
-                                "correctness": correctness,
-                                "tool_usage": tool_score,
-                                "latency_s": result["latency_s"],
-                                "tokens_est": result["tokens_est"],
-                            })
+                            mlflow.log_params(
+                                {
+                                    "question": tc.question[:250],
+                                    "category": tc.category,
+                                    "needs_tool": str(tc.needs_tool),
+                                }
+                            )
+                            mlflow.log_metrics(
+                                {
+                                    "correctness": correctness,
+                                    "tool_usage": tool_score,
+                                    "latency_s": result["latency_s"],
+                                    "tokens_est": result["tokens_est"],
+                                }
+                            )
 
                             status = "PASS" if correctness == 1.0 else "FAIL"
-                            print(
-                                f"  [{status}] Q{i} ({tc.category}): "
-                                f"{tc.question[:45]}"
-                            )
+                            print(f"  [{status}] Q{i} ({tc.category}): {tc.question[:45]}")
                             print(
                                 f"         Correctness={correctness:.0f}  "
                                 f"ToolUse={tool_score:.1f}  "
@@ -381,18 +395,10 @@ class BenchmarkSuite:
                     # Log agent-level aggregate metrics
                     n = len(agent_rows)
                     agg = {
-                        "avg_correctness": round(
-                            sum(r["correctness"] for r in agent_rows) / n, 3
-                        ),
-                        "avg_tool_usage": round(
-                            sum(r["tool_usage"] for r in agent_rows) / n, 3
-                        ),
-                        "avg_latency_s": round(
-                            sum(r["latency_s"] for r in agent_rows) / n, 3
-                        ),
-                        "total_tokens_est": sum(
-                            r["tokens_est"] for r in agent_rows
-                        ),
+                        "avg_correctness": round(sum(r["correctness"] for r in agent_rows) / n, 3),
+                        "avg_tool_usage": round(sum(r["tool_usage"] for r in agent_rows) / n, 3),
+                        "avg_latency_s": round(sum(r["latency_s"] for r in agent_rows) / n, 3),
+                        "total_tokens_est": sum(r["tokens_est"] for r in agent_rows),
                     }
                     mlflow.log_metrics(agg)
 
@@ -405,20 +411,23 @@ class BenchmarkSuite:
     def _build_summary(self) -> None:
         """Compute per-agent aggregate metrics."""
         df = pd.DataFrame(self.results)
-        self.summary_df = cast(pd.DataFrame, df.groupby("agent").agg(
-            correctness=("correctness", "mean"),
-            tool_usage=("tool_usage", "mean"),
-            latency_s=("latency_s", "mean"),
-            tokens_est=("tokens_est", "sum"),
-            tool_calls=("tool_calls", "sum"),
-        ).round(3))
+        self.summary_df = cast(
+            pd.DataFrame,
+            df.groupby("agent")
+            .agg(
+                correctness=("correctness", "mean"),
+                tool_usage=("tool_usage", "mean"),
+                latency_s=("latency_s", "mean"),
+                tokens_est=("tokens_est", "sum"),
+                tool_calls=("tool_calls", "sum"),
+            )
+            .round(3),
+        )
         self.summary_df["quality"] = (
             (self.summary_df["correctness"] + self.summary_df["tool_usage"]) / 2
         ).round(3)
         self.summary_df["token_efficiency"] = (
-            self.summary_df["quality"]
-            / self.summary_df["tokens_est"].clip(lower=1)
-            * 100
+            self.summary_df["quality"] / self.summary_df["tokens_est"].clip(lower=1) * 100
         ).round(3)
 
     def _log_artifacts(self, parent_run: Any) -> None:
@@ -445,11 +454,13 @@ class BenchmarkSuite:
             best_quality = self.summary_df["quality"].idxmax()
             fastest = self.summary_df["latency_s"].idxmin()
             most_efficient = self.summary_df["token_efficiency"].idxmax()
-            mlflow.log_params({
-                "best_quality_agent": best_quality,
-                "fastest_agent": fastest,
-                "most_efficient_agent": most_efficient,
-            })
+            mlflow.log_params(
+                {
+                    "best_quality_agent": best_quality,
+                    "fastest_agent": fastest,
+                    "most_efficient_agent": most_efficient,
+                }
+            )
 
     def generate_report(self) -> str:
         """Generate a full benchmark report string."""
@@ -488,8 +499,7 @@ class BenchmarkSuite:
             most_eff = self.summary_df["token_efficiency"].idxmax()
 
             lines.append(
-                f"  Best quality:     {best_q} "
-                f"(score={self.summary_df.loc[best_q, 'quality']:.3f})"
+                f"  Best quality:     {best_q} (score={self.summary_df.loc[best_q, 'quality']:.3f})"
             )
             lines.append(
                 f"  Fastest:          {fastest} "
@@ -530,16 +540,14 @@ class BenchmarkSuite:
                 if other == arch:
                     continue
                 other_better_quality = (
-                    self.summary_df.loc[other, "quality"]
-                    >= self.summary_df.loc[arch, "quality"]
+                    self.summary_df.loc[other, "quality"] >= self.summary_df.loc[arch, "quality"]
                 )
                 other_lower_latency = (
                     self.summary_df.loc[other, "latency_s"]
                     <= self.summary_df.loc[arch, "latency_s"]
                 )
                 strictly_better = (
-                    self.summary_df.loc[other, "quality"]
-                    > self.summary_df.loc[arch, "quality"]
+                    self.summary_df.loc[other, "quality"] > self.summary_df.loc[arch, "quality"]
                     or self.summary_df.loc[other, "latency_s"]
                     < self.summary_df.loc[arch, "latency_s"]
                 )
@@ -589,6 +597,7 @@ class BenchmarkSuite:
 
 # ── Evaluation dataset ────────────────────────────────────
 
+
 def create_test_cases() -> list[TestCase]:
     """6 test cases across three categories."""
     return [
@@ -635,6 +644,7 @@ def create_test_cases() -> list[TestCase]:
 
 
 # ── Main ──────────────────────────────────────────────────
+
 
 def main() -> None:
     print("=" * 70)

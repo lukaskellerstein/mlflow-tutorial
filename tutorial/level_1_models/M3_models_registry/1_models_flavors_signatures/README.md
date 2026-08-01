@@ -99,10 +99,12 @@ signature = ModelSignature(inputs=input_schema, outputs=output_schema)
 ### Step 5: Add Inference Parameters
 
 ```python
-param_schema = ParamSchema([
-    ParamSpec("temperature", DataType.double, default=0.7),
-    ParamSpec("max_tokens", DataType.long, default=256),
-])
+param_schema = ParamSchema(
+    [
+        ParamSpec("temperature", DataType.double, default=0.7),
+        ParamSpec("max_tokens", DataType.long, default=256),
+    ]
+)
 signature = ModelSignature(inputs=input_schema, outputs=output_schema, params=param_schema)
 ```
 

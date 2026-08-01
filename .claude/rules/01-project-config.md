@@ -51,12 +51,12 @@ Started with `podman compose up -d` from `infra/`.
 
 | Service | URL | Notes |
 |:--|:--|:--|
-| MLflow UI | http://localhost:5555 | tracking server + artifact store |
-| Temporal UI | http://localhost:8080 | Level 3 only |
-| Qdrant | http://localhost:6333/dashboard | vector DB for RAG lessons |
-| Grafana | http://localhost:3000 | admin/admin, Level 3 |
-| Prometheus | http://localhost:9090 | Level 3 |
-| LMStudio | http://localhost:1234/v1/ | **not** in podman — runs natively for Apple Silicon GPU access |
+| MLflow UI | <http://localhost:5555> | tracking server + artifact store |
+| Temporal UI | <http://localhost:8080> | Level 3 only |
+| Qdrant | <http://localhost:6333/dashboard> | vector DB for RAG lessons |
+| Grafana | <http://localhost:3000> | admin/admin, Level 3 |
+| Prometheus | <http://localhost:9090> | Level 3 |
+| LMStudio | <http://localhost:1234/v1/> | **not** in podman — runs natively for Apple Silicon GPU access |
 
 `infra/.env` is local-only and untracked; the committed `infra/.env.example`
 carries the variable names and the localhost-only development defaults

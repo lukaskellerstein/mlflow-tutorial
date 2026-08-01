@@ -62,10 +62,12 @@ def search_knowledge(query: str) -> str:
     """Search a knowledge base for information on a topic."""
     ...
 
+
 @tool
 def calculate(expression: str) -> str:
     """Evaluate a simple math expression."""
     ...
+
 
 def build_agent():
     llm = ChatOpenAI(
@@ -82,10 +84,15 @@ def build_agent():
 The dataset includes 6 test cases across two categories (knowledge and math), each specifying which tool should be used:
 
 ```python
-{"input": "What is Python?", "expected": "high-level programming language",
- "category": "knowledge", "needs_tool": "search_knowledge"},
-{"input": "What is 25 * 4?", "expected": "100",
- "category": "math", "needs_tool": "calculate"},
+(
+    {
+        "input": "What is Python?",
+        "expected": "high-level programming language",
+        "category": "knowledge",
+        "needs_tool": "search_knowledge",
+    },
+)
+({"input": "What is 25 * 4?", "expected": "100", "category": "math", "needs_tool": "calculate"},)
 ```
 
 ### Step 3: The Pipeline Class

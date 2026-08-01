@@ -25,6 +25,7 @@ from langchain_openai import ChatOpenAI
 
 # ── LLM config ──────────────────────────────────────────────────────────────
 
+
 def load_llm_config() -> dict:
     """Load active LLM provider from llm_config.yaml."""
     config_path = Path(__file__).parent / "llm_config.yaml"
@@ -39,9 +40,7 @@ def load_llm_config() -> dict:
         env_var = api_key[1:]
         api_key = os.environ.get(env_var, "")
         if not api_key:
-            raise ValueError(
-                f"Set {env_var} environment variable for provider '{active}'"
-            )
+            raise ValueError(f"Set {env_var} environment variable for provider '{active}'")
 
     return {
         "provider": active,
@@ -54,6 +53,7 @@ def load_llm_config() -> dict:
 
 # ── ContainerSandbox ─────────────────────────────────────────────────────────
 
+
 class ContainerSandbox(BaseSandbox):
     """Sandbox backed by a running Docker/Podman container."""
 
@@ -65,23 +65,26 @@ class ContainerSandbox(BaseSandbox):
     def id(self) -> str:
         return self._container_id
 
-    def execute(
-        self, command: str, *, timeout: int | None = None
-    ) -> ExecuteResponse:
+    def execute(self, command: str, *, timeout: int | None = None) -> ExecuteResponse:
         t = timeout or 120
         rc, stdout, stderr = exec_in_container(self._container_id, command, timeout=t)
         output = stdout + stderr
         return ExecuteResponse(output=output, exit_code=rc, truncated=False)
 
-    def upload_files(
-        self, files: list[tuple[str, bytes]]
-    ) -> list[FileUploadResponse]:
+    def upload_files(self, files: list[tuple[str, bytes]]) -> list[FileUploadResponse]:
         results: list[FileUploadResponse] = []
         for path, content in files:
             try:
                 proc = subprocess.run(
-                    [self._runtime, "exec", "-i", self._container_id, "bash", "-c",
-                     f"cat > {path}"],
+                    [
+                        self._runtime,
+                        "exec",
+                        "-i",
+                        self._container_id,
+                        "bash",
+                        "-c",
+                        f"cat > {path}",
+                    ],
                     input=content,
                     capture_output=True,
                     timeout=30,
@@ -95,22 +98,26 @@ class ContainerSandbox(BaseSandbox):
                 results.append(FileUploadResponse(path=path, error=str(e)))
         return results
 
-    def download_files(
-        self, paths: list[str]
-    ) -> list[FileDownloadResponse]:
+    def download_files(self, paths: list[str]) -> list[FileDownloadResponse]:
         results: list[FileDownloadResponse] = []
         for path in paths:
-            rc, stdout, stderr = exec_in_container(
-                self._container_id, f"cat {path}"
-            )
+            rc, stdout, stderr = exec_in_container(self._container_id, f"cat {path}")
             if rc != 0:
-                results.append(FileDownloadResponse(
-                    path=path, content=None, error=stderr.strip(),
-                ))
+                results.append(
+                    FileDownloadResponse(
+                        path=path,
+                        content=None,
+                        error=stderr.strip(),
+                    )
+                )
             else:
-                results.append(FileDownloadResponse(
-                    path=path, content=stdout.encode(), error=None,
-                ))
+                results.append(
+                    FileDownloadResponse(
+                        path=path,
+                        content=stdout.encode(),
+                        error=None,
+                    )
+                )
         return results
 
 
@@ -158,7 +165,6 @@ def build_prompt(instance: dict) -> str:
     if hints.strip():
         prompt += f"\n## Hints\n{hints}\n"
     prompt += (
-        "\nExplore the codebase to understand the issue, "
-        "then edit the source files to fix the bug."
+        "\nExplore the codebase to understand the issue, then edit the source files to fix the bug."
     )
     return prompt

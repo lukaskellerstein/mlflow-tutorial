@@ -134,14 +134,16 @@ class SimpleRAG:
         self._doc_vectors = [_tfidf_vector(t, self._idf) for t in self._corpus_tokens]
 
         self._chain = (
-            ChatPromptTemplate.from_messages([
-                (
-                    "system",
-                    "Answer the question using ONLY the provided context. "
-                    "If the context does not contain the answer, say 'I don't know'.",
-                ),
-                ("human", "Context:\n{context}\n\nQuestion: {question}"),
-            ])
+            ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        "Answer the question using ONLY the provided context. "
+                        "If the context does not contain the answer, say 'I don't know'.",
+                    ),
+                    ("human", "Context:\n{context}\n\nQuestion: {question}"),
+                ]
+            )
             | llm
             | StrOutputParser()
         )
@@ -292,14 +294,16 @@ def run_evaluation(rag: SimpleRAG, strategy_name: str) -> dict:
     results = []
     for item in EVAL_DATASET:
         rag_output = rag.answer(item["question"])
-        results.append({
-            "inputs": {"question": item["question"]},
-            "outputs": rag_output,
-            "expectations": {
-                "expected_answer": item["expected_answer"],
-                "expected_doc_ids": item["expected_doc_ids"],
-            },
-        })
+        results.append(
+            {
+                "inputs": {"question": item["question"]},
+                "outputs": rag_output,
+                "expectations": {
+                    "expected_answer": item["expected_answer"],
+                    "expected_doc_ids": item["expected_doc_ids"],
+                },
+            }
+        )
 
     eval_df = pd.DataFrame(results)
 

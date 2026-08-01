@@ -96,11 +96,11 @@ podman compose up -d
 
 | Service | URL |
 |---------|-----|
-| MLflow UI | http://localhost:5555 |
-| Temporal UI | http://localhost:8080 |
-| Qdrant | http://localhost:6333/dashboard |
-| Grafana | http://localhost:3000 (admin/admin) |
-| Prometheus | http://localhost:9090 |
+| MLflow UI | <http://localhost:5555> |
+| Temporal UI | <http://localhost:8080> |
+| Qdrant | <http://localhost:6333/dashboard> |
+| Grafana | <http://localhost:3000> (admin/admin) |
+| Prometheus | <http://localhost:9090> |
 
 LMStudio runs natively (not in Podman) for Apple Silicon GPU access.
 

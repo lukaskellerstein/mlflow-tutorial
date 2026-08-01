@@ -92,6 +92,7 @@ Finally, we create traces that mix MLflow-managed spans (with inputs/outputs vis
 ```python
 custom_tracer = tracer_provider.get_tracer("custom-otel-instrumentation")
 
+
 @mlflow.trace(name="pipeline")
 def pipeline():
     with custom_tracer.start_as_current_span("db_query") as span:

@@ -51,11 +51,13 @@ The model is logged with an inferred signature so MLflow validates inputs at pre
 class LLMModel(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
         from openai import OpenAI
+
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
     def predict(self, context, model_input, params=None):
         # Loop over prompts, call LLM, collect responses + timing + tokens
         ...
+
 
 mlflow.pyfunc.log_model(name="llm_model", python_model=LLMModel(), signature=signature)
 ```

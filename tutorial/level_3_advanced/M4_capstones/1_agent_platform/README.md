@@ -106,12 +106,14 @@ Three agents are registered, each with different tools and system prompts:
 
 ```python
 registry = AgentRegistry()
-registry.register(AgentConfig(
-    name="qa_agent",
-    description="General Q&A agent",
-    tools=[search_knowledge],
-    system_prompt="You are a helpful Q&A assistant...",
-))
+registry.register(
+    AgentConfig(
+        name="qa_agent",
+        description="General Q&A agent",
+        tools=[search_knowledge],
+        system_prompt="You are a helpful Q&A assistant...",
+    )
+)
 ```
 
 Each call to `register()` creates a LangGraph ReAct agent using `create_react_agent` with `ChatOpenAI(model="google/gemma-4-26b-a4b")`.

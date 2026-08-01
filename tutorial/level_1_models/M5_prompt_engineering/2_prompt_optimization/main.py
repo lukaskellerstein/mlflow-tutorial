@@ -121,12 +121,14 @@ def evaluate_prompt(prompt_text: str, dataset: list[dict]) -> list[dict]:
     for item in dataset:
         predicted = ask_llm(prompt_text, item["question"])
         scores = score_answer(predicted, item["expected"])
-        results.append({
-            "question": item["question"],
-            "expected": item["expected"],
-            "predicted": predicted,
-            **scores,
-        })
+        results.append(
+            {
+                "question": item["question"],
+                "expected": item["expected"],
+                "predicted": predicted,
+                **scores,
+            }
+        )
     return results
 
 
@@ -142,13 +144,15 @@ def run_iteration(
 ) -> dict:
     """Evaluate a prompt variant and log everything to MLflow."""
     with mlflow.start_run(run_name=variant_name, nested=True) as run:
-        mlflow.log_params({
-            "variant": variant_name,
-            "iteration": iteration,
-            "prompt_length": len(prompt_text),
-            "prompt_word_count": len(prompt_text.split()),
-            "model": MODEL_NAME,
-        })
+        mlflow.log_params(
+            {
+                "variant": variant_name,
+                "iteration": iteration,
+                "prompt_length": len(prompt_text),
+                "prompt_word_count": len(prompt_text.split()),
+                "model": MODEL_NAME,
+            }
+        )
         mlflow.set_tag("prompt_text", prompt_text[:250])
 
         start = time.time()
@@ -175,11 +179,13 @@ def run_iteration(
             f.write(prompt_text)
         mlflow.log_artifact(prompt_path, artifact_path="prompts")
 
-        print(f"  [{iteration}] {variant_name:30s}  "
-              f"match={avg_metrics['avg_exact_match']:.2f}  "
-              f"brevity={avg_metrics['avg_brevity']:.2f}  "
-              f"composite={avg_metrics['avg_composite']:.2f}  "
-              f"({elapsed:.1f}s)")
+        print(
+            f"  [{iteration}] {variant_name:30s}  "
+            f"match={avg_metrics['avg_exact_match']:.2f}  "
+            f"brevity={avg_metrics['avg_brevity']:.2f}  "
+            f"composite={avg_metrics['avg_composite']:.2f}  "
+            f"({elapsed:.1f}s)"
+        )
 
         record = {
             "variant": variant_name,
@@ -247,11 +253,13 @@ def main() -> None:
     all_results: list[dict] = []
 
     with mlflow.start_run(run_name="prompt_optimization") as parent_run:
-        mlflow.set_tags({
-            "task": "prompt_optimization",
-            "dataset_size": str(len(EVAL_DATA)),
-            "model": MODEL_NAME,
-        })
+        mlflow.set_tags(
+            {
+                "task": "prompt_optimization",
+                "dataset_size": str(len(EVAL_DATA)),
+                "model": MODEL_NAME,
+            }
+        )
 
         # ── Part 2: Manual optimization loop ──────────────────────────────
         print("=" * 60)
@@ -278,8 +286,10 @@ def main() -> None:
         # Use the best instruction variant so far as the base
         best_so_far = max(all_results, key=lambda r: r["avg_composite"])
         base_prompt = dict(PROMPT_VARIANTS)[best_so_far["variant"]]
-        print(f"  Base prompt: '{best_so_far['variant']}' "
-              f"(composite={best_so_far['avg_composite']:.2f})")
+        print(
+            f"  Base prompt: '{best_so_far['variant']}' "
+            f"(composite={best_so_far['avg_composite']:.2f})"
+        )
         print()
 
         for n_examples in range(4):  # 0, 1, 2, 3
@@ -305,8 +315,14 @@ def main() -> None:
         print("=" * 60)
 
         summary_df = pd.DataFrame(all_results)
-        display_cols = ["iteration", "variant", "avg_exact_match",
-                        "avg_brevity", "avg_confidence", "avg_composite"]
+        display_cols = [
+            "iteration",
+            "variant",
+            "avg_exact_match",
+            "avg_brevity",
+            "avg_confidence",
+            "avg_composite",
+        ]
         print()
         print(summary_df[display_cols].to_string(index=False))
         print()
@@ -325,11 +341,13 @@ def main() -> None:
                 step=r["iteration"],
             )
 
-        mlflow.log_params({
-            "best_variant": best["variant"],
-            "best_composite": round(float(best["avg_composite"]), 4),
-            "total_iterations": len(all_results),
-        })
+        mlflow.log_params(
+            {
+                "best_variant": best["variant"],
+                "best_composite": round(float(best["avg_composite"]), 4),
+                "total_iterations": len(all_results),
+            }
+        )
 
         # Log the full summary table
         mlflow.log_table(summary_df, artifact_file="optimization_summary.json")

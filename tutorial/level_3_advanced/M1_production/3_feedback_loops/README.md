@@ -73,9 +73,7 @@ mlflow.log_feedback(
     trace_id=fb.trace_id,
     name="user_rating",
     value=fb.rating,
-    source=AssessmentSource(
-        source_type=AssessmentSourceType.HUMAN, source_id="simulated_user"
-    ),
+    source=AssessmentSource(source_type=AssessmentSourceType.HUMAN, source_id="simulated_user"),
     rationale=fb.comment,
 )
 ```

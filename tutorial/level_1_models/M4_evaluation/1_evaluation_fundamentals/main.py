@@ -12,9 +12,9 @@ import json
 import re
 
 import mlflow
-from openai import OpenAI
 import pandas as pd
 from mlflow.genai.scorers import ResponseLength, scorer
+from openai import OpenAI
 
 # -- Configuration --
 LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
@@ -81,13 +81,15 @@ def part1_genai_evaluate() -> None:
     print("Part 1: mlflow.genai.evaluate() with scorers")
     print("=" * 60)
 
-    eval_data = pd.DataFrame([
-        {
-            "inputs": {"question": qa["question"]},
-            "expectations": {"expected_response": qa["expected_response"]},
-        }
-        for qa in QA_PAIRS
-    ])
+    eval_data = pd.DataFrame(
+        [
+            {
+                "inputs": {"question": qa["question"]},
+                "expectations": {"expected_response": qa["expected_response"]},
+            }
+            for qa in QA_PAIRS
+        ]
+    )
 
     print(f"  Dataset: {len(eval_data)} questions")
     print("  Scorers: ResponseLength(1-500 words), contains_expected")
@@ -188,12 +190,14 @@ def part2_llm_as_judge() -> list[dict]:
         print(f"    Judge score    : {verdict['score']}/5")
         print(f"    Justification  : {verdict['justification']}")
 
-        results.append({
-            "question": qa["question"],
-            "model_answer": model_answer,
-            "judge_score": verdict["score"],
-            "justification": verdict["justification"],
-        })
+        results.append(
+            {
+                "question": qa["question"],
+                "model_answer": model_answer,
+                "judge_score": verdict["score"],
+                "justification": verdict["justification"],
+            }
+        )
 
     avg_score = sum(r["judge_score"] for r in results) / len(results)
     print(f"\n  Average judge score: {avg_score:.2f} / 5")
@@ -205,13 +209,31 @@ def custom_scorer(expected: str, response: str) -> dict[str, float]:
     """Deterministic scorer: length ratio, keyword overlap, detail depth."""
     len_ratio = min(len(response) / max(len(expected), 1), 1.5) / 1.5
 
-    stop_words = {"the", "a", "an", "is", "are", "was", "were", "and", "or",
-                  "of", "to", "in", "on", "by", "it", "that", "this", "for"}
+    stop_words = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "was",
+        "were",
+        "and",
+        "or",
+        "of",
+        "to",
+        "in",
+        "on",
+        "by",
+        "it",
+        "that",
+        "this",
+        "for",
+    }
     expected_kw = set(expected.lower().split()) - stop_words
     response_kw = set(response.lower().split()) - stop_words
     overlap = len(expected_kw & response_kw) / max(len(expected_kw), 1)
 
-    sentence_count = len(re.split(r'[.!?]+', response.strip())) - 1
+    sentence_count = len(re.split(r"[.!?]+", response.strip())) - 1
     detail = min(sentence_count / 3.0, 1.0)
 
     composite = round(0.4 * len_ratio + 0.4 * overlap + 0.2 * detail, 3)
@@ -272,13 +294,19 @@ def part4_combined(judge_results: list[dict]) -> None:
     print(f"  {'-' * 35} {'-' * 7} {'-' * 9} {'-' * 8}")
     for r in all_rows:
         q = r["question"][:33] + (".." if len(r["question"]) > 33 else "")
-        print(f"  {q:<35s} {r['judge_score']:>7.2f} "
-              f"{r['keyword_overlap']:>9.3f} {r['custom_composite']:>8.3f}")
+        print(
+            f"  {q:<35s} {r['judge_score']:>7.2f} "
+            f"{r['keyword_overlap']:>9.3f} {r['custom_composite']:>8.3f}"
+        )
 
-    avgs = {k: sum(r[k] for r in all_rows) / len(all_rows)
-            for k in ["judge_score", "keyword_overlap", "custom_composite"]}
-    print(f"  {'AVERAGE':<35s} {avgs['judge_score']:>7.2f} "
-          f"{avgs['keyword_overlap']:>9.3f} {avgs['custom_composite']:>8.3f}")
+    avgs = {
+        k: sum(r[k] for r in all_rows) / len(all_rows)
+        for k in ["judge_score", "keyword_overlap", "custom_composite"]
+    }
+    print(
+        f"  {'AVERAGE':<35s} {avgs['judge_score']:>7.2f} "
+        f"{avgs['keyword_overlap']:>9.3f} {avgs['custom_composite']:>8.3f}"
+    )
     print()
 
 

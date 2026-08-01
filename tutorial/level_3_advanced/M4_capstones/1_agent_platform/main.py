@@ -79,6 +79,7 @@ def summarize_text(text: str) -> str:
 @dataclass
 class AgentConfig:
     """Configuration for a registered agent."""
+
     name: str
     description: str
     tools: list
@@ -144,32 +145,51 @@ class AgentRegistry:
 # Evaluation datasets for each agent
 # ---------------------------------------------------------------------------
 EVAL_DATASETS: dict[str, pd.DataFrame] = {
-    "qa_agent": pd.DataFrame([
-        {"input": "What is Python?", "expected": "programming language",
-         "category": "knowledge"},
-        {"input": "What is MLflow used for?", "expected": "ML lifecycle",
-         "category": "knowledge"},
-        {"input": "Explain Docker.", "expected": "container",
-         "category": "knowledge"},
-        {"input": "What is LangChain?", "expected": "framework",
-         "category": "knowledge"},
-    ]),
-    "summarizer_agent": pd.DataFrame([
-        {"input": "Summarize: Python is a high-level programming language "
-         "known for its readability and vast ecosystem of libraries.",
-         "expected": "python", "category": "summarization"},
-        {"input": "Summarize: MLflow is an open-source platform for managing "
-         "the full machine learning lifecycle.",
-         "expected": "mlflow", "category": "summarization"},
-        {"input": "Summarize: Kubernetes automates container deployment, "
-         "scaling, and management across clusters.",
-         "expected": "container", "category": "summarization"},
-    ]),
-    "code_helper_agent": pd.DataFrame([
-        {"input": "What is 25 * 4?", "expected": "100", "category": "math"},
-        {"input": "Calculate 144 / 12.", "expected": "12", "category": "math"},
-        {"input": "What is 7 + 8?", "expected": "15", "category": "math"},
-    ]),
+    "qa_agent": pd.DataFrame(
+        [
+            {
+                "input": "What is Python?",
+                "expected": "programming language",
+                "category": "knowledge",
+            },
+            {
+                "input": "What is MLflow used for?",
+                "expected": "ML lifecycle",
+                "category": "knowledge",
+            },
+            {"input": "Explain Docker.", "expected": "container", "category": "knowledge"},
+            {"input": "What is LangChain?", "expected": "framework", "category": "knowledge"},
+        ]
+    ),
+    "summarizer_agent": pd.DataFrame(
+        [
+            {
+                "input": "Summarize: Python is a high-level programming language "
+                "known for its readability and vast ecosystem of libraries.",
+                "expected": "python",
+                "category": "summarization",
+            },
+            {
+                "input": "Summarize: MLflow is an open-source platform for managing "
+                "the full machine learning lifecycle.",
+                "expected": "mlflow",
+                "category": "summarization",
+            },
+            {
+                "input": "Summarize: Kubernetes automates container deployment, "
+                "scaling, and management across clusters.",
+                "expected": "container",
+                "category": "summarization",
+            },
+        ]
+    ),
+    "code_helper_agent": pd.DataFrame(
+        [
+            {"input": "What is 25 * 4?", "expected": "100", "category": "math"},
+            {"input": "Calculate 144 / 12.", "expected": "12", "category": "math"},
+            {"input": "What is 7 + 8?", "expected": "15", "category": "math"},
+        ]
+    ),
 }
 
 
@@ -190,15 +210,10 @@ def invoke_agent(agent, user_input: str) -> dict:
     """Invoke an agent and capture output and metadata."""
     start = time.time()
     try:
-        response = agent.invoke(
-            {"messages": [{"role": "user", "content": user_input}]}
-        )
+        response = agent.invoke({"messages": [{"role": "user", "content": user_input}]})
         latency = time.time() - start
         answer = response["messages"][-1].content
-        tool_calls = [
-            m.name for m in response["messages"]
-            if hasattr(m, "name") and m.name
-        ]
+        tool_calls = [m.name for m in response["messages"] if hasattr(m, "name") and m.name]
         return {
             "output": answer,
             "latency_s": round(latency, 2),
@@ -246,10 +261,7 @@ def evaluate_agent(
     }
 
     # Quality gate check
-    gate_passed = (
-        accuracy >= gates.min_accuracy
-        and avg_latency <= gates.max_avg_latency_s
-    )
+    gate_passed = accuracy >= gates.min_accuracy and avg_latency <= gates.max_avg_latency_s
 
     return {
         "agent_name": agent_name,
@@ -257,11 +269,16 @@ def evaluate_agent(
         "results": results,
         "gate_passed": gate_passed,
         "gate_details": {
-            "accuracy": {"actual": accuracy, "threshold": gates.min_accuracy,
-                         "passed": accuracy >= gates.min_accuracy},
-            "avg_latency": {"actual": avg_latency,
-                            "threshold": gates.max_avg_latency_s,
-                            "passed": avg_latency <= gates.max_avg_latency_s},
+            "accuracy": {
+                "actual": accuracy,
+                "threshold": gates.min_accuracy,
+                "passed": accuracy >= gates.min_accuracy,
+            },
+            "avg_latency": {
+                "actual": avg_latency,
+                "threshold": gates.max_avg_latency_s,
+                "passed": avg_latency <= gates.max_avg_latency_s,
+            },
         },
     }
 
@@ -337,28 +354,30 @@ def run_platform() -> None:
     eval_results: dict[str, dict] = {}
 
     with mlflow.start_run(run_name="platform_evaluation") as parent_run:
-        mlflow.set_tags({
-            "platform_version": "1.0.0",
-            "phase": "evaluation",
-            "num_agents": str(len(registry.list_agents())),
-        })
+        mlflow.set_tags(
+            {
+                "platform_version": "1.0.0",
+                "phase": "evaluation",
+                "num_agents": str(len(registry.list_agents())),
+            }
+        )
 
         for agent_name in registry.list_agents():
             print(f"\n  --- Evaluating: {agent_name} ---")
             agent = registry.get(agent_name)
             dataset = EVAL_DATASETS[agent_name]
 
-            with mlflow.start_run(
-                run_name=f"eval_{agent_name}", nested=True
-            ):
+            with mlflow.start_run(run_name=f"eval_{agent_name}", nested=True):
                 config = registry.get_config(agent_name)
-                mlflow.log_params({
-                    "agent_name": agent_name,
-                    "agent_version": config.version,
-                    "agent_description": config.description[:250],
-                    "num_tools": len(config.tools),
-                    "num_test_cases": len(dataset),
-                })
+                mlflow.log_params(
+                    {
+                        "agent_name": agent_name,
+                        "agent_version": config.version,
+                        "agent_description": config.description[:250],
+                        "num_tools": len(config.tools),
+                        "num_test_cases": len(dataset),
+                    }
+                )
 
                 result = evaluate_agent(agent_name, agent, dataset, gates)
                 eval_results[agent_name] = result
@@ -367,9 +386,7 @@ def run_platform() -> None:
                 mlflow.log_metrics(result["metrics"])
 
                 # Log gate results
-                mlflow.set_tag(
-                    "quality_gate_passed", str(result["gate_passed"])
-                )
+                mlflow.set_tag("quality_gate_passed", str(result["gate_passed"]))
                 for gate_name, gate_info in result["gate_details"].items():
                     mlflow.set_tag(
                         f"gate_{gate_name}",
@@ -387,13 +404,15 @@ def run_platform() -> None:
         # Log summary at parent level
         summary_rows = []
         for name, r in eval_results.items():
-            summary_rows.append({
-                "agent": name,
-                "accuracy": r["metrics"]["accuracy"],
-                "avg_latency_s": r["metrics"]["avg_latency_s"],
-                "error_rate": r["metrics"]["error_rate"],
-                "gate_passed": r["gate_passed"],
-            })
+            summary_rows.append(
+                {
+                    "agent": name,
+                    "accuracy": r["metrics"]["accuracy"],
+                    "avg_latency_s": r["metrics"]["avg_latency_s"],
+                    "error_rate": r["metrics"]["error_rate"],
+                    "gate_passed": r["gate_passed"],
+                }
+            )
         summary_df = pd.DataFrame(summary_rows)
         summary_path = "/tmp/agent_platform_eval_summary.csv"
         summary_df.to_csv(summary_path, index=False)
@@ -413,10 +432,7 @@ def run_platform() -> None:
     for name, r in eval_results.items():
         m = r["metrics"]
         gate = "PASS" if r["gate_passed"] else "FAIL"
-        print(
-            f"  {name:<22} {m['accuracy']:>9.1%} {m['avg_latency_s']:>9.1f}s"
-            f" {gate:>8}"
-        )
+        print(f"  {name:<22} {m['accuracy']:>9.1%} {m['avg_latency_s']:>9.1f}s {gate:>8}")
 
     # =======================================================================
     # Phase 4: Deployment Pipeline
@@ -450,8 +466,7 @@ def run_platform() -> None:
                 "deployed_agent_accuracy",
                 eval_results[deployed_agent_name]["metrics"]["accuracy"],
             )
-            print(f"\n    --> Deployed: {deployed_agent_name} "
-                  f"(accuracy: {approved[0][1]:.1%})")
+            print(f"\n    --> Deployed: {deployed_agent_name} (accuracy: {approved[0][1]:.1%})")
         else:
             print("\n    No agents passed quality gates. Deployment skipped.")
             mlflow.set_tag("deployed_agent", "none")
@@ -471,19 +486,19 @@ def run_platform() -> None:
         ]
 
         with mlflow.start_run(run_name="production_inference"):
-            mlflow.set_tags({
-                "phase": "inference",
-                "deployed_agent": deployed_agent_name,
-            })
+            mlflow.set_tags(
+                {
+                    "phase": "inference",
+                    "deployed_agent": deployed_agent_name,
+                }
+            )
 
             for i, query in enumerate(test_queries, 1):
                 print(f"\n    Query {i}: {query}")
                 result = invoke_agent(agent, query)
                 print(f"    Answer: {result['output'][:120]}")
                 print(f"    Latency: {result['latency_s']}s")
-                mlflow.log_metric(
-                    f"inference_latency_q{i}", result["latency_s"]
-                )
+                mlflow.log_metric(f"inference_latency_q{i}", result["latency_s"])
     else:
         print("\n    No agent deployed — skipping inference demo.")
 

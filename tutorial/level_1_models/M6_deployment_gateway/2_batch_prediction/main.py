@@ -57,11 +57,13 @@ class LLMModel(mlflow.pyfunc.PythonModel):
             responses.append(text)
             latencies.append(round(elapsed_ms, 1))
             tokens.append(used)
-        return pd.DataFrame({
-            "response": responses,
-            "latency_ms": latencies,
-            "tokens_used": tokens,
-        })
+        return pd.DataFrame(
+            {
+                "response": responses,
+                "latency_ms": latencies,
+                "tokens_used": tokens,
+            }
+        )
 
 
 # ── Part 1: Create and log the LLM PyFunc model ──────────────────────
@@ -72,11 +74,13 @@ def part1_log_model() -> str:
 
     with mlflow.start_run(run_name="log_llm_model") as run:
         sample_input = pd.DataFrame({"prompt": ["Say hello."]})
-        sample_output = pd.DataFrame({
-            "response": ["Hello!"],
-            "latency_ms": [120.0],
-            "tokens_used": [15],
-        })
+        sample_output = pd.DataFrame(
+            {
+                "response": ["Hello!"],
+                "latency_ms": [120.0],
+                "tokens_used": [15],
+            }
+        )
         signature = infer_signature(sample_input, sample_output)
 
         mlflow.pyfunc.log_model(
@@ -100,16 +104,20 @@ def part2_batch_inference(model_uri: str) -> tuple[pd.DataFrame, float]:
     print("Part 2: Batch LLM Inference")
     print("=" * 60)
 
-    batch_prompts = pd.DataFrame({"prompt": [
-        "Summarize the benefits of renewable energy in two sentences.",
-        "Translate to French: 'The weather is beautiful today.'",
-        "What is the capital of Japan?",
-        "Classify this review as positive or negative: 'The food was terrible and the service was slow.'",
-        "Write a haiku about programming.",
-        "Explain quantum computing to a 10-year-old in three sentences.",
-        "List three common Python debugging techniques.",
-        "Rewrite this sentence more formally: 'Hey, can you fix the bug ASAP?'",
-    ]})
+    batch_prompts = pd.DataFrame(
+        {
+            "prompt": [
+                "Summarize the benefits of renewable energy in two sentences.",
+                "Translate to French: 'The weather is beautiful today.'",
+                "What is the capital of Japan?",
+                "Classify this review as positive or negative: 'The food was terrible and the service was slow.'",
+                "Write a haiku about programming.",
+                "Explain quantum computing to a 10-year-old in three sentences.",
+                "List three common Python debugging techniques.",
+                "Rewrite this sentence more formally: 'Hey, can you fix the bug ASAP?'",
+            ]
+        }
+    )
     print(f"  Batch size: {len(batch_prompts)} prompts")
 
     model = mlflow.pyfunc.load_model(model_uri)
@@ -123,7 +131,7 @@ def part2_batch_inference(model_uri: str) -> tuple[pd.DataFrame, float]:
 
     for i, (_, row) in enumerate(results_df.iterrows()):
         preview = str(row["response"])[:80].replace("\n", " ")
-        print(f"  [{i+1}] {row['latency_ms']:.0f}ms | {row['tokens_used']} tok | {preview}...")
+        print(f"  [{i + 1}] {row['latency_ms']:.0f}ms | {row['tokens_used']} tok | {preview}...")
 
     print(f"\n  Total time: {total_time:.2f}s")
     print()
@@ -142,13 +150,15 @@ def part3_log_results(results_df: pd.DataFrame, total_time: float) -> None:
         total_tokens = int(results_df["tokens_used"].sum())
         cost_estimate = (total_tokens / 1000) * COST_PER_1K_TOKENS
 
-        mlflow.log_metrics({
-            "batch_size": batch_size,
-            "total_latency_sec": round(total_time, 2),
-            "avg_latency_per_prompt_ms": round(avg_latency, 1),
-            "total_tokens": total_tokens,
-            "cost_estimate_usd": round(cost_estimate, 6),
-        })
+        mlflow.log_metrics(
+            {
+                "batch_size": batch_size,
+                "total_latency_sec": round(total_time, 2),
+                "avg_latency_per_prompt_ms": round(avg_latency, 1),
+                "total_tokens": total_tokens,
+                "cost_estimate_usd": round(cost_estimate, 6),
+            }
+        )
         print(f"  batch_size              : {batch_size}")
         print(f"  total_latency_sec       : {total_time:.2f}")
         print(f"  avg_latency_per_prompt  : {avg_latency:.1f} ms")
@@ -171,10 +181,10 @@ def part4_cli_commands(model_uri: str) -> None:
 
     print("  Use 'mlflow models predict' for offline batch scoring:\n")
     print(f'    mlflow models predict -m "{model_uri}" \\')
-    print('      -i prompts.csv -o responses.csv --content-type csv')
+    print("      -i prompts.csv -o responses.csv --content-type csv")
     print()
     print("  Where prompts.csv has a single 'prompt' column:")
-    print('    prompt')
+    print("    prompt")
     print('    "Summarize the benefits of renewable energy."')
     print('    "What is the capital of Japan?"')
     print()

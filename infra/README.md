@@ -6,12 +6,12 @@ All services needed for the MLflow tutorial, managed via a single Podman Compose
 
 | Service | Port | URL | Purpose |
 |---------|------|-----|---------|
-| MLflow | 5555 | http://localhost:5555 | Tracking server + UI |
-| Temporal UI | 8080 | http://localhost:8080 | Workflow dashboard |
+| MLflow | 5555 | <http://localhost:5555> | Tracking server + UI |
+| Temporal UI | 8080 | <http://localhost:8080> | Workflow dashboard |
 | Temporal gRPC | 7233 | localhost:7233 | Workflow engine |
-| Qdrant | 6333 | http://localhost:6333/dashboard | Vector DB |
-| Grafana | 3000 | http://localhost:3000 | Monitoring dashboards |
-| Prometheus | 9090 | http://localhost:9090 | Metrics collection |
+| Qdrant | 6333 | <http://localhost:6333/dashboard> | Vector DB |
+| Grafana | 3000 | <http://localhost:3000> | Monitoring dashboards |
+| Prometheus | 9090 | <http://localhost:9090> | Metrics collection |
 | PostgreSQL | 5432 | — | Shared database (MLflow + Temporal) |
 | Elasticsearch | — | — | Temporal search/visibility (internal) |
 
@@ -22,10 +22,12 @@ All services needed for the MLflow tutorial, managed via a single Podman Compose
 - [Podman](https://podman.io/) installed (`brew install podman`)
 - [Podman Compose](https://github.com/containers/podman-compose) installed (`brew install podman-compose`)
 - Podman machine initialized and running:
+
   ```bash
   podman machine init
   podman machine start
   ```
+
 - [Ollama](https://ollama.ai/) installed natively
 
 ## Quick Start
@@ -161,11 +163,13 @@ Data survives `podman compose down`. To reset everything: `podman compose down -
 ## Troubleshooting
 
 **Podman machine not running:**
+
 ```bash
 podman machine start
 ```
 
 **Port already in use:**
+
 ```bash
 # Find what's using the port (e.g., 5555)
 lsof -i :5555
@@ -174,6 +178,7 @@ lsof -i :5555
 
 **MLflow can't connect to PostgreSQL:**
 Wait for PostgreSQL to be healthy. Check logs:
+
 ```bash
 podman compose logs postgres
 podman compose logs mlflow
@@ -181,11 +186,13 @@ podman compose logs mlflow
 
 **Temporal fails to start:**
 Elasticsearch and PostgreSQL must be healthy first. Temporal's auto-setup creates the schema on first run — this can take 30-60 seconds.
+
 ```bash
 podman compose logs temporal
 ```
 
 **Reset everything:**
+
 ```bash
 podman compose down -v
 podman compose up -d

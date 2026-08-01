@@ -53,12 +53,16 @@ def researcher_node(state: PipelineState) -> dict:
         api_key=SecretStr("lm-studio"),
         temperature=0.7,
     )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "You are a research assistant. Given a topic, produce 3-5 concise "
-         "bullet points covering the most important facts. Be factual and brief."),
-        ("human", "Research this topic: {topic}"),
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a research assistant. Given a topic, produce 3-5 concise "
+                "bullet points covering the most important facts. Be factual and brief.",
+            ),
+            ("human", "Research this topic: {topic}"),
+        ]
+    )
     chain = prompt | llm | StrOutputParser()
     notes = chain.invoke({"topic": state["topic"]})
 
@@ -87,28 +91,38 @@ def writer_node(state: PipelineState) -> dict:
     )
 
     if revision == 0:
-        prompt = ChatPromptTemplate.from_messages([
-            ("system",
-             "You are a technical writer. Given research notes, write a clear, "
-             "structured summary in 2-3 short paragraphs. Use plain language."),
-            ("human", "Write a summary based on these notes:\n{notes}"),
-        ])
-        draft = (prompt | llm | StrOutputParser()).invoke(
-            {"notes": state["research_notes"]}
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You are a technical writer. Given research notes, write a clear, "
+                    "structured summary in 2-3 short paragraphs. Use plain language.",
+                ),
+                ("human", "Write a summary based on these notes:\n{notes}"),
+            ]
         )
+        draft = (prompt | llm | StrOutputParser()).invoke({"notes": state["research_notes"]})
     else:
-        prompt = ChatPromptTemplate.from_messages([
-            ("system",
-             "You are a technical writer. Revise the draft based on the reviewer's "
-             "feedback. Keep the summary to 2-3 short paragraphs."),
-            ("human",
-             "Original draft:\n{draft}\n\nReviewer feedback:\n{feedback}\n\n"
-             "Please revise the draft."),
-        ])
-        draft = (prompt | llm | StrOutputParser()).invoke({
-            "draft": state["draft"],
-            "feedback": state["review_feedback"],
-        })
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You are a technical writer. Revise the draft based on the reviewer's "
+                    "feedback. Keep the summary to 2-3 short paragraphs.",
+                ),
+                (
+                    "human",
+                    "Original draft:\n{draft}\n\nReviewer feedback:\n{feedback}\n\n"
+                    "Please revise the draft.",
+                ),
+            ]
+        )
+        draft = (prompt | llm | StrOutputParser()).invoke(
+            {
+                "draft": state["draft"],
+                "feedback": state["review_feedback"],
+            }
+        )
 
     duration = time.time() - start
     print(f"  [Writer] Done in {duration:.1f}s")
@@ -131,15 +145,19 @@ def reviewer_node(state: PipelineState) -> dict:
         api_key=SecretStr("lm-studio"),
         temperature=0.3,
     )
-    prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "You are an editor. Review the draft for clarity and accuracy. "
-         "Respond with exactly one of these formats:\n"
-         "PASS: <one sentence of praise>\n"
-         "FAIL: <one sentence describing what to fix>\n"
-         "Be concise. Only fail if there is a clear problem."),
-        ("human", "Review this draft:\n{draft}"),
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are an editor. Review the draft for clarity and accuracy. "
+                "Respond with exactly one of these formats:\n"
+                "PASS: <one sentence of praise>\n"
+                "FAIL: <one sentence describing what to fix>\n"
+                "Be concise. Only fail if there is a clear problem.",
+            ),
+            ("human", "Review this draft:\n{draft}"),
+        ]
+    )
     chain = prompt | llm | StrOutputParser()
     review = chain.invoke({"draft": state["draft"]})
 
@@ -225,19 +243,20 @@ def analyze_traces() -> None:
     print("Analyzing Traces")
     print("=" * 60)
 
-    experiment = mlflow.get_experiment_by_name(
-        "L2/M5_agent_observability/3_multiagent_systems"
-    )
+    experiment = mlflow.get_experiment_by_name("L2/M5_agent_observability/3_multiagent_systems")
     if experiment is None:
         print("  No experiment found.")
         return
 
-    traces = cast(list[Trace], mlflow.search_traces(
-        locations=[experiment.experiment_id],
-        max_results=5,
-        return_type="list",
-        flush=True,
-    ))
+    traces = cast(
+        list[Trace],
+        mlflow.search_traces(
+            locations=[experiment.experiment_id],
+            max_results=5,
+            return_type="list",
+            flush=True,
+        ),
+    )
 
     print(f"  Found {len(traces)} trace(s)\n")
 
@@ -273,11 +292,13 @@ def log_pipeline_metrics(results: list[dict]) -> None:
     print("=" * 60)
 
     with mlflow.start_run(run_name="multiagent_pipeline_metrics"):
-        mlflow.set_tags({
-            "pipeline_type": "researcher_writer_reviewer",
-            "agent_count": "3",
-            "pattern": "supervisor",
-        })
+        mlflow.set_tags(
+            {
+                "pipeline_type": "researcher_writer_reviewer",
+                "agent_count": "3",
+                "pattern": "supervisor",
+            }
+        )
 
         for idx, result in enumerate(results):
             topic_key = f"topic_{idx + 1}"
@@ -298,23 +319,29 @@ def log_pipeline_metrics(results: list[dict]) -> None:
             handoff_count = len(result["agent_durations"]) - 1
             mlflow.log_metric(f"{topic_key}_handoff_count", max(handoff_count, 0))
 
-            print(f"  [{topic_key}] duration={result['total_duration_s']}s, "
-                  f"revisions={result['revision_count']}, "
-                  f"handoffs={handoff_count}, "
-                  f"passed={result['review_passed']}")
+            print(
+                f"  [{topic_key}] duration={result['total_duration_s']}s, "
+                f"revisions={result['revision_count']}, "
+                f"handoffs={handoff_count}, "
+                f"passed={result['review_passed']}"
+            )
 
         # Averages across topics
         avg_duration = sum(r["total_duration_s"] for r in results) / len(results)
         avg_revisions = sum(r["revision_count"] for r in results) / len(results)
         pass_rate = sum(int(r["review_passed"]) for r in results) / len(results)
-        mlflow.log_metrics({
-            "avg_total_duration_s": round(avg_duration, 2),
-            "avg_revision_count": round(avg_revisions, 2),
-            "review_pass_rate": round(pass_rate, 2),
-        })
+        mlflow.log_metrics(
+            {
+                "avg_total_duration_s": round(avg_duration, 2),
+                "avg_revision_count": round(avg_revisions, 2),
+                "review_pass_rate": round(pass_rate, 2),
+            }
+        )
 
-        print(f"\n  Averages: duration={avg_duration:.1f}s, "
-              f"revisions={avg_revisions:.1f}, pass_rate={pass_rate:.0%}")
+        print(
+            f"\n  Averages: duration={avg_duration:.1f}s, "
+            f"revisions={avg_revisions:.1f}, pass_rate={pass_rate:.0%}"
+        )
 
     print("  Metrics logged to MLflow run.")
 

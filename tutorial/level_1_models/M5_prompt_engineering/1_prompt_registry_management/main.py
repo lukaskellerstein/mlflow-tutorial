@@ -150,13 +150,15 @@ def part2_ab_test(versions: list[int]) -> pd.DataFrame:
                 print(f"       A: {preview}...")
                 print(f"       [{word_count} words]")
 
-                rows.append({
-                    "variant": label,
-                    "version": version,
-                    "question": question,
-                    "answer": answer,
-                    "word_count": word_count,
-                })
+                rows.append(
+                    {
+                        "variant": label,
+                        "version": version,
+                        "question": question,
+                        "answer": answer,
+                        "word_count": word_count,
+                    }
+                )
 
             avg_words = total_words / len(TEST_QUESTIONS)
             mlflow.log_metric("avg_word_count", avg_words)

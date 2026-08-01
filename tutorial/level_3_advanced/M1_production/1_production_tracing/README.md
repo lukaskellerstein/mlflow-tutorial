@@ -69,12 +69,14 @@ Every traced call attaches production metadata via `span.set_attributes()` and `
 
 ```python
 with mlflow.start_span(name="llm_call") as span:
-    span.set_attributes({
-        "request_id": request_id,
-        "user_id": metadata["user_id"],
-        "environment": metadata["environment"],
-        "app_version": metadata["app_version"],
-    })
+    span.set_attributes(
+        {
+            "request_id": request_id,
+            "user_id": metadata["user_id"],
+            "environment": metadata["environment"],
+            "app_version": metadata["app_version"],
+        }
+    )
     # ... make LLM call ...
     mlflow.set_trace_tag(span.trace_id, "environment", "production")
 ```
@@ -100,12 +102,14 @@ Latency percentiles (p50, p95, p99) and token usage trends are computed from the
 
 ```python
 summary = build_performance_summary(records)
-mlflow.log_metrics({
-    "p50_latency_ms": summary["p50_ms"],
-    "p95_latency_ms": summary["p95_ms"],
-    "p99_latency_ms": summary["p99_ms"],
-    "total_token_estimate": summary["total_token_estimate"],
-})
+mlflow.log_metrics(
+    {
+        "p50_latency_ms": summary["p50_ms"],
+        "p95_latency_ms": summary["p95_ms"],
+        "p99_latency_ms": summary["p99_ms"],
+        "total_token_estimate": summary["total_token_estimate"],
+    }
+)
 ```
 
 ## Running the Lesson

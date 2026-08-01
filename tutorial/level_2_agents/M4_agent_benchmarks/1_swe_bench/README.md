@@ -91,6 +91,7 @@ def analyze_code(problem: str) -> str:
     """Analyze a coding problem and identify the root cause."""
     ...
 
+
 @tool
 def generate_patch(analysis: str, repo: str) -> str:
     """Generate a unified diff patch based on the analysis."""

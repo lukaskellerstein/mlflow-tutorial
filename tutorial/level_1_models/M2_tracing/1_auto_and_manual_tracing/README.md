@@ -74,6 +74,7 @@ Decorate functions to create spans automatically. Nested decorated functions bec
 def validate_text(text: str) -> str:
     return text.strip()
 
+
 @mlflow.trace(name="process_pipeline")
 def process_pipeline(text: str) -> dict:
     validated = validate_text(text)  # becomes a child span
@@ -102,6 +103,7 @@ Enable autolog, then make LLM calls inside a manually traced function:
 
 ```python
 mlflow.openai.autolog()
+
 
 @mlflow.trace(name="summarize_with_llm")
 def summarize_with_llm(text: str) -> str:

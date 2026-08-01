@@ -61,9 +61,10 @@ def lookup(topic: str) -> str:
     """Look up factual information about a technology topic."""
     ...
 
+
 EVAL_DATASET = [
     {"question": "What is Python?", "expected_keyword": "readability", "needs_tool": True},
-    ...
+    ...,
 ]
 ```
 

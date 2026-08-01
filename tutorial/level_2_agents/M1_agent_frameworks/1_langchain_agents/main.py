@@ -164,9 +164,7 @@ def run_agent_tasks(agent) -> list[dict]:
         mlflow.log_metrics(
             {
                 "total_tasks": len(TASKS),
-                "avg_latency": round(
-                    sum(r["latency"] for r in results) / len(results), 3
-                ),
+                "avg_latency": round(sum(r["latency"] for r in results) / len(results), 3),
                 "total_tool_calls": sum(r["tool_calls"] for r in results),
             }
         )
@@ -183,9 +181,7 @@ def analyse_traces() -> None:
     print("Part 4: Trace Analysis")
     print("=" * 60)
 
-    experiment = mlflow.get_experiment_by_name(
-        "L2/M5_agent_observability/1_langchain_agents"
-    )
+    experiment = mlflow.get_experiment_by_name("L2/M5_agent_observability/1_langchain_agents")
     if experiment is None:
         print("  No experiment found — skipping trace analysis.")
         return
@@ -263,9 +259,7 @@ def main() -> None:
     print(f"{'Task':<6} {'Tool Calls':<12} {'Steps':<8} {'Latency':<10} {'Answer'}")
     print("-" * 80)
     for r in results:
-        answer_short = (
-            r["answer"][:40] + "..." if len(r["answer"]) > 40 else r["answer"]
-        )
+        answer_short = r["answer"][:40] + "..." if len(r["answer"]) > 40 else r["answer"]
         print(
             f"{r['task_index']:<6} {r['tool_calls']:<12} {r['total_steps']:<8} {r['latency']:<10.3f} {answer_short}"
         )

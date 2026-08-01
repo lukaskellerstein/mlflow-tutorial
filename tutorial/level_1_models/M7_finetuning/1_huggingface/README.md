@@ -75,7 +75,8 @@ args = TrainingArguments(
 )
 
 trainer = Trainer(
-    model=model, args=args,
+    model=model,
+    args=args,
     train_dataset=tokenized_ds,
     data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
 )

@@ -104,9 +104,7 @@ class RAGModel(mlflow.pyfunc.PythonModel):
                 query=query_vector,
                 limit=top_k,
             )
-            context_text = "\n".join(
-                [(p.payload or {})["text"] for p in search_results.points]
-            )
+            context_text = "\n".join([(p.payload or {})["text"] for p in search_results.points])
 
             # Generate answer with retrieved context
             response = client.chat.completions.create(

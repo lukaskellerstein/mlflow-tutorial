@@ -43,12 +43,15 @@ The FastMCP server defines two tools with simple return types:
 
 ```python
 from mcp.server.fastmcp import FastMCP
+
 mcp = FastMCP("tutorial_tools")
+
 
 @mcp.tool()
 def calculator(expression: str) -> dict:
     result = eval(expression)
     return {"expression": expression, "result": result}
+
 
 @mcp.tool()
 def knowledge_lookup(topic: str) -> dict:
@@ -61,7 +64,7 @@ Connect to the MCP server via STDIO and configure the agent:
 
 ```python
 options = ClaudeAgentOptions(
-    tools=[],           # no built-in tools (Bash, Read, etc.)
+    tools=[],  # no built-in tools (Bash, Read, etc.)
     mcp_servers={
         "tools": {
             "command": sys.executable,

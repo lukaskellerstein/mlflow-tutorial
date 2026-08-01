@@ -46,15 +46,18 @@ We create three deterministic tools using LangChain's `@tool` decorator. Each to
 ```python
 from langchain_core.tools import tool
 
+
 @tool
 def calculator(expression: str) -> str:
     """Evaluate a basic arithmetic expression."""
     ...
 
+
 @tool
 def string_reverser(text: str) -> str:
     """Reverse the characters in a given string."""
     ...
+
 
 @tool
 def word_counter(text: str) -> str:
@@ -70,7 +73,12 @@ We use `langchain.agents.create_agent`, which is the current API replacing the d
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
-llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.0)
+llm = ChatOpenAI(
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    model="google/gemma-4-e4b",
+    temperature=0.0,
+)
 agent = create_agent(model=llm, tools=[calculator, string_reverser, word_counter])
 ```
 

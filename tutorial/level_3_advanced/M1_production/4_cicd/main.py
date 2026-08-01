@@ -129,13 +129,15 @@ class EvaluationHarness:
             agreements = sum(1 for r in case_results if r == majority)
             consistency = agreements / len(case_results)
 
-            per_case.append({
-                "input": tc["input"],
-                "expected": tc["expected"],
-                "pass_rate": sum(case_results) / len(case_results),
-                "consistency": consistency,
-                "attempts": len(case_results),
-            })
+            per_case.append(
+                {
+                    "input": tc["input"],
+                    "expected": tc["expected"],
+                    "pass_rate": sum(case_results) / len(case_results),
+                    "consistency": consistency,
+                    "attempts": len(case_results),
+                }
+            )
 
         # Aggregate metrics
         accuracy = correct_count / max(total_checks, 1)
@@ -165,37 +167,45 @@ class GateChecker:
         """Run all gate checks and return individual results."""
         results: list[GateResult] = []
 
-        results.append(GateResult(
-            gate_name="accuracy",
-            threshold=self.gate.min_accuracy,
-            actual=metrics.accuracy,
-            passed=metrics.accuracy >= self.gate.min_accuracy,
-            detail=f"Accuracy {metrics.accuracy:.2%} >= {self.gate.min_accuracy:.2%}",
-        ))
+        results.append(
+            GateResult(
+                gate_name="accuracy",
+                threshold=self.gate.min_accuracy,
+                actual=metrics.accuracy,
+                passed=metrics.accuracy >= self.gate.min_accuracy,
+                detail=f"Accuracy {metrics.accuracy:.2%} >= {self.gate.min_accuracy:.2%}",
+            )
+        )
 
-        results.append(GateResult(
-            gate_name="latency_p95",
-            threshold=self.gate.max_latency_p95_ms,
-            actual=metrics.latency_p95_ms,
-            passed=metrics.latency_p95_ms <= self.gate.max_latency_p95_ms,
-            detail=f"P95 latency {metrics.latency_p95_ms:.0f}ms <= {self.gate.max_latency_p95_ms:.0f}ms",
-        ))
+        results.append(
+            GateResult(
+                gate_name="latency_p95",
+                threshold=self.gate.max_latency_p95_ms,
+                actual=metrics.latency_p95_ms,
+                passed=metrics.latency_p95_ms <= self.gate.max_latency_p95_ms,
+                detail=f"P95 latency {metrics.latency_p95_ms:.0f}ms <= {self.gate.max_latency_p95_ms:.0f}ms",
+            )
+        )
 
-        results.append(GateResult(
-            gate_name="consistency",
-            threshold=self.gate.min_consistency,
-            actual=metrics.consistency,
-            passed=metrics.consistency >= self.gate.min_consistency,
-            detail=f"Consistency {metrics.consistency:.2%} >= {self.gate.min_consistency:.2%}",
-        ))
+        results.append(
+            GateResult(
+                gate_name="consistency",
+                threshold=self.gate.min_consistency,
+                actual=metrics.consistency,
+                passed=metrics.consistency >= self.gate.min_consistency,
+                detail=f"Consistency {metrics.consistency:.2%} >= {self.gate.min_consistency:.2%}",
+            )
+        )
 
-        results.append(GateResult(
-            gate_name="error_rate",
-            threshold=self.gate.max_error_rate,
-            actual=metrics.error_rate,
-            passed=metrics.error_rate <= self.gate.max_error_rate,
-            detail=f"Error rate {metrics.error_rate:.2%} <= {self.gate.max_error_rate:.2%}",
-        ))
+        results.append(
+            GateResult(
+                gate_name="error_rate",
+                threshold=self.gate.max_error_rate,
+                actual=metrics.error_rate,
+                passed=metrics.error_rate <= self.gate.max_error_rate,
+                detail=f"Error rate {metrics.error_rate:.2%} <= {self.gate.max_error_rate:.2%}",
+            )
+        )
 
         return results
 
@@ -257,24 +267,30 @@ def run_cicd_pipeline(
 
     # Log everything to MLflow
     with mlflow.start_run(run_name=pipeline_label):
-        mlflow.log_params({
-            "model_name": model_name,
-            "num_test_cases": len(TEST_CASES),
-            "pipeline_label": pipeline_label,
-            **{f"gate_{k}": v for k, v in gate.to_dict().items()},
-        })
-        mlflow.log_metrics({
-            "accuracy": metrics.accuracy,
-            "latency_p95_ms": metrics.latency_p95_ms,
-            "consistency": metrics.consistency,
-            "error_rate": metrics.error_rate,
-            "gates_passed": int(all_passed),
-            "gates_failed_count": sum(1 for r in gate_results if not r.passed),
-        })
-        mlflow.set_tags({
-            "pipeline_type": "cicd_quality_gate",
-            "deploy_decision": "approved" if all_passed else "blocked",
-        })
+        mlflow.log_params(
+            {
+                "model_name": model_name,
+                "num_test_cases": len(TEST_CASES),
+                "pipeline_label": pipeline_label,
+                **{f"gate_{k}": v for k, v in gate.to_dict().items()},
+            }
+        )
+        mlflow.log_metrics(
+            {
+                "accuracy": metrics.accuracy,
+                "latency_p95_ms": metrics.latency_p95_ms,
+                "consistency": metrics.consistency,
+                "error_rate": metrics.error_rate,
+                "gates_passed": int(all_passed),
+                "gates_failed_count": sum(1 for r in gate_results if not r.passed),
+            }
+        )
+        mlflow.set_tags(
+            {
+                "pipeline_type": "cicd_quality_gate",
+                "deploy_decision": "approved" if all_passed else "blocked",
+            }
+        )
 
         # Log per-case results as artifact
         df = pd.DataFrame(metrics.per_case)
@@ -285,8 +301,13 @@ def run_cicd_pipeline(
         # Log gate report as artifact
         report = {
             "gates": [
-                {"gate": r.gate_name, "threshold": r.threshold,
-                 "actual": r.actual, "passed": r.passed, "detail": r.detail}
+                {
+                    "gate": r.gate_name,
+                    "threshold": r.threshold,
+                    "actual": r.actual,
+                    "passed": r.passed,
+                    "detail": r.detail,
+                }
                 for r in gate_results
             ],
             "all_passed": all_passed,
@@ -307,12 +328,15 @@ def analyze_gate_history() -> None:
     print("  Gate History & Trend Analysis")
     print(f"{'=' * 60}")
 
-    runs = cast(pd.DataFrame, mlflow.search_runs(
-        experiment_names=["L3/M3_production/4_cicd"],
-        filter_string="tags.pipeline_type = 'cicd_quality_gate'",
-        order_by=["start_time ASC"],
-        max_results=20,
-    ))
+    runs = cast(
+        pd.DataFrame,
+        mlflow.search_runs(
+            experiment_names=["L3/M3_production/4_cicd"],
+            filter_string="tags.pipeline_type = 'cicd_quality_gate'",
+            order_by=["start_time ASC"],
+            max_results=20,
+        ),
+    )
 
     if runs.empty:
         print("  No gate history found.")

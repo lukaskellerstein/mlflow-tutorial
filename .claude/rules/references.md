@@ -3,6 +3,7 @@
 Always consult these sources when building lessons. Do NOT guess at APIs — read the source code and docs first.
 
 ## MLFlow
+
 - **Source code**: `/Users/lukaskellerstein/Projects/github/mlflow/mlflow`
   - Python API: `~/Projects/github/mlflow/mlflow/mlflow/` (the inner `mlflow/` package)
   - GenAI module: `~/Projects/github/mlflow/mlflow/mlflow/genai/`
@@ -12,6 +13,7 @@ Always consult these sources when building lessons. Do NOT guess at APIs — rea
 - **Documentation**: `/Users/lukaskellerstein/Projects/github/mlflow/mlflow/docs/docs`
 
 ## LangChain
+
 - **Source code**: `/Users/lukaskellerstein/Projects/github/langchain-ai/langchain`
 - **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain`
   - Agents: `.../10_agent/`
@@ -19,43 +21,51 @@ Always consult these sources when building lessons. Do NOT guess at APIs — rea
 - Verify that APIs used in reference code are still current
 
 ## LangGraph
+
 - **Source code**: `/Users/lukaskellerstein/Projects/github/langchain-ai/langgraph`
 - **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph`
   - Agents: `.../5_agent/`
   - Multi-agent: `.../6_agents/`
 
 ## DeepAgents
+
 - **Source code**: `/Users/lukaskellerstein/Projects/github/langchain-ai/deepagents`
 - **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/3_deepagents`
 
 ## Claude Agent SDK
+
 - **Source code**: `/Users/lukaskellerstein/Projects/github/anthropics/claude-agent-sdk-python`
 - **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
 
 ## Temporal.io
+
 - **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/my-workflows/temporal-io/my-python`
   - AI workflows: `.../MY/5_AI/`
 - **Docker reference**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/my-workflows/temporal-io/docker`
 
 ## LMStudio
-- **CLI docs**: https://lmstudio.ai/docs/cli
-- **Headless mode**: https://lmstudio.ai/docs/developer/core/headless
-- **Model**: Gemma4-E4B — https://lmstudio.ai/models/google/gemma-4-e4b
+
+- **CLI docs**: <https://lmstudio.ai/docs/cli>
+- **Headless mode**: <https://lmstudio.ai/docs/developer/core/headless>
+- **Model**: Gemma4-E4B — <https://lmstudio.ai/models/google/gemma-4-e4b>
 
 ## Evaluation
-- **SWE-Bench**: https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified
+
+- **SWE-Bench**: <https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified>
 
 ## Qdrant (Vector DB)
+
 - Used for RAG lessons, runs via Podman Compose in `infra/`
 
 ## Infrastructure
+
 - All services run via `podman compose up -d` from `infra/`
-- MLflow: http://localhost:5555 (PostgreSQL backend)
-- LMStudio: http://localhost:1234 (native, not in Podman)
-- Temporal: http://localhost:8080 (UI), localhost:7233 (gRPC)
-- Qdrant: http://localhost:6333 (REST), localhost:6334 (gRPC)
-- Grafana: http://localhost:3000 (admin/admin)
-- Prometheus: http://localhost:9090
+- MLflow: <http://localhost:5555> (PostgreSQL backend)
+- LMStudio: <http://localhost:1234> (native, not in Podman)
+- Temporal: <http://localhost:8080> (UI), localhost:7233 (gRPC)
+- Qdrant: <http://localhost:6333> (REST), localhost:6334 (gRPC)
+- Grafana: <http://localhost:3000> (admin/admin)
+- Prometheus: <http://localhost:9090>
 
 ## How to Use References
 

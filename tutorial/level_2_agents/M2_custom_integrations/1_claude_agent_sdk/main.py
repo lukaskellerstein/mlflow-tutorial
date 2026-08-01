@@ -66,9 +66,11 @@ def build_options(max_turns: int = 3) -> ClaudeAgentOptions:
 
 # ── Part 2: Traced agent execution ──────────────────────────────
 
+
 @dataclass
 class AgentResult:
     """Collected data from an agent execution."""
+
     query: str
     response: str
     thinking: str
@@ -107,14 +109,18 @@ async def run_agent(prompt: str, options: ClaudeAgentOptions) -> AgentResult:
                     elif isinstance(block, ToolUseBlock):
                         with mlflow.start_span(name=f"tool_call.{block.name}") as span:
                             span.set_inputs(block.input)
-                            span.set_attributes({
-                                "tool_name": block.name,
-                                "tool_use_id": block.id,
-                            })
-                        tool_calls.append({
-                            "name": block.name,
-                            "input": block.input,
-                        })
+                            span.set_attributes(
+                                {
+                                    "tool_name": block.name,
+                                    "tool_use_id": block.id,
+                                }
+                            )
+                        tool_calls.append(
+                            {
+                                "name": block.name,
+                                "input": block.input,
+                            }
+                        )
             elif isinstance(message, ResultMessage):
                 duration_ms = message.duration_ms
                 num_turns = message.num_turns
@@ -152,18 +158,22 @@ async def run_examples(options: ClaudeAgentOptions) -> list[AgentResult]:
             results.append(result)
 
             mlflow.log_params({"query": q[:250], "model": result.model})
-            mlflow.log_metrics({
-                "duration_ms": result.duration_ms,
-                "num_turns": result.num_turns,
-                "tool_calls": len(result.tool_calls),
-                "response_length": len(result.response),
-            })
+            mlflow.log_metrics(
+                {
+                    "duration_ms": result.duration_ms,
+                    "num_turns": result.num_turns,
+                    "tool_calls": len(result.tool_calls),
+                    "response_length": len(result.response),
+                }
+            )
             if result.cost_usd is not None:
                 mlflow.log_metric("cost_usd", result.cost_usd)
-            mlflow.set_tags({
-                "has_tool_call": str(len(result.tool_calls) > 0),
-                "tools_used": json.dumps([tc["name"] for tc in result.tool_calls]),
-            })
+            mlflow.set_tags(
+                {
+                    "has_tool_call": str(len(result.tool_calls) > 0),
+                    "tools_used": json.dumps([tc["name"] for tc in result.tool_calls]),
+                }
+            )
 
             print(f"    Response: {result.response[:100]}...")
             if result.tool_calls:
@@ -178,20 +188,22 @@ async def run_examples(options: ClaudeAgentOptions) -> list[AgentResult]:
 
 # ── Part 4: Trace analysis ──────────────────────────────────────
 
+
 def analyze_traces() -> None:
     """Query traces from MLflow and display the span hierarchy."""
-    experiment = mlflow.get_experiment_by_name(
-        "L2/M2_custom_integrations/1_claude_agent_sdk"
-    )
+    experiment = mlflow.get_experiment_by_name("L2/M2_custom_integrations/1_claude_agent_sdk")
     if experiment is None:
         print("  Experiment not found.")
         return
 
-    traces = cast(list[Trace], mlflow.search_traces(
-        locations=[experiment.experiment_id],
-        return_type="list",
-        flush=True,
-    ))
+    traces = cast(
+        list[Trace],
+        mlflow.search_traces(
+            locations=[experiment.experiment_id],
+            return_type="list",
+            flush=True,
+        ),
+    )
     print(f"  Found {len(traces)} traces")
 
     for trace in traces[:3]:
@@ -206,8 +218,7 @@ def analyze_traces() -> None:
 
     if traces:
         durations = [
-            t.info.execution_time_ms for t in traces
-            if t.info.execution_time_ms is not None
+            t.info.execution_time_ms for t in traces if t.info.execution_time_ms is not None
         ]
         if durations:
             print(f"\n  Average trace duration: {sum(durations) / len(durations):.0f}ms")
@@ -215,6 +226,7 @@ def analyze_traces() -> None:
 
 
 # ── Main ─────────────────────────────────────────────────────────
+
 
 async def main() -> None:
     print("=" * 60)
@@ -246,26 +258,32 @@ async def main() -> None:
     print("Part 3: Running example queries")
     print("=" * 60)
     with mlflow.start_run(run_name="claude_sdk_integration") as parent_run:
-        mlflow.log_params({
-            "agent_type": "claude_agent_sdk",
-            "num_queries": len(EXAMPLE_QUERIES),
-            "tools": json.dumps(["calculator", "knowledge_lookup"]),
-        })
-        mlflow.set_tags({
-            "framework": "claude_agent_sdk",
-            "integration_type": "custom_tracing",
-        })
+        mlflow.log_params(
+            {
+                "agent_type": "claude_agent_sdk",
+                "num_queries": len(EXAMPLE_QUERIES),
+                "tools": json.dumps(["calculator", "knowledge_lookup"]),
+            }
+        )
+        mlflow.set_tags(
+            {
+                "framework": "claude_agent_sdk",
+                "integration_type": "custom_tracing",
+            }
+        )
 
         results = await run_examples(options)
 
         total_dur = sum(r.duration_ms for r in results)
         total_tools = sum(len(r.tool_calls) for r in results)
         costs = [r.cost_usd for r in results if r.cost_usd is not None]
-        mlflow.log_metrics({
-            "total_duration_ms": total_dur,
-            "avg_duration_ms": total_dur // max(len(results), 1),
-            "total_tool_calls": total_tools,
-        })
+        mlflow.log_metrics(
+            {
+                "total_duration_ms": total_dur,
+                "avg_duration_ms": total_dur // max(len(results), 1),
+                "total_tool_calls": total_tools,
+            }
+        )
         if costs:
             mlflow.log_metric("total_cost_usd", sum(costs))
 

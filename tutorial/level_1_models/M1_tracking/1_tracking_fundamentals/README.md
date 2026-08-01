@@ -9,7 +9,7 @@ This lesson introduces MLflow's five core pillars, walks you through your first 
 
 ## Prerequisites
 
-- MLflow server running at http://127.0.0.1:5555 (start with `podman compose up -d` from `infra/`)
+- MLflow server running at <http://127.0.0.1:5555> (start with `podman compose up -d` from `infra/`)
 - LMStudio running with `google/gemma-4-e4b` loaded (`lms load google/gemma-4-e4b --gpu max -y`)
 - LMStudio server started (`lms server start`)
 - Python 3.10+

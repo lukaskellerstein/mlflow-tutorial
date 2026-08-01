@@ -105,18 +105,31 @@ def main() -> None:
 
         # ── Part 3: Fallback Chains ───────────────────────────────
         section("Part 3: Fallback Chains for High Availability")
-        route_config = {"endpoints": [
-            {"name": "team-chat", "provider": "openai", "model": "gpt-4o",
-             "fallbacks": [
-                 {"provider": "openai", "model": "gpt-4o-mini"},
-                 {"provider": "anthropic", "model": "claude-sonnet-4-20250514"}]},
-            {"name": "fast-completions", "provider": "anthropic",
-             "model": "claude-haiku-4-20250414",
-             "fallbacks": [{"provider": "openai", "model": "gpt-4o-mini"}]},
-            {"name": "embeddings", "provider": "openai",
-             "model": "text-embedding-3-small",
-             "fallbacks": [{"provider": "openai", "model": "text-embedding-3-large"}]},
-        ]}
+        route_config = {
+            "endpoints": [
+                {
+                    "name": "team-chat",
+                    "provider": "openai",
+                    "model": "gpt-4o",
+                    "fallbacks": [
+                        {"provider": "openai", "model": "gpt-4o-mini"},
+                        {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
+                    ],
+                },
+                {
+                    "name": "fast-completions",
+                    "provider": "anthropic",
+                    "model": "claude-haiku-4-20250414",
+                    "fallbacks": [{"provider": "openai", "model": "gpt-4o-mini"}],
+                },
+                {
+                    "name": "embeddings",
+                    "provider": "openai",
+                    "model": "text-embedding-3-small",
+                    "fallbacks": [{"provider": "openai", "model": "text-embedding-3-large"}],
+                },
+            ]
+        }
         for ep in route_config["endpoints"]:
             fb = ", ".join(f"{f['provider']}/{f['model']}" for f in ep["fallbacks"])
             print(f"  {ep['name']:20s}  primary={ep['provider']}/{ep['model']}")
@@ -127,11 +140,14 @@ def main() -> None:
 
         # ── Part 4: Traffic Splitting ─────────────────────────────
         section("Part 4: Traffic Splitting (A/B Testing)")
-        traffic_config = {"endpoint": "production-chat", "traffic_split": [
-            {"provider": "openai", "model": "gpt-4o", "weight": 60},
-            {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "weight": 30},
-            {"provider": "google", "model": "gemini-2.5-pro", "weight": 10},
-        ]}
+        traffic_config = {
+            "endpoint": "production-chat",
+            "traffic_split": [
+                {"provider": "openai", "model": "gpt-4o", "weight": 60},
+                {"provider": "anthropic", "model": "claude-sonnet-4-20250514", "weight": 30},
+                {"provider": "google", "model": "gemini-2.5-pro", "weight": 10},
+            ],
+        }
         print("  Weights must sum to 100%. Example 'production-chat':")
         for e in traffic_config["traffic_split"]:
             print(f"    {e['weight']:>3}%  {e['provider']} / {e['model']}")
@@ -140,20 +156,29 @@ def main() -> None:
 
         # ── Part 5: Cost Management ───────────────────────────────
         section("Part 5: Budget Policies and Usage Tracking")
-        budget_config = {"policies": [
-            {"name": "daily-alert", "amount_usd": 50, "period": "daily", "action": "alert"},
-            {"name": "monthly-hard-cap", "amount_usd": 2000, "period": "monthly", "action": "reject"},
-        ]}
+        budget_config = {
+            "policies": [
+                {"name": "daily-alert", "amount_usd": 50, "period": "daily", "action": "alert"},
+                {
+                    "name": "monthly-hard-cap",
+                    "amount_usd": 2000,
+                    "period": "monthly",
+                    "action": "reject",
+                },
+            ]
+        }
         print("  Actions: ALERT (webhook) | REJECT (HTTP 429)")
         for p in budget_config["policies"]:
             print(f"  '{p['name']}': ${p['amount_usd']}/{p['period']} -> {p['action']}")
 
-        usage_df = pd.DataFrame({
-            "day": [f"2026-07-{d:02d}" for d in range(7, 14)],
-            "requests": [1200, 1350, 980, 1100, 1450, 1280, 1500],
-            "cost_usd": [28.50, 32.25, 23.40, 26.50, 34.75, 30.40, 35.50],
-            "p50_latency_ms": [245, 260, 230, 250, 275, 255, 280],
-        })
+        usage_df = pd.DataFrame(
+            {
+                "day": [f"2026-07-{d:02d}" for d in range(7, 14)],
+                "requests": [1200, 1350, 980, 1100, 1450, 1280, 1500],
+                "cost_usd": [28.50, 32.25, 23.40, 26.50, 34.75, 30.40, 35.50],
+                "p50_latency_ms": [245, 260, 230, 250, 275, 255, 280],
+            }
+        )
         totals = {
             "total_requests": int(usage_df["requests"].sum()),
             "total_cost_usd": round(usage_df["cost_usd"].sum(), 2),
@@ -161,9 +186,11 @@ def main() -> None:
             "avg_p50_latency_ms": round(usage_df["p50_latency_ms"].mean(), 1),
         }
         print("\n  Simulated 7-day usage:")
-        print(f"    Requests: {totals['total_requests']:,}  |  "
-              f"Cost: ${totals['total_cost_usd']}  |  "
-              f"Avg latency: {totals['avg_p50_latency_ms']} ms")
+        print(
+            f"    Requests: {totals['total_requests']:,}  |  "
+            f"Cost: ${totals['total_cost_usd']}  |  "
+            f"Avg latency: {totals['avg_p50_latency_ms']} ms"
+        )
         mlflow.log_metrics(totals)
         mlflow.log_table(data=usage_df, artifact_file="tables/daily_usage.json")
         log_json(budget_config, "budget_policies.json")
@@ -172,19 +199,31 @@ def main() -> None:
         section("Part 6: Gateway vs Direct API")
         w = (22, 25, 25)
         print(f"  | {'Feature':<{w[0]}} | {'AI Gateway':<{w[1]}} | {'Direct API':<{w[2]}} |")
-        print(f"  |{'-'*(w[0]+2)}|{'-'*(w[1]+2)}|{'-'*(w[2]+2)}|")
+        print(f"  |{'-' * (w[0] + 2)}|{'-' * (w[1] + 2)}|{'-' * (w[2] + 2)}|")
         for feat, gw, direct in COMPARISON:
             print(f"  | {feat:<{w[0]}} | {gw:<{w[1]}} | {direct:<{w[2]}} |")
 
-        providers_df = pd.DataFrame({
-            "provider": ["OpenAI", "Anthropic", "Google", "AWS Bedrock", "Mistral", "Groq"],
-            "chat_models": ["gpt-4o, 4o-mini", "claude-4, haiku",
-                            "gemini-2.5-pro/flash", "claude, llama",
-                            "large, small", "llama, mixtral"],
-            "strengths": ["Broad ecosystem", "Long context", "Multimodal",
-                          "Enterprise/VPC", "EU-hosted, open-weight",
-                          "Ultra-low latency"],
-        })
+        providers_df = pd.DataFrame(
+            {
+                "provider": ["OpenAI", "Anthropic", "Google", "AWS Bedrock", "Mistral", "Groq"],
+                "chat_models": [
+                    "gpt-4o, 4o-mini",
+                    "claude-4, haiku",
+                    "gemini-2.5-pro/flash",
+                    "claude, llama",
+                    "large, small",
+                    "llama, mixtral",
+                ],
+                "strengths": [
+                    "Broad ecosystem",
+                    "Long context",
+                    "Multimodal",
+                    "Enterprise/VPC",
+                    "EU-hosted, open-weight",
+                    "Ultra-low latency",
+                ],
+            }
+        )
         print("\n  Provider Overview:")
         for _, r in providers_df.iterrows():
             print(f"    {r['provider']:12s} | {r['chat_models']:20s} | {r['strengths']}")

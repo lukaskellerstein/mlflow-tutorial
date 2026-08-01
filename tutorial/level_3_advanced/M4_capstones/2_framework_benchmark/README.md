@@ -85,17 +85,22 @@ def lookup(topic: str) -> str:
     """Look up factual information about a technology topic."""
     ...
 
+
 @tool
 def calculate(expression: str) -> str:
     """Evaluate a simple math expression."""
     ...
 
+
 test_cases = [
-    TestCase(question="What is 2 + 2?", expected_keyword="4",
-             category="simple", needs_tool=False),
-    TestCase(question="What is Python known for?", expected_keyword="readability",
-             category="tool_required", needs_tool=True),
-    ...
+    TestCase(question="What is 2 + 2?", expected_keyword="4", category="simple", needs_tool=False),
+    TestCase(
+        question="What is Python known for?",
+        expected_keyword="readability",
+        category="tool_required",
+        needs_tool=True,
+    ),
+    ...,
 ]
 ```
 

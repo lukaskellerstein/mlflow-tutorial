@@ -10,7 +10,7 @@ This lesson builds a multi-agent system using LangGraph's supervisor pattern and
 ## Prerequisites
 
 - Completed: L1-M5.1 (Auto Tracing), L2-M5.2 (LangGraph Agents)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts

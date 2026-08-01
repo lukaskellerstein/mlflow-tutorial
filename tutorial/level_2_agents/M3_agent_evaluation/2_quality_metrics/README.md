@@ -80,8 +80,12 @@ Six test cases cover single-tool, multi-tool, and no-tool scenarios. Each case s
 ```python
 results = mlflow.genai.evaluate(
     data=eval_data,
-    scorers=[task_completion_scorer, tool_selection_scorer,
-             reasoning_quality_scorer, response_quality_scorer],
+    scorers=[
+        task_completion_scorer,
+        tool_selection_scorer,
+        reasoning_quality_scorer,
+        response_quality_scorer,
+    ],
 )
 ```
 

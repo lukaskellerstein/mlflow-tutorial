@@ -134,16 +134,12 @@ def setup_repo(container_id: str, repo: str, base_commit: str) -> bool:
     return True
 
 
-def apply_patch(
-    container_id: str, patch_text: str, patch_name: str = "fix.patch"
-) -> bool:
+def apply_patch(container_id: str, patch_text: str, patch_name: str = "fix.patch") -> bool:
     """Apply a patch inside the container."""
     if not patch_text.strip():
         return False
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".patch", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".patch", delete=False) as f:
         f.write(patch_text)
         host_path = f.name
 
@@ -173,9 +169,7 @@ def apply_patch(
     return rc2 == 0
 
 
-def run_tests(
-    container_id: str, test_names: list[str], repo: str
-) -> tuple[int, int, str]:
+def run_tests(container_id: str, test_names: list[str], repo: str) -> tuple[int, int, str]:
     """Run specific tests inside the container. Returns (passed, failed, raw_output)."""
     if not test_names:
         return 0, 0, "No tests specified"

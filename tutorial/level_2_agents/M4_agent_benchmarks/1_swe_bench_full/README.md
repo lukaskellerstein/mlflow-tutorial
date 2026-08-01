@@ -122,11 +122,14 @@ The agent uses DeepAgents with a `ContainerSandbox` that wraps `podman exec`. De
 from deepagents import create_deep_agent
 from deepagents.backends.sandbox import BaseSandbox
 
+
 class ContainerSandbox(BaseSandbox):
     def execute(self, command, *, timeout=None):
         rc, stdout, stderr = exec_in_container(self._container_id, command)
         return ExecuteResponse(output=stdout + stderr, exit_code=rc, truncated=False)
+
     # + id, upload_files, download_files
+
 
 sandbox = ContainerSandbox(container_id)
 agent = create_deep_agent(model=llm, backend=sandbox, system_prompt=SYSTEM_PROMPT)
@@ -155,7 +158,7 @@ f2p_passed, f2p_failed, output = harness.run_tests(container_id, f2p_tests, repo
 Resolution rate is computed identically to the leaderboard:
 
 ```python
-resolved = (f2p_passed == len(f2p_tests) and f2p_failed == 0 and p2p_failed == 0)
+resolved = f2p_passed == len(f2p_tests) and f2p_failed == 0 and p2p_failed == 0
 resolution_rate = sum(r["resolved"] for r in results) / len(results)
 ```
 

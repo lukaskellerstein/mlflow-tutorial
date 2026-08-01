@@ -54,8 +54,7 @@ TASK_PROMPTS = {
         "State whether it is positive, negative, or neutral and explain briefly."
     ),
     "keywords": (
-        "Extract 5-7 key topics or keywords from the following text "
-        "as a comma-separated list."
+        "Extract 5-7 key topics or keywords from the following text as a comma-separated list."
     ),
 }
 
@@ -87,10 +86,12 @@ async def analyze_text(request: AnalysisRequest) -> AnalysisResult:
         result_text = _call_llm(system_prompt, request.text)
 
         duration = time.time() - start
-        span.set_outputs({
-            "result_preview": result_text[:200],
-            "duration_s": round(duration, 2),
-        })
+        span.set_outputs(
+            {
+                "result_preview": result_text[:200],
+                "duration_s": round(duration, 2),
+            }
+        )
 
     return AnalysisResult(
         task=request.task,
@@ -103,9 +104,7 @@ async def analyze_text(request: AnalysisRequest) -> AnalysisResult:
 
 
 @mlflow.trace(name="temporal_workflow_execution", span_type="WORKFLOW")
-async def run_workflow(
-    client: Client, text: str, workflow_id: str
-) -> PipelineResult:
+async def run_workflow(client: Client, text: str, workflow_id: str) -> PipelineResult:
     """Execute the Temporal workflow and trace the entire run in MLflow."""
     with mlflow.start_span(name="temporal_dispatch") as span:
         span.set_inputs({"workflow_id": workflow_id, "text_length": len(text)})
@@ -117,11 +116,13 @@ async def run_workflow(
             task_queue=TASK_QUEUE,
         )
 
-        span.set_outputs({
-            "summary_preview": result.summary[:120],
-            "sentiment_preview": result.sentiment[:120],
-            "keywords_preview": result.keywords[:120],
-        })
+        span.set_outputs(
+            {
+                "summary_preview": result.summary[:120],
+                "sentiment_preview": result.sentiment[:120],
+                "keywords_preview": result.keywords[:120],
+            }
+        )
 
     return result
 
@@ -140,11 +141,14 @@ def analyze_traces() -> None:
         print("  Experiment not found — skipping analysis.")
         return
 
-    traces = cast(list[Trace], mlflow.search_traces(
-        experiment_ids=[experiment.experiment_id],
-        return_type="list",
-        max_results=8,  # limit to recent traces
-    ))
+    traces = cast(
+        list[Trace],
+        mlflow.search_traces(
+            experiment_ids=[experiment.experiment_id],
+            return_type="list",
+            max_results=8,  # limit to recent traces
+        ),
+    )
     print(f"\n  Showing up to {len(traces)} most recent trace(s)\n")
 
     for i, trace in enumerate(traces):
@@ -163,10 +167,7 @@ def analyze_traces() -> None:
             end_ns = span.end_time_ns or start_ns
             dur_ms = (end_ns - start_ns) / 1e6
             indent = "      " if span.parent_id else "    "
-            print(
-                f"{indent}-> {span.name:35s} {dur_ms:>8.1f} ms  "
-                f"[{span.span_type}]"
-            )
+            print(f"{indent}-> {span.name:35s} {dur_ms:>8.1f} ms  [{span.span_type}]")
 
         # Per-activity breakdown
         activity_spans = [s for s in spans if s.name.startswith("activity_")]
@@ -197,7 +198,6 @@ SAMPLE_TEXTS = [
     "models are being deployed at unprecedented scale. However, concerns "
     "about bias, transparency, and accountability remain pressing challenges "
     "that the research community must address.",
-
     "Temporal.io provides durable execution for distributed applications. "
     "Workflows survive process restarts and infrastructure failures, making "
     "them ideal for long-running business processes. Combined with MLflow "
