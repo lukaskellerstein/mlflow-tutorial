@@ -51,7 +51,7 @@ graph TD
 ## Course Structure
 
 | Level | Focus | Modules | Lessons | Time |
-|-------|-------|---------|---------|------|
+| ------- | ------- | --------- | --------- | ------ |
 | **Level 1 — Models** | Everything about models/LLMs end-to-end | 7 | 18 | ~16 hours |
 | **Level 2 — AI Agents** | Agent frameworks, evaluation, benchmarking | 4 | 13 | ~19.5 hours |
 | **Level 3 — Advanced** | Production patterns, infrastructure, capstones | 4 | 11 | ~19 hours |
@@ -61,7 +61,7 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 ### Level 1 — Models
 
 | Module | Lessons | Topics |
-|--------|---------|--------|
+| -------- | --------- | -------- |
 | M1 Tracking | 3 | Tracking fundamentals, search/query/MlflowClient, advanced patterns |
 | M2 Tracing | 2 | Auto and manual tracing, trace analysis |
 | M3 Models & Registry | 3 | Models/flavors/signatures, custom PyFunc, registry workflows |
@@ -73,7 +73,7 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 ### Level 2 — AI Agents
 
 | Module | Lessons | Topics |
-|--------|---------|--------|
+| -------- | --------- | -------- |
 | M1 Agent Frameworks | 3 | LangChain agents, LangGraph agents, multi-agent systems |
 | M2 Custom Integrations | 2 | Claude Agent SDK, DeepAgents |
 | M3 Agent Evaluation | 5 | Agent testing, quality metrics, architecture comparison, optimization, evaluation pipeline |
@@ -82,7 +82,7 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 ### Level 3 — Advanced
 
 | Module | Lessons | Topics |
-|--------|---------|--------|
+| -------- | --------- | -------- |
 | M1 Production | 4 | Production tracing, Grafana dashboards, feedback loops, CI/CD |
 | M2 Advanced Tracing | 2 | OpenTelemetry export, Temporal workflow tracing |
 | M3 Extensibility | 3 | Custom autolog, plugins, enterprise data management |
@@ -133,19 +133,19 @@ uv run python main.py
 ### Services
 
 | Service | URL | Notes |
-|---------|-----|-------|
-| MLflow UI | http://localhost:5555 | Tracking, models, traces |
-| LMStudio | http://localhost:1234 | OpenAI-compatible API |
-| Temporal UI | http://localhost:8080 | Workflow orchestration |
-| Qdrant | http://localhost:6333/dashboard | Vector database |
-| Grafana | http://localhost:3000 | Dashboards (admin/admin) |
-| Prometheus | http://localhost:9090 | Metrics collection |
+| --------- | ----- | ------- |
+| MLflow UI | <http://localhost:5555> | Tracking, models, traces |
+| LMStudio | <http://localhost:1234> | OpenAI-compatible API |
+| Temporal UI | <http://localhost:8080> | Workflow orchestration |
+| Qdrant | <http://localhost:6333/dashboard> | Vector database |
+| Grafana | <http://localhost:3000> | Dashboards (admin/admin) |
+| Prometheus | <http://localhost:9090> | Metrics collection |
 | PostgreSQL | localhost:5432 | MLflow + Temporal backend |
 
 ### LLM Models
 
 | Model | Size | Use Case |
-|-------|------|----------|
+| ------- | ------ | ---------- |
 | `google/gemma-4-e4b` | 4B | Level 1 lessons, fast tasks, basic examples |
 | `google/gemma-4-26b-a4b` | 26B MoE | Level 2-3, agents, LLM-as-judge |
 | `text-embedding-nomic-embed-text-v1.5` | 137M | Embeddings for RAG and vector DB |
@@ -199,7 +199,7 @@ N_lesson_name/
 ## Technical Stack
 
 | Category | Technology |
-|----------|------------|
+| ---------- | ------------ |
 | ML Platform | MLflow 2.x+ |
 | LLM Inference | LMStudio (local, OpenAI-compatible API) |
 | Agent Frameworks | LangChain v1.0+, LangGraph, Claude Agent SDK, DeepAgents |

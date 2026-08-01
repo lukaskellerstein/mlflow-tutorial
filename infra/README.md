@@ -42,6 +42,7 @@ ollama pull nomic-embed-text
 
 ```bash
 cd infra
+cp .env.example .env   # first time only — .env is local-only, never committed
 podman compose up -d
 ```
 

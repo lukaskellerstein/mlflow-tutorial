@@ -1,3 +1,18 @@
 .playwright-mcp
 
 .venv
+__pycache__/
+
+# Machine-local Claude Code overrides. Never committed — see
+# .claude/rules/12-security.md.
+.claude/settings.local.json
+
+# Secrets stay out of the repo. `infra/.env` is local-only and untracked; the
+# committed `infra/.env.example` carries the variable names and the
+# localhost-only development defaults. See .claude/rules/12-security.md.
+.env
+.env.local
+.envrc
+*.key
+*.pem
+*.agekey

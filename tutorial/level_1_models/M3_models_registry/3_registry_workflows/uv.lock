@@ -1805,7 +1805,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mlflow", specifier = ">=2.0" },
+    { name = "mlflow", specifier = ">=3.0" },
     { name = "openai", specifier = ">=1.0" },
     { name = "pandas", specifier = ">=2.0" },
 ]

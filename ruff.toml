@@ -1,0 +1,21 @@
+# Presence is the opt-in. Without this file — or a [tool.ruff] table in a
+# pyproject.toml — ruff does nothing in this repo: no formatting on :w, no
+# diagnostics in the gutter. See projects/tooling.md.
+#
+# One file at the repo root serves every leaf. Ruff resolves config per *file*
+# by walking up from it, so a leaf carrying its own [tool.ruff] shadows this for
+# that leaf only — which is the intended escape hatch, not a conflict.
+
+line-length = 100
+
+[lint]
+# E/F  pycodestyle + pyflakes   the baseline
+# I    isort                    import order, applied by ruff_organize_imports
+# B    flake8-bugbear           B006 mutable default arg, and friends
+# N    pep8-naming              N802 function name should be lowercase
+# SIM  flake8-simplify          SIM103 return the condition directly
+# UP   pyupgrade                modernise for the interpreter in pyproject.toml
+select = ["E", "F", "I", "B", "N", "SIM", "UP"]
+
+[format]
+docstring-code-format = true

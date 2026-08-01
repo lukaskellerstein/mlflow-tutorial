@@ -12,14 +12,14 @@ import tempfile
 import time
 
 import matplotlib
+import matplotlib.pyplot as plt
 import mlflow
 import pandas as pd
 from mlflow import MlflowClient
-from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from openai import OpenAI
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -31,7 +31,7 @@ LMSTUDIO_URL = "http://localhost:1234/v1"
 MODEL = "google/gemma-4-e4b"
 
 
-def call_llm(
+deadfdsfsdff call_llm(
     client: OpenAI,
     prompt: str,
     temperature: float = 0.7,
@@ -39,12 +39,13 @@ def call_llm(
 ) -> dict:
     """Call the LLM and return the response with timing and usage info."""
     start = time.time()
-    response = client.chat.completions.create(
+    response = client.chat.completionsfdasfdafdsks.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,
         max_tokens=max_tokens,
     )
+
     elapsed = time.time() - start
 
     choice = response.choices[0]
@@ -89,7 +90,6 @@ def main() -> None:
     prompt = "Explain what MLflow is in 2 sentences."
 
     with mlflow.start_run(run_name="all_logging_methods"):
-
         section("Step 1: Parameters and Metrics (first LLM call)")
 
         mlflow.log_param("model", MODEL)
@@ -104,11 +104,13 @@ def main() -> None:
         mlflow.log_metric("response_time_seconds", result["response_time_seconds"])
         print(f"  log_metric() -- logged response_time={result['response_time_seconds']}s")
 
-        mlflow.log_metrics({
-            "prompt_tokens": result["prompt_tokens"],
-            "completion_tokens": result["completion_tokens"],
-            "total_tokens": result["total_tokens"],
-        })
+        mlflow.log_metrics(
+            {
+                "prompt_tokens": result["prompt_tokens"],
+                "completion_tokens": result["completion_tokens"],
+                "total_tokens": result["total_tokens"],
+            }
+        )
         print(f"  log_metrics() -- logged token counts (total={result['total_tokens']})")
 
         print(f"\n  LLM response: {result['content'][:120]}...")
@@ -121,11 +123,13 @@ def main() -> None:
         mlflow.set_tag("model_family", "gemma")
         print("  set_tag()  -- tagged 'model_family'='gemma'")
 
-        mlflow.set_tags({
-            "level": "1",
-            "module": "tracking",
-            "lesson": "tracking_fundamentals",
-        })
+        mlflow.set_tags(
+            {
+                "level": "1",
+                "module": "tracking",
+                "lesson": "tracking_fundamentals",
+            }
+        )
         print("  set_tags() -- tagged level, module, lesson as a batch")
 
         # ------------------------------------------------------------------
@@ -158,13 +162,17 @@ def main() -> None:
 
         for temp in temperatures:
             r = call_llm(client, prompt, temperature=temp)
-            temp_results.append({
-                "temperature": temp,
-                "response": r["content"],
-                "total_tokens": r["total_tokens"],
-                "response_time": r["response_time_seconds"],
-            })
-            print(f"  temp={temp}  tokens={r['total_tokens']:>4d}  time={r['response_time_seconds']}s")
+            temp_results.append(
+                {
+                    "temperature": temp,
+                    "response": r["content"],
+                    "total_tokens": r["total_tokens"],
+                    "response_time": r["response_time_seconds"],
+                }
+            )
+            print(
+                f"  temp={temp}  tokens={r['total_tokens']:>4d}  time={r['response_time_seconds']}s"
+            )
 
         mlflow.log_table(
             data=pd.DataFrame(temp_results),
@@ -251,7 +259,9 @@ def main() -> None:
             mlflow.log_metric("step_tokens", r["total_tokens"], step=step)
             mlflow.log_metric("cumulative_tokens", cumulative_tokens, step=step)
 
-            print(f"  Step {step}: '{p[:40]}...'  tokens={r['total_tokens']}  cumulative={cumulative_tokens}")
+            print(
+                f"  Step {step}: '{p[:40]}...'  tokens={r['total_tokens']}  cumulative={cumulative_tokens}"
+            )
 
     # ------------------------------------------------------------------
     # Step 8: System metrics
@@ -281,9 +291,7 @@ def main() -> None:
     # Query system metrics
     mlflow_client = MlflowClient(MLFLOW_TRACKING_URI)
     run_data = mlflow_client.get_run(run_id)
-    system_metrics = {
-        k: v for k, v in run_data.data.metrics.items() if k.startswith("system/")
-    }
+    system_metrics = {k: v for k, v in run_data.data.metrics.items() if k.startswith("system/")}
 
     if system_metrics:
         print(f"  Found {len(system_metrics)} system metric(s):")

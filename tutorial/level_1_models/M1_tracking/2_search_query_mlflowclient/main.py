@@ -66,6 +66,7 @@ def section(title: str) -> None:
 
 # ── Part A: Fluent Search API ─────────────────────────────────────────
 
+
 def create_sample_runs(client: OpenAI) -> str:
     """Create LLM runs with different configs to query later."""
     section("Step 1: Creating sample runs with different configurations")
@@ -73,47 +74,78 @@ def create_sample_runs(client: OpenAI) -> str:
     experiment = mlflow.set_experiment(EXPERIMENT_NAME)
 
     configs = [
-        {"topic": "transformers", "prompt": "Explain transformer architecture in 2 sentences.",
-         "temperature": 0.3, "system_prompt": "You are a concise ML tutor."},
-        {"topic": "transformers", "prompt": "Explain transformer architecture in 2 sentences.",
-         "temperature": 0.7, "system_prompt": "You are a concise ML tutor."},
-        {"topic": "transformers", "prompt": "Explain transformer architecture in 2 sentences.",
-         "temperature": 1.0, "system_prompt": "You are a creative writer."},
-        {"topic": "rag", "prompt": "What is retrieval-augmented generation?",
-         "temperature": 0.3, "system_prompt": "You are a concise ML tutor."},
-        {"topic": "rag", "prompt": "What is retrieval-augmented generation?",
-         "temperature": 0.7, "system_prompt": None},
-        {"topic": "agents", "prompt": "What are AI agents and why do they matter?",
-         "temperature": 0.7, "system_prompt": "You are a concise ML tutor."},
+        {
+            "topic": "transformers",
+            "prompt": "Explain transformer architecture in 2 sentences.",
+            "temperature": 0.3,
+            "system_prompt": "You are a concise ML tutor.",
+        },
+        {
+            "topic": "transformers",
+            "prompt": "Explain transformer architecture in 2 sentences.",
+            "temperature": 0.7,
+            "system_prompt": "You are a concise ML tutor.",
+        },
+        {
+            "topic": "transformers",
+            "prompt": "Explain transformer architecture in 2 sentences.",
+            "temperature": 1.0,
+            "system_prompt": "You are a creative writer.",
+        },
+        {
+            "topic": "rag",
+            "prompt": "What is retrieval-augmented generation?",
+            "temperature": 0.3,
+            "system_prompt": "You are a concise ML tutor.",
+        },
+        {
+            "topic": "rag",
+            "prompt": "What is retrieval-augmented generation?",
+            "temperature": 0.7,
+            "system_prompt": None,
+        },
+        {
+            "topic": "agents",
+            "prompt": "What are AI agents and why do they matter?",
+            "temperature": 0.7,
+            "system_prompt": "You are a concise ML tutor.",
+        },
     ]
 
     for cfg in configs:
         with mlflow.start_run(run_name=f"{cfg['topic']}_t{cfg['temperature']}"):
-            mlflow.log_params({
-                "model": MODEL,
-                "prompt_topic": cfg["topic"],
-                "temperature": cfg["temperature"],
-                "max_tokens": 1024,
-                "has_system_prompt": cfg["system_prompt"] is not None,
-            })
+            mlflow.log_params(
+                {
+                    "model": MODEL,
+                    "prompt_topic": cfg["topic"],
+                    "temperature": cfg["temperature"],
+                    "max_tokens": 1024,
+                    "has_system_prompt": cfg["system_prompt"] is not None,
+                }
+            )
 
             result = call_llm(
-                client, cfg["prompt"],
+                client,
+                cfg["prompt"],
                 temperature=cfg["temperature"],
                 system_prompt=cfg["system_prompt"],
             )
 
-            mlflow.log_metrics({
-                "response_time_seconds": result["response_time_seconds"],
-                "prompt_tokens": result["prompt_tokens"],
-                "completion_tokens": result["completion_tokens"],
-                "total_tokens": result["total_tokens"],
-            })
+            mlflow.log_metrics(
+                {
+                    "response_time_seconds": result["response_time_seconds"],
+                    "prompt_tokens": result["prompt_tokens"],
+                    "completion_tokens": result["completion_tokens"],
+                    "total_tokens": result["total_tokens"],
+                }
+            )
 
             mlflow.set_tag("lesson", "L1-M1.2")
-            print(f"  {cfg['topic']:15s}  temp={cfg['temperature']}"
-                  f"  tokens={result['total_tokens']:>4d}"
-                  f"  time={result['response_time_seconds']}s")
+            print(
+                f"  {cfg['topic']:15s}  temp={cfg['temperature']}"
+                f"  tokens={result['total_tokens']:>4d}"
+                f"  time={result['response_time_seconds']}s"
+            )
 
     return experiment.experiment_id
 
@@ -128,29 +160,38 @@ def demo_search_runs(experiment_id: str) -> None:
     print(all_runs[available].to_string(index=False))
 
     section("Step 3: search_runs -- filter by temperature")
-    low_temp = cast(pd.DataFrame, mlflow.search_runs(
-        experiment_ids=[experiment_id],
-        filter_string="params.temperature = '0.3'",
-    ))
+    low_temp = cast(
+        pd.DataFrame,
+        mlflow.search_runs(
+            experiment_ids=[experiment_id],
+            filter_string="params.temperature = '0.3'",
+        ),
+    )
     print(f"  Runs with temperature 0.3: {len(low_temp)}")
     if not low_temp.empty:
         available = [c for c in COLS if c in low_temp.columns]
         print(low_temp[available].to_string(index=False))
 
     section("Step 4: search_runs -- order by total tokens DESC")
-    ordered = cast(pd.DataFrame, mlflow.search_runs(
-        experiment_ids=[experiment_id],
-        order_by=["metrics.total_tokens DESC"],
-    ))
+    ordered = cast(
+        pd.DataFrame,
+        mlflow.search_runs(
+            experiment_ids=[experiment_id],
+            order_by=["metrics.total_tokens DESC"],
+        ),
+    )
     print("  Runs ranked by total tokens (most first):")
     available = [c for c in COLS if c in ordered.columns]
     print(ordered[available].to_string(index=False))
 
     section("Step 5: Combined filter -- topic AND metric threshold")
-    combined = cast(pd.DataFrame, mlflow.search_runs(
-        experiment_ids=[experiment_id],
-        filter_string="params.prompt_topic = 'transformers' AND metrics.total_tokens > 100",
-    ))
+    combined = cast(
+        pd.DataFrame,
+        mlflow.search_runs(
+            experiment_ids=[experiment_id],
+            filter_string="params.prompt_topic = 'transformers' AND metrics.total_tokens > 100",
+        ),
+    )
     print(f"  Matching runs: {len(combined)}")
     if not combined.empty:
         available = [c for c in COLS if c in combined.columns]
@@ -173,8 +214,12 @@ def demo_dataframe_export(experiment_id: str) -> None:
 
     if "params.prompt_topic" in df.columns and "metrics.total_tokens" in df.columns:
         summary = (
-            cast(pd.DataFrame, df.groupby("params.prompt_topic")["metrics.total_tokens"]
-                 .agg(["count", "mean", "max"]))
+            cast(
+                pd.DataFrame,
+                df.groupby("params.prompt_topic")["metrics.total_tokens"].agg(
+                    ["count", "mean", "max"]
+                ),
+            )
             .rename(columns={"count": "runs", "mean": "avg_tokens", "max": "max_tokens"})
             .sort_values("max_tokens", ascending=False)
         )
@@ -229,7 +274,8 @@ def demo_mlflowclient(llm_client: OpenAI) -> None:
         ml_client.log_param(run_id, "system_prompt", config["system_prompt"])
 
         result = call_llm(
-            llm_client, TEST_QUESTION,
+            llm_client,
+            TEST_QUESTION,
             temperature=config["temperature"],
             system_prompt=config["system_prompt"],
         )
@@ -241,8 +287,10 @@ def demo_mlflowclient(llm_client: OpenAI) -> None:
         ml_client.update_run(run_id, status="FINISHED")
         run_ids.append(run_id)
 
-        print(f"  {config['name']}: latency={result['response_time_seconds']}s, "
-              f"tokens={result['total_tokens']}")
+        print(
+            f"  {config['name']}: latency={result['response_time_seconds']}s, "
+            f"tokens={result['total_tokens']}"
+        )
 
     # -- Query operations --
     section("Step 9: MlflowClient -- query operations")
@@ -277,10 +325,8 @@ def demo_mlflowclient(llm_client: OpenAI) -> None:
 
     ml_client.delete_run(run_ids[2])
     stage = ml_client.get_run(run_ids[2]).info.lifecycle_stage
-    active_count = len(ml_client.search_runs(
-        [experiment_id], run_view_type=ViewType.ACTIVE_ONLY))
-    all_count = len(ml_client.search_runs(
-        [experiment_id], run_view_type=ViewType.ALL))
+    active_count = len(ml_client.search_runs([experiment_id], run_view_type=ViewType.ACTIVE_ONLY))
+    all_count = len(ml_client.search_runs([experiment_id], run_view_type=ViewType.ALL))
     print(f"\n  Deleted run {run_ids[2][:8]}... (stage={stage})")
     print(f"    Active: {active_count}, All (incl. deleted): {all_count}")
 
@@ -295,15 +341,16 @@ def demo_mlflowclient(llm_client: OpenAI) -> None:
         order_by=["metrics.latency_seconds ASC"],
     )
 
-    print(f"\n  {'Config':<16s} {'Temp':>6s} {'Latency':>10s} "
-          f"{'Tokens':>8s} {'Resp Len':>10s}")
+    print(f"\n  {'Config':<16s} {'Temp':>6s} {'Latency':>10s} {'Tokens':>8s} {'Resp Len':>10s}")
     print(f"  {'-' * 16} {'-' * 6} {'-' * 10} {'-' * 8} {'-' * 10}")
     for r in runs:
-        print(f"  {r.info.run_name or 'unnamed':<16s} "
-              f"{r.data.params.get('temperature', 'N/A'):>6s} "
-              f"{r.data.metrics.get('latency_seconds', 0):>10.2f} "
-              f"{int(r.data.metrics.get('total_tokens', 0)):>8d} "
-              f"{int(r.data.metrics.get('response_length', 0)):>10d}")
+        print(
+            f"  {r.info.run_name or 'unnamed':<16s} "
+            f"{r.data.params.get('temperature', 'N/A'):>6s} "
+            f"{r.data.metrics.get('latency_seconds', 0):>10.2f} "
+            f"{int(r.data.metrics.get('total_tokens', 0)):>8d} "
+            f"{int(r.data.metrics.get('response_length', 0)):>10d}"
+        )
 
     # -- Fluent vs Client summary --
     section("Fluent API vs MlflowClient")

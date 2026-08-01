@@ -3,39 +3,39 @@
 Always consult these sources when building lessons. Do NOT guess at APIs — read the source code and docs first.
 
 ## MLFlow
-- **Source code**: `/Users/lkellers/Projects/github/mlflow/mlflow`
+- **Source code**: `/Users/lukaskellerstein/Projects/github/mlflow/mlflow`
   - Python API: `~/Projects/github/mlflow/mlflow/mlflow/` (the inner `mlflow/` package)
   - GenAI module: `~/Projects/github/mlflow/mlflow/mlflow/genai/`
   - LangChain integration: `~/Projects/github/mlflow/mlflow/mlflow/langchain/`
   - Evaluation: `~/Projects/github/mlflow/mlflow/mlflow/metrics/`
   - Tracing: `~/Projects/github/mlflow/mlflow/mlflow/tracing/`
-- **Documentation**: `/Users/lkellers/Projects/github/mlflow/mlflow/docs/docs`
+- **Documentation**: `/Users/lukaskellerstein/Projects/github/mlflow/mlflow/docs/docs`
 
 ## LangChain
-- **Source code**: `/Users/lkellers/Projects/github/langchain-ai/langchain`
-- **Examples**: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain`
+- **Source code**: `/Users/lukaskellerstein/Projects/github/langchain-ai/langchain`
+- **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain`
   - Agents: `.../10_agent/`
 - v1.0+ API only: use `create_agent` from `langchain.agents` (no legacy chains)
 - Verify that APIs used in reference code are still current
 
 ## LangGraph
-- **Source code**: `/Users/lkellers/Projects/github/langchain-ai/langgraph`
-- **Examples**: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph`
+- **Source code**: `/Users/lukaskellerstein/Projects/github/langchain-ai/langgraph`
+- **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph`
   - Agents: `.../5_agent/`
   - Multi-agent: `.../6_agents/`
 
 ## DeepAgents
-- **Source code**: `/Users/lkellers/Projects/github/langchain-ai/deepagents`
-- **Examples**: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/3_deepagents`
+- **Source code**: `/Users/lukaskellerstein/Projects/github/langchain-ai/deepagents`
+- **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/3_deepagents`
 
 ## Claude Agent SDK
-- **Source code**: `/Users/lkellers/Projects/github/anthropics/claude-agent-sdk-python`
-- **Examples**: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
+- **Source code**: `/Users/lukaskellerstein/Projects/github/anthropics/claude-agent-sdk-python`
+- **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
 
 ## Temporal.io
-- **Examples**: `/Users/lkellers/Projects/github/lukaskellerstein/my-workflows/temporal-io/my-python`
+- **Examples**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/my-workflows/temporal-io/my-python`
   - AI workflows: `.../MY/5_AI/`
-- **Docker reference**: `/Users/lkellers/Projects/github/lukaskellerstein/my-workflows/temporal-io/docker`
+- **Docker reference**: `/Users/lukaskellerstein/Projects/github/lukaskellerstein/my-workflows/temporal-io/docker`
 
 ## LMStudio
 - **CLI docs**: https://lmstudio.ai/docs/cli

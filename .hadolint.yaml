@@ -1,0 +1,13 @@
+# Copied to a target repo as `.hadolint.yaml`. Presence is the opt-in — without
+# it hadolint does not lint this repo's Dockerfiles. See projects/tooling.md.
+#
+# Deliberately near-empty: an unconfigured hadolint reports mostly true
+# positives, so the useful default is "all rules on". Add ignores here as you
+# earn them, one at a time, each with the reason.
+
+ignored:
+  # DL3008 — pin apt versions. Reintroduce if this repo ships reproducible
+  # images; drop this line to turn the rule back on.
+  - DL3008
+
+failure-threshold: warning

@@ -5,21 +5,26 @@
     "allow": [
       "Agent",
       "Artifact",
+      "AskUserQuestion",
       "Bash",
-      "Cd",
+      "BashOutput",
       "Edit",
+      "EnterPlanMode",
       "EnterWorktree",
       "ExitPlanMode",
+      "ExitWorktree",
       "Glob",
       "Grep",
       "KillShell",
+      "ListMcpResourcesTool",
       "LSP",
       "Monitor",
-      "MultiEdit",
       "NotebookEdit",
-      "PowerShell",
       "Read",
-      "ShareOnboardingGuide",
+      "ReadMcpResourceTool",
+      "ReportFindings",
+      "ScheduleWakeup",
+      "SendMessage",
       "Skill",
       "TaskCreate",
       "TaskGet",
@@ -38,20 +43,30 @@
       "mcp__reference-langchain"
     ],
     "deny": [
-      "Bash(sudo *)",
+      "Bash(rm -rf /)",
       "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
       "Bash(rm -rf ~*)",
+      "Bash(rm -rf ~/*)",
+      "Bash(rm -rf $HOME*)",
       "Bash(rm -fr /*)",
       "Bash(rm -fr ~*)",
       "Bash(rm -r -f /*)",
       "Bash(rm -r -f ~*)",
+      "Bash(sudo rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(*--no-preserve-root*)",
       "Bash(mkfs*)",
+      "Bash(diskutil erase*)",
       "Bash(dd if=*)",
+      "Bash(dd * of=/dev/*)",
+
       "Bash(git push --force*)",
       "Bash(git push -f*)",
       "Bash(git reset --hard*)",
       "Bash(git clean -f*)",
       "Edit(./.git/**)",
+
       "Read(~/.ssh/**)",
       "Edit(~/.ssh/**)",
       "Read(~/.gnupg/**)",
@@ -64,15 +79,57 @@
       "Read(~/.netrc)",
       "Read(~/.npmrc)",
       "Read(~/.pypirc)",
+      "Read(~/.bash_history)",
+      "Read(~/.zsh_history)",
+      "Read(~/.claude/.credentials.json)",
+      "Edit(~/.claude/.credentials.json)",
+      "Read(~/.config/sops/age/**)",
+      "Edit(~/.config/sops/age/**)",
+
       "Read(./secrets/**)",
       "Read(./.secrets/**)",
+      "Read(./**/.env)",
+      "Read(./**/.env.local)",
       "Read(./**/.env.production)",
       "Read(./**/.env.staging)",
+      "Read(./.npmrc)",
+      "Read(./**/*credentials*.json)",
+      "Read(./**/serviceAccountKey.json)",
       "Read(./**/*.pem)",
       "Read(./**/*.key)",
       "Read(./**/*.p12)",
-      "Read(./**/*credentials*.json)",
-      "Read(./**/serviceAccountKey.json)"
+      "Read(./**/*.pfx)",
+      "Read(./**/*.keystore)",
+      "Read(./**/*.jks)",
+      "Read(./**/*.agekey)",
+      "Read(./**/keys.txt)",
+      "Read(./**/*.tfstate)",
+      "Read(./**/*.tfstate.backup)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "mcp__playwright-mlflow-tutor__browser_(navigate|navigate_back|tab_new|snapshot|take_screenshot|run_code)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/playwright-post-navigate.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/playwright-cleanup.py\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

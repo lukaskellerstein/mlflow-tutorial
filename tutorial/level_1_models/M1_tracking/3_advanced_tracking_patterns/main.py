@@ -87,48 +87,60 @@ def part1_nested_runs(client: OpenAI) -> None:
     results: list[dict] = []
 
     with mlflow.start_run(run_name="LLM Config Sweep") as parent_run:
-        mlflow.set_tags({
-            "sweep_type": "llm_config_sweep",
-            "model": MODEL,
-            "num_configs": str(num_configs),
-        })
+        mlflow.set_tags(
+            {
+                "sweep_type": "llm_config_sweep",
+                "model": MODEL,
+                "num_configs": str(num_configs),
+            }
+        )
 
         for temperature in TEMPERATURES:
             for variant_name, system_prompt in PROMPT_VARIANTS.items():
                 run_label = f"temp_{temperature}_style_{variant_name}"
 
                 with mlflow.start_run(run_name=run_label, nested=True):
-                    mlflow.log_params({
-                        "temperature": temperature,
-                        "prompt_variant": variant_name,
-                        "model": MODEL,
-                    })
-                    mlflow.set_tags({
-                        "prompt_variant": variant_name,
-                        "temperature": str(temperature),
-                    })
+                    mlflow.log_params(
+                        {
+                            "temperature": temperature,
+                            "prompt_variant": variant_name,
+                            "model": MODEL,
+                        }
+                    )
+                    mlflow.set_tags(
+                        {
+                            "prompt_variant": variant_name,
+                            "temperature": str(temperature),
+                        }
+                    )
 
-                    r = call_llm(client, TEST_QUESTION,
-                                 temperature=temperature,
-                                 system_prompt=system_prompt)
+                    r = call_llm(
+                        client, TEST_QUESTION, temperature=temperature, system_prompt=system_prompt
+                    )
 
-                    mlflow.log_metrics({
-                        "response_length": r["response_length"],
-                        "token_count": r["total_tokens"],
-                        "latency_seconds": r["response_time_seconds"],
-                    })
+                    mlflow.log_metrics(
+                        {
+                            "response_length": r["response_length"],
+                            "token_count": r["total_tokens"],
+                            "latency_seconds": r["response_time_seconds"],
+                        }
+                    )
 
-                    results.append({
-                        "run_name": run_label,
-                        "temperature": temperature,
-                        "prompt_variant": variant_name,
-                        "response_length": r["response_length"],
-                        "token_count": r["total_tokens"],
-                        "latency_seconds": r["response_time_seconds"],
-                    })
+                    results.append(
+                        {
+                            "run_name": run_label,
+                            "temperature": temperature,
+                            "prompt_variant": variant_name,
+                            "response_length": r["response_length"],
+                            "token_count": r["total_tokens"],
+                            "latency_seconds": r["response_time_seconds"],
+                        }
+                    )
 
-                    print(f"  {run_label:35s}  length={r['response_length']:5d}"
-                          f"  tokens={r['total_tokens']:5d}  latency={r['response_time_seconds']:.2f}s")
+                    print(
+                        f"  {run_label:35s}  length={r['response_length']:5d}"
+                        f"  tokens={r['total_tokens']:5d}  latency={r['response_time_seconds']:.2f}s"
+                    )
 
         # Parent summary
         section("Step 2: Parent-run summary")
@@ -137,19 +149,27 @@ def part1_nested_runs(client: OpenAI) -> None:
         fastest = min(results, key=lambda x: x["latency_seconds"])
         avg_latency = sum(x["latency_seconds"] for x in results) / len(results)
 
-        mlflow.log_params({
-            "best_config_by_length": best_by_length["run_name"],
-            "fastest_config": fastest["run_name"],
-        })
-        mlflow.log_metrics({
-            "avg_latency_seconds": round(avg_latency, 3),
-            "max_response_length": best_by_length["response_length"],
-            "min_response_length": shortest["response_length"],
-        })
+        mlflow.log_params(
+            {
+                "best_config_by_length": best_by_length["run_name"],
+                "fastest_config": fastest["run_name"],
+            }
+        )
+        mlflow.log_metrics(
+            {
+                "avg_latency_seconds": round(avg_latency, 3),
+                "max_response_length": best_by_length["response_length"],
+                "min_response_length": shortest["response_length"],
+            }
+        )
 
-        print(f"  Most detailed: {best_by_length['run_name']}  (length={best_by_length['response_length']})")
+        print(
+            f"  Most detailed: {best_by_length['run_name']}  (length={best_by_length['response_length']})"
+        )
         print(f"  Most concise:  {shortest['run_name']}  (length={shortest['response_length']})")
-        print(f"  Fastest:       {fastest['run_name']}  (latency={fastest['latency_seconds']:.2f}s)")
+        print(
+            f"  Fastest:       {fastest['run_name']}  (latency={fastest['latency_seconds']:.2f}s)"
+        )
         print(f"  Avg latency:   {avg_latency:.2f}s")
         print(f"  Parent run ID: {parent_run.info.run_id}")
 
@@ -158,14 +178,20 @@ def part1_nested_runs(client: OpenAI) -> None:
     experiment = mlflow.get_experiment_by_name(EXPERIMENT_NAME)
     if experiment is None:
         raise RuntimeError(f"Experiment {EXPERIMENT_NAME!r} not found")
-    child_runs = cast(pd.DataFrame, mlflow.search_runs(
-        experiment_ids=[experiment.experiment_id],
-        filter_string=f"tags.mlflow.parentRunId = '{parent_run.info.run_id}'",
-        order_by=["metrics.response_length DESC"],
-    ))
+    child_runs = cast(
+        pd.DataFrame,
+        mlflow.search_runs(
+            experiment_ids=[experiment.experiment_id],
+            filter_string=f"tags.mlflow.parentRunId = '{parent_run.info.run_id}'",
+            order_by=["metrics.response_length DESC"],
+        ),
+    )
     summary_cols = [
-        "params.temperature", "tags.prompt_variant",
-        "metrics.response_length", "metrics.token_count", "metrics.latency_seconds",
+        "params.temperature",
+        "tags.prompt_variant",
+        "metrics.response_length",
+        "metrics.token_count",
+        "metrics.latency_seconds",
     ]
     available = [c for c in summary_cols if c in child_runs.columns]
     if available:
@@ -209,9 +235,11 @@ def part2_async_logging(client: OpenAI) -> None:
             mlflow.log_metric("latency_ms", r["response_time_seconds"] * 1000, step=i)
             mlflow.log_metric("token_count", r["total_tokens"], step=i)
 
-            print(f"    [{i:2d}] {prompt[:45]:<45s}  "
-                  f"latency={r['response_time_seconds']:.2f}s  "
-                  f"tokens={r['total_tokens']:3d}")
+            print(
+                f"    [{i:2d}] {prompt[:45]:<45s}  "
+                f"latency={r['response_time_seconds']:.2f}s  "
+                f"tokens={r['total_tokens']:3d}"
+            )
 
     mlflow.config.enable_async_logging(False)
     print(f"\n  Run ID: {run.info.run_id}")
@@ -266,6 +294,7 @@ def part2_async_logging(client: OpenAI) -> None:
 
 # ── Part 3: Artifact Organization Patterns ────────────────────────────
 
+
 def part3_artifact_organization(client: OpenAI) -> None:
     """Demonstrate organized artifact subfolder structure and bulk uploads."""
 
@@ -273,7 +302,6 @@ def part3_artifact_organization(client: OpenAI) -> None:
     print("  Best practice: use artifact_path to create a clean folder structure.")
 
     with mlflow.start_run(run_name="organized_artifacts") as run:
-
         # Step 6: Organized subfolder structure
         section("Step 6: Organized artifact subfolders")
 
@@ -286,7 +314,11 @@ def part3_artifact_organization(client: OpenAI) -> None:
             mlflow.log_artifact(config_path, artifact_path="config/llm")
             print("  Logged -> config/llm/llm_config.json")
 
-            eval_config = {"num_prompts": 8, "judge_model": "gemma-4-26b", "metrics": ["quality", "latency"]}
+            eval_config = {
+                "num_prompts": 8,
+                "judge_model": "gemma-4-26b",
+                "metrics": ["quality", "latency"],
+            }
             eval_path = os.path.join(tmpdir, "eval_config.json")
             with open(eval_path, "w") as f:
                 json.dump(eval_config, f, indent=2)

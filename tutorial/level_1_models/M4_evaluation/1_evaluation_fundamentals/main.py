@@ -12,9 +12,9 @@ import json
 import re
 
 import mlflow
+from openai import OpenAI
 import pandas as pd
 from mlflow.genai.scorers import ResponseLength, scorer
-from openai import OpenAI
 
 # -- Configuration --
 LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
