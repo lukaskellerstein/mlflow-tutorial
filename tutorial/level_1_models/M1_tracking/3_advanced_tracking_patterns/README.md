@@ -10,7 +10,7 @@ This lesson covers three advanced tracking patterns: nested runs for organizing 
 ## Prerequisites
 
 - Completed: L1-M1.1 (Tracking Fundamentals), L1-M1.2 (Search, Query, and MlflowClient)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts

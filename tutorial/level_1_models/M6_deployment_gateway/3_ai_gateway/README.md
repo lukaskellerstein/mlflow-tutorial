@@ -10,7 +10,7 @@ The MLflow AI Gateway provides a unified, centralized interface for interacting 
 ## Prerequisites
 
 - Completed: L1-M6.1 (Model Serving)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - No cloud API keys required (this lesson is educational / config-focused)
 
 ## Concepts

@@ -11,12 +11,14 @@ Build a production-quality custom autolog implementation that:
 
 import functools
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import mlflow
 import pandas as pd
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 
 # ---------------------------------------------------------------------------
@@ -35,7 +37,7 @@ class SimpleChat:
         self._llm = ChatOpenAI(
             model=model,
             base_url="http://localhost:1234/v1",
-            api_key="lm-studio",
+            api_key=SecretStr("lm-studio"),
             temperature=temperature,
         )
         self._call_count = 0
@@ -44,7 +46,7 @@ class SimpleChat:
         """Send a single message and return the response text."""
         self._call_count += 1
         response = self._llm.invoke(message)
-        return response.content
+        return str(response.content)
 
     def chat_with_history(self, messages: list[dict[str, str]]) -> str:
         """Send a conversation history and return the response.
@@ -53,7 +55,7 @@ class SimpleChat:
         """
         self._call_count += 1
         response = self._llm.invoke(messages)
-        return response.content
+        return str(response.content)
 
     def batch_chat(self, messages: list[str]) -> list[str]:
         """Send multiple independent messages and return all responses."""
@@ -113,9 +115,9 @@ def _make_chat_wrapper(original_fn: Callable) -> Callable:
         if _state.log_metrics:
             call_num = self.call_count
             mlflow.log_metrics({
-                f"chat_latency_s": round(elapsed, 3),
-                f"chat_input_chars": len(message),
-                f"chat_output_chars": len(result),
+                "chat_latency_s": round(elapsed, 3),
+                "chat_input_chars": len(message),
+                "chat_output_chars": len(result),
             }, step=call_num)
 
         # Fire registered callbacks
@@ -240,8 +242,8 @@ def simplechat_autolog(
         log_traces:  If True, create MLflow trace spans for each call.
         log_metrics: If True, log per-call metrics to the active run.
     """
-    global _state
-
+    # NOTE: no `global _state` needed -- we only mutate the object's attributes,
+    # never rebind the module-level name itself.
     if disable:
         # Restore original methods if we previously patched them
         if _state._original_chat is not None:
@@ -268,6 +270,9 @@ def simplechat_autolog(
     _state.enabled = True
 
     # Monkey-patch the class methods
+    assert _state._original_chat is not None
+    assert _state._original_chat_with_history is not None
+    assert _state._original_batch_chat is not None
     SimpleChat.chat = _make_chat_wrapper(_state._original_chat)
     SimpleChat.chat_with_history = _make_chat_with_history_wrapper(
         _state._original_chat_with_history
@@ -416,18 +421,18 @@ def main() -> None:
     print("Summary")
     print("=" * 60)
     print(f"  Total SimpleChat calls: {bot.call_count}")
-    print(f"  Autolog pattern: monkey-patch class methods with wrappers")
-    print(f"  Features demonstrated:")
-    print(f"    - Enable/disable lifecycle")
-    print(f"    - Automatic trace spans with inputs/outputs/attributes")
-    print(f"    - Per-call metric logging (latency, char counts)")
-    print(f"    - Extensible callback hooks")
-    print(f"    - Restore original methods on disable")
-    print(f"\n  View runs in MLflow UI: http://127.0.0.1:5000")
+    print("  Autolog pattern: monkey-patch class methods with wrappers")
+    print("  Features demonstrated:")
+    print("    - Enable/disable lifecycle")
+    print("    - Automatic trace spans with inputs/outputs/attributes")
+    print("    - Per-call metric logging (latency, char counts)")
+    print("    - Extensible callback hooks")
+    print("    - Restore original methods on disable")
+    print("\n  View runs in MLflow UI: http://127.0.0.1:5555")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L3/M3_extensibility/1_custom_autolog")
     main()

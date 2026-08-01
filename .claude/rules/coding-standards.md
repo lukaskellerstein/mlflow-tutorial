@@ -25,7 +25,7 @@ Always set the tracking URI explicitly in code at the top of `main.py`:
 
 ```python
 import mlflow
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 ```
 
 ## LMStudio / LLM Setup
@@ -56,13 +56,19 @@ response = client.chat.completions.create(
 
 ### With LangChain (for agent/chain lessons)
 
+`ChatOpenAI.api_key` is typed `SecretStr | None`. Pydantic coerces a plain string
+at runtime, but the type checker rejects it — so wrap the key in `SecretStr` and
+declare `pydantic>=2` in the lesson's `pyproject.toml`. (The plain string form
+stays correct for `openai.OpenAI`, which accepts `str`.)
+
 ```python
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 # Small model
 llm = ChatOpenAI(
     base_url="http://localhost:1234/v1",
-    api_key="lm-studio",
+    api_key=SecretStr("lm-studio"),
     model="google/gemma-4-e4b",
     temperature=0.7,
 )
@@ -70,7 +76,7 @@ llm = ChatOpenAI(
 # Large MoE model
 llm = ChatOpenAI(
     base_url="http://localhost:1234/v1",
-    api_key="lm-studio",
+    api_key=SecretStr("lm-studio"),
     model="google/gemma-4-26b-a4b",
     temperature=0.7,
 )
@@ -115,6 +121,12 @@ embeddings = OpenAIEmbeddings(
   - Fine-tuning lessons: `transformers`, `datasets`
   - Production lessons: `fastapi`, `uvicorn`
   - Monitoring lessons: `prometheus-client`
+- Any lesson that calls `mlflow.langchain.autolog()` must declare the `langchain`
+  meta-package, even if the code only imports `langchain_openai`/`langgraph`.
+  MLflow's version check imports `langchain` itself, so without it autolog raises
+  `ModuleNotFoundError: No module named 'langchain'`.
+- Declare every module the lesson imports directly. Do not rely on a package
+  arriving transitively (e.g. `numpy` via `pandas`, `requests` via `mlflow`).
 
 ## Console Output
 

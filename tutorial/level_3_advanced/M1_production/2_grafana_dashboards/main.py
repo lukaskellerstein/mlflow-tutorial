@@ -15,7 +15,6 @@ configuration for production monitoring.  The script:
 
 import json
 import time
-import threading
 from typing import Any
 
 import mlflow
@@ -27,10 +26,8 @@ from prometheus_client import (
     Gauge,
     Histogram,
     start_http_server,
-    REGISTRY,
-    generate_latest,
 )
-
+from pydantic import SecretStr
 
 # ---------------------------------------------------------------------------
 # 1. Prometheus metrics definitions
@@ -76,7 +73,7 @@ class InstrumentedLLMService:
         self.llm = ChatOpenAI(
             model=model,
             base_url="http://localhost:1234/v1",
-            api_key="lm-studio",
+            api_key=SecretStr("lm-studio"),
             temperature=temperature,
         )
         self.call_count = 0
@@ -236,13 +233,9 @@ def verify_metrics(port: int) -> dict[str, float]:
     for line in text.splitlines():
         if line.startswith("#"):
             continue
-        if line.startswith("llm_request_total"):
-            parts = line.split()
-            summary[parts[0]] = float(parts[1])
-        elif line.startswith("llm_tokens_used_total"):
-            parts = line.split()
-            summary[parts[0]] = float(parts[1])
-        elif line.startswith("llm_errors_total"):
+        if line.startswith(
+            ("llm_request_total", "llm_tokens_used_total", "llm_errors_total")
+        ):
             parts = line.split()
             summary[parts[0]] = float(parts[1])
         elif line.startswith("llm_request_duration_seconds_count"):
@@ -330,9 +323,9 @@ def main() -> None:
         with open(dash_path, "w") as fh:
             json.dump(dashboard, fh, indent=2)
         mlflow.log_artifact(dash_path, artifact_path="dashboards")
-        print(f"  Dashboard JSON saved and logged as MLflow artifact")
+        print("  Dashboard JSON saved and logged as MLflow artifact")
         print(f"  Panels: {[p['title'] for p in dashboard['dashboard']['panels']]}")
-        print(f"  Import via Grafana UI -> Dashboards -> Import -> Upload JSON")
+        print("  Import via Grafana UI -> Dashboards -> Import -> Upload JSON")
 
         # -- Part 5: Verify Prometheus metrics ------------------------------
         print("\n--- Part 5: Verifying Prometheus metrics ---")
@@ -356,7 +349,7 @@ def main() -> None:
         print(f"  Total compl. tokens: {total_compl_tok}")
         print(f"  Prometheus:          http://localhost:{metrics_port}/metrics")
         print(f"  MLflow run ID:       {run.info.run_id}")
-        print(f"  MLflow UI:           http://127.0.0.1:5000")
+        print("  MLflow UI:           http://127.0.0.1:5555")
         print(f"  Grafana dashboard:   {dash_path}")
         print(f"{'=' * 60}")
 
@@ -364,6 +357,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L3/M1_production/2_grafana_dashboards")
     main()

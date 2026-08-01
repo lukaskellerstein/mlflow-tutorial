@@ -160,7 +160,7 @@ def part4_compare(base_model, finetuned_model, tokenizer):
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M7_finetuning/1_huggingface")
 
     print("\n" + "=" * 60)
@@ -180,5 +180,5 @@ if __name__ == "__main__":
 
     print("=" * 60)
     print("Done! View results in the MLflow UI:")
-    print("  http://127.0.0.1:5000/#/experiments")
+    print("  http://127.0.0.1:5555/#/experiments")
     print("=" * 60)

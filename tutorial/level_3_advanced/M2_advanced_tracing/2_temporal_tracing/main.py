@@ -16,13 +16,14 @@ import asyncio
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from typing import cast
 
 import mlflow
+from mlflow.entities import Trace
 from openai import OpenAI
 from temporalio import activity
 from temporalio.client import Client
 from temporalio.worker import Worker
-
 from workflow_def import (
     AnalysisRequest,
     AnalysisResult,
@@ -31,7 +32,7 @@ from workflow_def import (
 )
 
 # -- Configuration --
-TRACKING_URI = "http://127.0.0.1:5000"
+TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT = "L2/M4_advanced_tracing/2_temporal_tracing"
 TASK_QUEUE = "mlflow-tutorial-text-analysis"
 MODEL = "google/gemma-4-26b-a4b"
@@ -69,7 +70,7 @@ def _call_llm(system_prompt: str, user_prompt: str) -> str:
         ],
         temperature=0.7,
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
 @activity.defn
@@ -139,11 +140,11 @@ def analyze_traces() -> None:
         print("  Experiment not found — skipping analysis.")
         return
 
-    traces = mlflow.search_traces(
+    traces = cast(list[Trace], mlflow.search_traces(
         experiment_ids=[experiment.experiment_id],
         return_type="list",
         max_results=8,  # limit to recent traces
-    )
+    ))
     print(f"\n  Showing up to {len(traces)} most recent trace(s)\n")
 
     for i, trace in enumerate(traces):
@@ -171,7 +172,7 @@ def analyze_traces() -> None:
         activity_spans = [s for s in spans if s.name.startswith("activity_")]
         if activity_spans:
             durations = {
-                s.name: (s.end_time_ns - s.start_time_ns) / 1e6
+                s.name: ((s.end_time_ns or 0) - (s.start_time_ns or 0)) / 1e6
                 for s in activity_spans
             }
             slowest = max(durations, key=durations.get)  # type: ignore[arg-type]
@@ -183,7 +184,7 @@ def analyze_traces() -> None:
         root_spans = [s for s in spans if s.parent_id is None]
         if root_spans:
             root = root_spans[0]
-            total_ms = (root.end_time_ns - root.start_time_ns) / 1e6
+            total_ms = ((root.end_time_ns or 0) - (root.start_time_ns or 0)) / 1e6
             print(f"    Total workflow time: {total_ms:.1f} ms")
         print()
 
@@ -246,15 +247,15 @@ async def async_main() -> None:
             print(f"  Keywords:  {result.keywords[:100]}...")
 
     # Let async trace logging flush
-    time.sleep(2)
+    await asyncio.sleep(2)
 
     # -- Part 4: Analyze traces --
     analyze_traces()
 
     print("=" * 60)
     print("Done! Inspect results at:")
-    print(f"  MLflow UI:    http://127.0.0.1:5000  (experiment: {EXPERIMENT})")
-    print(f"  Temporal UI:  http://localhost:8080   (search for workflow IDs)")
+    print(f"  MLflow UI:    http://127.0.0.1:5555  (experiment: {EXPERIMENT})")
+    print("  Temporal UI:  http://localhost:8080   (search for workflow IDs)")
     print("=" * 60)
 
 
@@ -280,7 +281,7 @@ async def _fallback_demo() -> None:
 
             print(f"  Result: {result_text[:100]}...")
 
-    time.sleep(2)
+    await asyncio.sleep(2)
     analyze_traces()
 
     print("\n" + "=" * 60)

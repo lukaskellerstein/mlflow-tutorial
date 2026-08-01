@@ -15,6 +15,7 @@ that identifies the best configuration.
 
 import os
 import time
+from typing import cast
 
 import mlflow
 import mlflow.langchain
@@ -22,11 +23,12 @@ import pandas as pd
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
+from pydantic import SecretStr
 
 # ---------------------------------------------------------------------------
 # MLflow setup
 # ---------------------------------------------------------------------------
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L2/M3_agent_evaluation/4_agent_optimization")
 mlflow.langchain.autolog(log_traces=True)
 
@@ -51,7 +53,7 @@ FACTS = {
 
 def _do_calc(expression: str) -> str:
     try:
-        return str(eval(expression, {"__builtins__": {}}))  # noqa: S307
+        return str(eval(expression, {"__builtins__": {}}))  # nosec: arithmetic-only, builtins stripped
     except Exception as exc:
         return f"Error: {exc}"
 
@@ -260,7 +262,7 @@ def main() -> None:
         print(f"{'=' * 70}")
         for name, text in SYSTEM_PROMPTS.items():
             agent = create_react_agent(
-                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key="lm-studio", temperature=0.0),
+                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key=SecretStr("lm-studio"), temperature=0.0),
                 tools=ORIGINAL_TOOLS, prompt=text)
             run_variant(f"prompt_{name}", agent, "system_prompt",
                         {"dimension": "system_prompt", "variant": name,
@@ -273,7 +275,7 @@ def main() -> None:
         best_prompt = SYSTEM_PROMPTS["structured"]
         for temp in [0.0, 0.3, 0.7, 1.0]:
             agent = create_react_agent(
-                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key="lm-studio", temperature=temp),
+                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key=SecretStr("lm-studio"), temperature=temp),
                 tools=ORIGINAL_TOOLS, prompt=best_prompt)
             run_variant(f"temp_{temp}", agent, "temperature",
                         {"dimension": "temperature", "variant": str(temp),
@@ -286,7 +288,7 @@ def main() -> None:
         for tlabel, tools in [("tools_original", ORIGINAL_TOOLS),
                                ("tools_improved", IMPROVED_TOOLS)]:
             agent = create_react_agent(
-                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key="lm-studio", temperature=0.0),
+                model=ChatOpenAI(model="google/gemma-4-26b-a4b", base_url="http://localhost:1234/v1", api_key=SecretStr("lm-studio"), temperature=0.0),
                 tools=tools, prompt=best_prompt)
             run_variant(tlabel, agent, "tool_descriptions",
                         {"dimension": "tool_descriptions", "variant": tlabel,
@@ -312,16 +314,18 @@ def main() -> None:
               f"ToolSelection={best['tool_selection']:.3f}  Latency={best['latency_s']:.3f}s")
 
         for step, (_, row) in enumerate(df.iterrows()):
-            mlflow.log_metric("opt_quality", row["quality"], step=step)
-            mlflow.log_metric("opt_correctness", row["correctness"], step=step)
-            mlflow.log_metric("opt_tool_selection", row["tool_selection"], step=step)
+            mlflow.log_metric("opt_quality", float(row["quality"]), step=step)
+            mlflow.log_metric("opt_correctness", float(row["correctness"]), step=step)
+            mlflow.log_metric("opt_tool_selection", float(row["tool_selection"]), step=step)
 
         mlflow.log_params({"best_variant": best["variant"],
                            "best_quality": best["quality"],
                            "num_variants_tested": len(all_results)})
 
         for dim in df["dimension"].unique():
-            dim_best = df[df["dimension"] == dim].sort_values("quality", ascending=False).iloc[0]
+            dim_best = cast(pd.DataFrame, df[df["dimension"] == dim]).sort_values(
+                "quality", ascending=False
+            ).iloc[0]
             mlflow.set_tag(f"best_{dim}", dim_best["variant"])
             print(f"  Best {dim}: {dim_best['variant']} (quality={dim_best['quality']:.3f})")
 
@@ -329,7 +333,7 @@ def main() -> None:
         df.to_csv(csv_path, index=False)
         mlflow.log_artifact(csv_path)
         print(f"\n  Parent Run ID: {parent.info.run_id}")
-        print(f"  View in MLflow UI: http://127.0.0.1:5000")
+        print("  View in MLflow UI: http://127.0.0.1:5555")
 
     if os.path.exists(csv_path):
         os.remove(csv_path)

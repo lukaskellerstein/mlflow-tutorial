@@ -12,13 +12,16 @@ using LangGraph, with full MLflow tracing:
 
 import operator
 import time
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 
 import mlflow
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from langgraph.graph import END, START, StateGraph
+from langgraph.graph import START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
+from mlflow.entities import Trace
+from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 
@@ -47,7 +50,7 @@ def researcher_node(state: PipelineState) -> dict:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.7,
     )
     prompt = ChatPromptTemplate.from_messages([
@@ -79,7 +82,7 @@ def writer_node(state: PipelineState) -> dict:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.7,
     )
 
@@ -125,7 +128,7 @@ def reviewer_node(state: PipelineState) -> dict:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.3,
     )
     prompt = ChatPromptTemplate.from_messages([
@@ -167,7 +170,7 @@ def supervisor_router(state: PipelineState) -> Literal["writer", "__end__"]:
 # ---------------------------------------------------------------------------
 # Build the graph
 # ---------------------------------------------------------------------------
-def build_graph() -> StateGraph:
+def build_graph() -> CompiledStateGraph[PipelineState, None, PipelineState, PipelineState]:
     """Build the multi-agent LangGraph with supervisor routing."""
     workflow = StateGraph(PipelineState)
 
@@ -229,12 +232,12 @@ def analyze_traces() -> None:
         print("  No experiment found.")
         return
 
-    traces = mlflow.search_traces(
+    traces = cast(list[Trace], mlflow.search_traces(
         locations=[experiment.experiment_id],
         max_results=5,
         return_type="list",
         flush=True,
-    )
+    ))
 
     print(f"  Found {len(traces)} trace(s)\n")
 
@@ -320,7 +323,7 @@ def log_pipeline_metrics(results: list[dict]) -> None:
 # Main
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M1_agent_frameworks/3_multiagent_systems")
 
     # Enable auto-tracing for LangChain/LangGraph
@@ -351,6 +354,6 @@ if __name__ == "__main__":
 
     print("\n" + "=" * 60)
     print("Done! View your multi-agent traces in the MLflow UI:")
-    print("  http://127.0.0.1:5000 -> Traces tab")
+    print("  http://127.0.0.1:5555 -> Traces tab")
     print("  Look for the researcher -> writer -> reviewer span hierarchy.")
     print("=" * 60)

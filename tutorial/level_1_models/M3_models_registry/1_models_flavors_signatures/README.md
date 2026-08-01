@@ -10,7 +10,7 @@ Learn how MLflow packages models into a portable, self-describing format. This l
 ## Prerequisites
 
 - Completed: L1-M2 (Tracing)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts

@@ -19,8 +19,9 @@ from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
 from mlflow.entities import AssessmentSource, Feedback
 from mlflow.genai.scorers import scorer
+from pydantic import SecretStr
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L2/M3_agent_evaluation/2_quality_metrics")
 
 STOP_WORDS = {"the", "a", "an", "is", "are", "was", "were", "and", "or",
@@ -69,7 +70,7 @@ def build_agent(temperature: float = 0.7) -> Any:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=temperature,
     ).bind_tools(TOOLS)
 
@@ -78,7 +79,7 @@ def build_agent(temperature: float = 0.7) -> Any:
 
     def should_continue(state: MessagesState) -> str:
         last = state["messages"][-1]
-        return "tools" if getattr(last, "type", "") == "ai" and last.tool_calls else END
+        return "tools" if getattr(last, "tool_calls", None) else END
 
     graph = StateGraph(MessagesState)
     graph.add_node("agent", agent_node)
@@ -174,10 +175,11 @@ def reasoning_quality_scorer(inputs: dict, outputs: dict) -> Feedback:
     raw = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.0,
     ).invoke(
-        JUDGE_PROMPT.format(question=question, response=answer)).content.strip()
+        JUDGE_PROMPT.format(question=question, response=answer))
+    raw = str(raw.content).strip()
     try:
         scores = json.loads(raw)
     except json.JSONDecodeError:
@@ -299,7 +301,7 @@ def main() -> None:
 
     compare_configs(ma, mb, "temp=0.3", "temp=0.9")
     print(f"\n{'=' * 70}")
-    print("  Done! View results: http://127.0.0.1:5000")
+    print("  Done! View results: http://127.0.0.1:5555")
     print("  Experiment: L3/M1_agent_evaluation/2_quality_metrics")
     print(f"{'=' * 70}")
 

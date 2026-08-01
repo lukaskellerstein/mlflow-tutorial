@@ -8,7 +8,6 @@ Demonstrates systematic prompt optimization tracked with MLflow:
 - Identify the best-performing prompt and analyze the optimization trajectory
 """
 
-import json
 import time
 
 import mlflow
@@ -110,7 +109,7 @@ def ask_llm(prompt: str, question: str) -> str:
         ],
         temperature=0.7,
     )
-    return response.choices[0].message.content.strip()
+    return (response.choices[0].message.content or "").strip()
 
 
 # ---------------------------------------------------------------------------
@@ -182,12 +181,13 @@ def run_iteration(
               f"composite={avg_metrics['avg_composite']:.2f}  "
               f"({elapsed:.1f}s)")
 
-        return {
+        record = {
             "variant": variant_name,
             "iteration": iteration,
             "run_id": run.info.run_id,
             **avg_metrics,
         }
+    return record
 
 
 # ---------------------------------------------------------------------------
@@ -241,7 +241,7 @@ def main() -> None:
     print("=" * 60)
     print(f"  Dataset:  {len(EVAL_DATA)} Q&A pairs (geography)")
     print(f"  Model:    {MODEL_NAME}")
-    print(f"  Scoring:  exact_match (50%) + brevity (30%) + confidence (20%)")
+    print("  Scoring:  exact_match (50%) + brevity (30%) + confidence (20%)")
     print()
 
     all_results: list[dict] = []
@@ -336,13 +336,13 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! View the optimization runs in the MLflow UI:")
-    print("  http://127.0.0.1:5000")
+    print("  http://127.0.0.1:5555")
     print("  Experiment: L1/M5_prompt_engineering/3_prompt_optimization")
     print("  Expand 'prompt_optimization' to see all variants as nested runs.")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M5_prompt_engineering/2_prompt_optimization")
     main()

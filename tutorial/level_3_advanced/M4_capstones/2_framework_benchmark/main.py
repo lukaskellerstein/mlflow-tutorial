@@ -13,11 +13,11 @@ Approaches:
 All approaches use ChatOpenAI(model="google/gemma-4-26b-a4b") and the same tool set.
 """
 
-import json
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import mlflow
 import pandas as pd
@@ -26,17 +26,18 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import create_react_agent
+from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # ── MLflow setup ──────────────────────────────────────────
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L3/M4_capstones/2_framework_benchmark")
 
 # ── Shared LLM and tools ──────────────────────────────────
 LLM = ChatOpenAI(
     model="google/gemma-4-26b-a4b",
     base_url="http://localhost:1234/v1",
-    api_key="lm-studio",
+    api_key=SecretStr("lm-studio"),
     temperature=0.0,
 )
 
@@ -80,7 +81,7 @@ def calculate(expression: str) -> str:
     try:
         allowed = set("0123456789+-*/.() ")
         if all(c in allowed for c in expression):
-            return str(eval(expression))  # noqa: S307
+            return str(eval(expression))  # nosec: reached only for whitelisted arithmetic chars
         return "Invalid expression — only basic arithmetic is supported."
     except Exception as e:
         return f"Calculation error: {e}"
@@ -91,7 +92,7 @@ TOOLS = [lookup, calculate]
 
 # ── Agent implementations ─────────────────────────────────
 
-def build_simple_chain() -> callable:
+def build_simple_chain() -> Callable[[str], dict]:
     """Approach A: prompt -> LLM -> answer (no tools)."""
 
     def run(question: str) -> dict:
@@ -101,7 +102,7 @@ def build_simple_chain() -> callable:
             {"role": "user", "content": question},
         ])
         elapsed = time.time() - start
-        answer = response.content
+        answer = str(response.content)
         return {
             "answer": answer,
             "latency_s": elapsed,
@@ -112,7 +113,7 @@ def build_simple_chain() -> callable:
     return run
 
 
-def build_react_agent() -> callable:
+def build_react_agent() -> Callable[[str], dict]:
     """Approach B: ReAct agent with tool access."""
     agent = create_react_agent(
         model=LLM,
@@ -144,7 +145,7 @@ def build_react_agent() -> callable:
     return run
 
 
-def build_stategraph_agent() -> callable:
+def build_stategraph_agent() -> Callable[[str], dict]:
     """Approach C: Custom StateGraph with classify -> route -> process -> respond."""
 
     class GraphState(TypedDict):
@@ -163,7 +164,7 @@ def build_stategraph_agent() -> callable:
                         "Categories: tech_lookup, math, general"},
             {"role": "user", "content": q},
         ])
-        cat = resp.content.strip().lower().replace("'", "").replace('"', '')
+        cat = str(resp.content).strip().lower().replace("'", "").replace('"', '')
         if "tech" in cat or "lookup" in cat:
             cat = "tech_lookup"
         elif "math" in cat or "calc" in cat:
@@ -194,7 +195,7 @@ def build_stategraph_agent() -> callable:
                                           "Reply with just the expression, nothing else."},
             {"role": "user", "content": q},
         ])
-        expr = resp.content.strip()
+        expr = str(resp.content).strip()
         result = calculate.invoke(expr)
         return {"context": f"Calculation result: {result}"}
 
@@ -263,7 +264,7 @@ class TestCase:
 @dataclass
 class AgentEntry:
     name: str
-    run_fn: callable
+    run_fn: Callable[[str], dict]
     description: str
 
 
@@ -276,7 +277,7 @@ class BenchmarkSuite:
     results: list[dict] = field(default_factory=list)
     summary_df: pd.DataFrame = field(default_factory=lambda: pd.DataFrame())
 
-    def add_agent(self, name: str, run_fn: callable, description: str = "") -> None:
+    def add_agent(self, name: str, run_fn: Callable[[str], dict], description: str = "") -> None:
         """Register an agent for benchmarking."""
         self.agents.append(AgentEntry(name=name, run_fn=run_fn, description=description))
 
@@ -310,9 +311,7 @@ class BenchmarkSuite:
                 print(f"  {agent_entry.description}")
                 print(f"{'─' * 70}")
 
-                with mlflow.start_run(
-                    run_name=agent_entry.name, nested=True
-                ) as agent_run:
+                with mlflow.start_run(run_name=agent_entry.name, nested=True):
                     mlflow.log_params({
                         "agent": agent_entry.name,
                         "model": "google/gemma-4-26b-a4b",
@@ -406,13 +405,13 @@ class BenchmarkSuite:
     def _build_summary(self) -> None:
         """Compute per-agent aggregate metrics."""
         df = pd.DataFrame(self.results)
-        self.summary_df = df.groupby("agent").agg(
+        self.summary_df = cast(pd.DataFrame, df.groupby("agent").agg(
             correctness=("correctness", "mean"),
             tool_usage=("tool_usage", "mean"),
             latency_s=("latency_s", "mean"),
             tokens_est=("tokens_est", "sum"),
             tool_calls=("tool_calls", "sum"),
-        ).round(3)
+        ).round(3))
         self.summary_df["quality"] = (
             (self.summary_df["correctness"] + self.summary_df["tool_usage"]) / 2
         ).round(3)
@@ -675,8 +674,8 @@ def main() -> None:
     report = suite.generate_report()
     print(f"\n{report}")
 
-    print(f"\n  View detailed runs in MLflow UI: http://127.0.0.1:5000")
-    print(f"  Experiment: L3/M5_capstones/2_framework_benchmark")
+    print("\n  View detailed runs in MLflow UI: http://127.0.0.1:5555")
+    print("  Experiment: L3/M5_capstones/2_framework_benchmark")
     print("=" * 70)
 
     # Cleanup temp files

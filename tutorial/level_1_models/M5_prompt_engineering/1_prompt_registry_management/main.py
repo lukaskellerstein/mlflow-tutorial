@@ -8,11 +8,13 @@ Combines prompt registry fundamentals with management at scale:
 - Compare results and select the best variant
 """
 
+from typing import cast
+
 import mlflow
 import pandas as pd
 from openai import OpenAI
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L1/M5_prompt_engineering/1_prompt_registry_management")
 
 PROMPT_NAME = "L1_M5_qa_prompt"
@@ -91,7 +93,7 @@ def part1_register_prompts() -> list[int]:
     print(f"  Loaded @production (v{loaded_prod.version}): {loaded_prod.template[:60]}...")
 
     # Format a prompt with variables
-    formatted = loaded_prod.format(question="What is recursion?")
+    formatted = str(loaded_prod.format(question="What is recursion?"))
     print(f"  Formatted: {formatted[:80]}...")
 
     # Search registered prompts
@@ -130,14 +132,14 @@ def part2_ab_test(versions: list[int]) -> pd.DataFrame:
             total_words = 0
 
             for i, question in enumerate(TEST_QUESTIONS, 1):
-                formatted = prompt_version.format(question=question)
+                formatted = str(prompt_version.format(question=question))
                 response = client.chat.completions.create(
                     model="google/gemma-4-e4b",
                     messages=[{"role": "user", "content": formatted}],
                     temperature=0.7,
                     max_tokens=1024,
                 )
-                answer = response.choices[0].message.content.strip()
+                answer = (response.choices[0].message.content or "").strip()
 
                 word_count = len(answer.split())
                 total_words += word_count
@@ -190,7 +192,7 @@ def part3_compare_results(results_df: pd.DataFrame) -> None:
     # Determine best variant (closest to medium length: 40-80 words)
     target_words = 60
     summary["distance_from_target"] = abs(summary["avg_words"] - target_words)
-    best_variant = summary["distance_from_target"].idxmin()
+    best_variant = cast(pd.Series, summary["distance_from_target"]).idxmin()
     print(f"\n  Best balanced variant (closest to ~{target_words} words): {best_variant}")
 
     with mlflow.start_run(run_name="ab_test_comparison"):
@@ -222,7 +224,7 @@ def main() -> None:
 
     print()
     print("=" * 60)
-    print("Done! Check the MLflow UI at http://127.0.0.1:5000")
+    print("Done! Check the MLflow UI at http://127.0.0.1:5555")
     print("  Experiment: L1/M5_prompt_engineering/1_prompt_registry_management")
     print("  Prompt Registry: look for the registered prompt versions")
     print("  Runs: 3 A/B test runs + 1 comparison run")

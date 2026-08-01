@@ -19,6 +19,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +90,7 @@ def traced_llm_call(
                 "app_version": metadata.get("app_version", "0.0.0"),
             })
             result = llm.invoke([{"role": "user", "content": prompt}])
-            response_text = result.content
+            response_text = str(result.content)
             duration_ms = (time.perf_counter() - start) * 1000
             token_est = _estimate_tokens(prompt) + _estimate_tokens(response_text)
             span.set_outputs({"response": response_text[:200]})
@@ -136,9 +137,9 @@ def untraced_llm_call(llm: ChatOpenAI, prompt: str) -> TraceRecord:
         return TraceRecord(
             request_id=request_id,
             prompt=prompt,
-            response=result.content,
+            response=str(result.content),
             duration_ms=round(duration_ms, 1),
-            token_estimate=_estimate_tokens(prompt) + _estimate_tokens(result.content),
+            token_estimate=_estimate_tokens(prompt) + _estimate_tokens(str(result.content)),
             sampled=False,
         )
     except Exception as exc:
@@ -295,7 +296,7 @@ def run_part3_error_tracing(llm: ChatOpenAI) -> list[TraceRecord]:
     bad_llm = ChatOpenAI(
             model="nonexistent_model_xyz",
             base_url="http://localhost:1234/v1",
-            api_key="lm-studio",
+            api_key=SecretStr("lm-studio"),
             temperature=0.0,
         )
     meta = {**metadata_base, "request_id": str(uuid.uuid4()), "user_id": "user_test"}
@@ -334,11 +335,11 @@ def run_part4_performance(all_records: list[TraceRecord]) -> None:
     print(f"\n  Requests analyzed: {summary['total_requests']}")
     print(f"  Sampled (traced): {summary['sampled_requests']} ({summary['sampling_rate']:.0%})")
     print(f"  Error rate: {summary['error_rate']:.1%}")
-    print(f"\n  Latency percentiles:")
+    print("\n  Latency percentiles:")
     print(f"    p50: {summary['p50_ms']:.1f} ms")
     print(f"    p95: {summary['p95_ms']:.1f} ms")
     print(f"    p99: {summary['p99_ms']:.1f} ms")
-    print(f"\n  Token usage:")
+    print("\n  Token usage:")
     print(f"    Total tokens (est): {summary['total_token_estimate']}")
     print(f"    Avg tokens/request: {summary['avg_tokens_per_request']}")
 
@@ -377,7 +378,7 @@ def run_part4_performance(all_records: list[TraceRecord]) -> None:
         csv_path = "/tmp/production_trace_records.csv"
         df.to_csv(csv_path, index=False)
         mlflow.log_artifact(csv_path, artifact_path="performance")
-        print(f"\n  Performance summary logged to MLflow run.")
+        print("\n  Performance summary logged to MLflow run.")
 
     # Strategy comparison table
     print("\n" + "=" * 60)
@@ -404,7 +405,7 @@ def main() -> None:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.0,
     )
 
@@ -416,12 +417,12 @@ def main() -> None:
     run_part4_performance(all_records)
 
     print("=" * 60)
-    print("Done! Check MLflow UI at http://127.0.0.1:5000")
+    print("Done! Check MLflow UI at http://127.0.0.1:5555")
     print("Filter traces by tags: environment, user_id, request_id")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L3/M1_production/1_production_tracing")
     main()

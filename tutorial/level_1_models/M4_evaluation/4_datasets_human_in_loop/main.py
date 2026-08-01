@@ -12,14 +12,16 @@ human-in-the-loop assessment workflows:
 import json
 import random
 import time
+from typing import cast
 
 import mlflow
 import mlflow.data
 import pandas as pd
+from mlflow.data.pandas_dataset import from_pandas
 from mlflow.entities import AssessmentSource, AssessmentSourceType
 from openai import OpenAI
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L1/M4_evaluation/4_datasets_human_in_loop")
 
 QA_ROWS = [
@@ -39,7 +41,7 @@ def ask_llm(client: OpenAI, question: str) -> str:
         temperature=0.3,
         max_tokens=1024,
     )
-    return response.choices[0].message.content.strip()
+    return (response.choices[0].message.content or "").strip()
 
 
 def auto_judge_score(client: OpenAI, question: str, expected: str, answer: str) -> dict:
@@ -57,7 +59,7 @@ def auto_judge_score(client: OpenAI, question: str, expected: str, answer: str) 
             temperature=0.0,
             max_tokens=1024,
         )
-        text = response.choices[0].message.content.strip()
+        text = (response.choices[0].message.content or "").strip()
         start, end = text.find("{"), text.rfind("}") + 1
         if start >= 0 and end > start:
             parsed = json.loads(text[start:end])
@@ -79,14 +81,14 @@ def part1_create_and_log_dataset(client: OpenAI) -> tuple[str, list[dict]]:
     print("Part 1: Create, Log, and Run Inference on a Dataset")
     print("=" * 60)
 
-    qa_data = pd.DataFrame(QA_ROWS, columns=["question", "ground_truth_answer"])
+    qa_data = pd.DataFrame(QA_ROWS, columns=pd.Index(["question", "ground_truth_answer"]))
     print(f"  Created Q&A dataset with {len(qa_data)} entries")
 
     with mlflow.start_run(run_name="dataset_and_inference") as run:
         run_id = run.info.run_id
 
         # Log the dataset with lineage
-        dataset = mlflow.data.from_pandas(
+        dataset = from_pandas(
             qa_data, source="tutorial_qa_pairs",
             name="qa_evaluation_dataset", targets="ground_truth_answer",
         )
@@ -102,7 +104,7 @@ def part1_create_and_log_dataset(client: OpenAI) -> tuple[str, list[dict]]:
                 answer = ask_llm(client, question)
                 return {"question": question, "expected": expected, "answer": answer}
 
-            result = traced_qa(row["question"], row["ground_truth_answer"])
+            result = traced_qa(str(row["question"]), str(row["ground_truth_answer"]))
             result["trace_id"] = mlflow.get_last_active_trace_id()
             results.append(result)
             print(f"  Q: {row['question']}")
@@ -110,10 +112,10 @@ def part1_create_and_log_dataset(client: OpenAI) -> tuple[str, list[dict]]:
             print()
 
         # Log inference results as a table artifact
-        results_df = pd.DataFrame(results)[["question", "expected", "answer"]]
+        results_df = cast(pd.DataFrame, pd.DataFrame(results)[["question", "expected", "answer"]])
         mlflow.log_table(results_df, artifact_file="inference_results.json")
         mlflow.log_param("model", "google/gemma-4-e4b")
-        print(f"  Logged inference results as 'inference_results.json'")
+        print("  Logged inference results as 'inference_results.json'")
 
     mlflow.flush_trace_async_logging()
     time.sleep(2)
@@ -206,7 +208,7 @@ def part3_combined_evaluation(client: OpenAI, results: list[dict]) -> None:
             else:
                 counts["borderline_human_review"] += 1
                 human_verdict = random.choice(["correct", "incorrect"])
-                if trace_id and auto_feedback:
+                if trace_id and auto_feedback and auto_feedback.assessment_id:
                     mlflow.override_feedback(
                         trace_id=trace_id,
                         assessment_id=auto_feedback.assessment_id,
@@ -221,7 +223,7 @@ def part3_combined_evaluation(client: OpenAI, results: list[dict]) -> None:
             print(f"  Q{i+1}: auto_score={score}, verdict={verdict}")
             mlflow.log_metric(f"q{i+1}_auto_score", score)
 
-        mlflow.log_metrics(counts)
+        mlflow.log_metrics({k: float(v) for k, v in counts.items()})
         total = len(results)
         print(f"\n  Triage summary ({total} items):")
         for k, v in counts.items():
@@ -263,7 +265,7 @@ def main() -> None:
     print("\n" + "=" * 60)
     print("Done!")
     print("=" * 60)
-    print("  Open MLflow UI at http://127.0.0.1:5000")
+    print("  Open MLflow UI at http://127.0.0.1:5555")
     print("  Experiment: L1/M4_evaluation/4_datasets_human_in_loop")
     print("  Check: Datasets tab, inference_results.json, trace assessments")
 

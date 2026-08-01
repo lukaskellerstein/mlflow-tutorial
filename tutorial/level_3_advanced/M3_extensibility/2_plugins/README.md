@@ -10,7 +10,7 @@ MLflow's plugin system allows you to extend nearly every aspect of the platform 
 ## Prerequisites
 
 - Completed: L1-M1 (Tracking), L2-M1 (Advanced Tracking), L2-M3 (Deep Evaluation)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts

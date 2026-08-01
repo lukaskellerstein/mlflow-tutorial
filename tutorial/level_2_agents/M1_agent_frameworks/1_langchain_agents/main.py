@@ -13,13 +13,15 @@ Key concepts:
 """
 
 import time
+from typing import cast
 
 import mlflow
 import mlflow.langchain
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-
+from mlflow.entities import Trace
+from pydantic import SecretStr
 
 # ── Part 1: Custom Tools ──────────────────────────────────────────
 
@@ -31,6 +33,7 @@ def calculator(expression: str) -> str:
     Args:
         expression: A math expression string, e.g. '15 * 23'.
     """
+
     allowed = set("0123456789+-*/(). ")
     if not all(ch in allowed for ch in expression):
         return f"Error: expression contains invalid characters: {expression}"
@@ -73,7 +76,7 @@ def build_agent():
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.0,
     )
     agent = create_agent(
@@ -100,12 +103,14 @@ def run_agent_tasks(agent) -> list[dict]:
     results = []
 
     with mlflow.start_run(run_name="langchain_agent_tasks"):
-        mlflow.set_tags({
-            "agent_type": "react",
-            "model": "google/gemma-4-26b-a4b",
-            "num_tools": str(len(TOOLS)),
-            "tool_names": ", ".join(t.name for t in TOOLS),
-        })
+        mlflow.set_tags(
+            {
+                "agent_type": "react",
+                "model": "google/gemma-4-26b-a4b",
+                "num_tools": str(len(TOOLS)),
+                "tool_names": ", ".join(t.name for t in TOOLS),
+            }
+        )
 
         for idx, task in enumerate(TASKS, start=1):
             print(f"\n{'=' * 60}")
@@ -113,9 +118,7 @@ def run_agent_tasks(agent) -> list[dict]:
             print("=" * 60)
 
             start = time.time()
-            response = agent.invoke(
-                {"messages": [{"role": "user", "content": task}]}
-            )
+            response = agent.invoke({"messages": [{"role": "user", "content": task}]})
             elapsed = time.time() - start
 
             # Extract the final answer from the last message
@@ -126,43 +129,47 @@ def run_agent_tasks(agent) -> list[dict]:
 
             # Count tool calls and messages (reasoning steps)
             messages = response["messages"]
-            tool_call_count = sum(
-                1 for m in messages if m.type == "tool"
-            )
+            tool_call_count = sum(1 for m in messages if m.type == "tool")
             total_steps = len(messages)
 
             # Log per-task metrics inside a nested run
-            with mlflow.start_run(
-                run_name=f"task_{idx}", nested=True
-            ):
-                mlflow.log_params({
-                    "task": task,
+            with mlflow.start_run(run_name=f"task_{idx}", nested=True):
+                mlflow.log_params(
+                    {
+                        "task": task,
+                        "task_index": idx,
+                    }
+                )
+                mlflow.log_metrics(
+                    {
+                        "latency_seconds": round(elapsed, 3),
+                        "tool_calls": tool_call_count,
+                        "total_steps": total_steps,
+                        "success": 1,
+                    }
+                )
+
+            results.append(
+                {
                     "task_index": idx,
-                })
-                mlflow.log_metrics({
-                    "latency_seconds": round(elapsed, 3),
+                    "task": task,
+                    "answer": answer,
                     "tool_calls": tool_call_count,
                     "total_steps": total_steps,
-                    "success": 1,
-                })
-
-            results.append({
-                "task_index": idx,
-                "task": task,
-                "answer": answer,
-                "tool_calls": tool_call_count,
-                "total_steps": total_steps,
-                "latency": round(elapsed, 3),
-            })
+                    "latency": round(elapsed, 3),
+                }
+            )
 
         # Log aggregate metrics on the parent run
-        mlflow.log_metrics({
-            "total_tasks": len(TASKS),
-            "avg_latency": round(
-                sum(r["latency"] for r in results) / len(results), 3
-            ),
-            "total_tool_calls": sum(r["tool_calls"] for r in results),
-        })
+        mlflow.log_metrics(
+            {
+                "total_tasks": len(TASKS),
+                "avg_latency": round(
+                    sum(r["latency"] for r in results) / len(results), 3
+                ),
+                "total_tool_calls": sum(r["tool_calls"] for r in results),
+            }
+        )
 
     return results
 
@@ -183,9 +190,12 @@ def analyse_traces() -> None:
         print("  No experiment found — skipping trace analysis.")
         return
 
-    traces = mlflow.search_traces(
-        locations=[experiment.experiment_id],
-        return_type="list",
+    traces = cast(
+        list[Trace],
+        mlflow.search_traces(
+            locations=[experiment.experiment_id],
+            return_type="list",
+        ),
     )
 
     if not traces:
@@ -253,20 +263,24 @@ def main() -> None:
     print(f"{'Task':<6} {'Tool Calls':<12} {'Steps':<8} {'Latency':<10} {'Answer'}")
     print("-" * 80)
     for r in results:
-        answer_short = r["answer"][:40] + "..." if len(r["answer"]) > 40 else r["answer"]
-        print(f"{r['task_index']:<6} {r['tool_calls']:<12} {r['total_steps']:<8} {r['latency']:<10.3f} {answer_short}")
+        answer_short = (
+            r["answer"][:40] + "..." if len(r["answer"]) > 40 else r["answer"]
+        )
+        print(
+            f"{r['task_index']:<6} {r['tool_calls']:<12} {r['total_steps']:<8} {r['latency']:<10.3f} {answer_short}"
+        )
 
     # Step 4: Analyse traces
     analyse_traces()
 
     print("=" * 60)
     print("Done! View traces in the MLflow UI:")
-    print("  http://127.0.0.1:5000/#/experiments")
+    print("  http://127.0.0.1:5555/#/experiments")
     print("  Look for experiment: L2/M5_agent_observability/1_langchain_agents")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M1_agent_frameworks/1_langchain_agents")
     main()

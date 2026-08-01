@@ -10,7 +10,7 @@ Prompt engineering is often an iterative, trial-and-error process. This lesson t
 ## Prerequisites
 
 - Completed: L1-M5.2 (Prompt Management)
-- MLFlow server running at http://127.0.0.1:5000
+- MLFlow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts

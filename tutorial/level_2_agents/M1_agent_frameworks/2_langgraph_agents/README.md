@@ -10,7 +10,7 @@ LangGraph models agents as directed graphs where data flows through nodes connec
 ## Prerequisites
 
 - Completed: L2-M1.1 (LangChain Agents)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-26b-a4b` loaded
 
 ## Concepts

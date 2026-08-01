@@ -15,6 +15,7 @@ import mlflow
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
 LMSTUDIO_API_KEY = "lm-studio"
@@ -40,7 +41,7 @@ def part1_openai_autolog() -> None:
         max_tokens=1024,
     )
 
-    print(f"  Response: {response.choices[0].message.content[:200]}")
+    print(f'  Response: {(response.choices[0].message.content or "")[:200]}')
     print()
     print("  [Autolog captured]")
     print("    - Input messages, output content, token usage, latency")
@@ -72,7 +73,7 @@ def part2_langchain_autolog() -> None:
         base_url=LMSTUDIO_BASE_URL,
         api_key=LMSTUDIO_API_KEY,
         temperature=0.7,
-        max_tokens=1024,
+        max_tokens=1024,  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     )
 
     agent = create_agent(
@@ -209,7 +210,7 @@ def summarize_with_llm(text: str) -> str:
     client = OpenAI(base_url=LMSTUDIO_BASE_URL, api_key=LMSTUDIO_API_KEY)
 
     with mlflow.start_span(name="prepare_prompt") as span:
-        messages = [
+        messages: list[ChatCompletionMessageParam] = [
             {"role": "system", "content": "You are a concise summarizer."},
             {"role": "user", "content": f"Summarize this in one sentence:\n\n{text}"},
         ]
@@ -224,7 +225,7 @@ def summarize_with_llm(text: str) -> str:
         max_tokens=1024,
     )
 
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
 def part5_combined() -> None:
@@ -264,7 +265,7 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! Open the MLflow UI to explore the traces:")
-    print("  http://127.0.0.1:5000")
+    print("  http://127.0.0.1:5555")
     print()
     print("Navigate to experiment 'L1/M2_tracing/1_auto_and_manual_tracing'")
     print("and click the Traces tab to see all captured traces.")
@@ -272,7 +273,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M2_tracing/1_auto_and_manual_tracing")
 
     main()

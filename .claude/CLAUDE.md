@@ -23,7 +23,7 @@ The full syllabus — module structure, lesson topics, deliverables, time estima
   - `google/gemma-4-e4b` — small 4B model for simple/fast tasks (Level 1 lessons)
   - `google/gemma-4-26b-a4b` — large 26B MoE model for complex tasks (Level 2/3, evaluation judges, agents)
   - `text-embedding-nomic-embed-text-v1.5` — embedding model for RAG/vector DB
-- **MLFlow**: latest 2.x+
+- **MLFlow**: 3.x — lessons pin `mlflow>=3.0`; the server image is `ghcr.io/mlflow/mlflow:latest`
 - **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK, DeepAgents
 - **Vector DB**: Qdrant (via Podman Compose)
 - **Workflow orchestration**: Temporal.io (via Podman Compose, Level 3)
@@ -39,7 +39,7 @@ podman compose up -d
 
 | Service | URL |
 |---------|-----|
-| MLflow UI | http://localhost:5000 |
+| MLflow UI | http://localhost:5555 |
 | Temporal UI | http://localhost:8080 |
 | Qdrant | http://localhost:6333/dashboard |
 | Grafana | http://localhost:3000 (admin/admin) |

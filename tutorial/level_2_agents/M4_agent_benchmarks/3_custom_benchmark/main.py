@@ -180,7 +180,7 @@ def run_task(agent, task: dict, config_name: str) -> dict:
             mlflow.set_tag("status", "success")
             print(f"  [{task['task_id']}] D{task['difficulty']} "
                   f"correct={scores['answer_correct']} latency={latency:.1f}s")
-            return {
+            record = {
                 **task, "config": config_name, "latency_s": round(latency, 2),
                 "answer_correct": scores["answer_correct"],
                 "num_tool_calls": len(tool_calls), "status": "success",
@@ -190,11 +190,12 @@ def run_task(agent, task: dict, config_name: str) -> dict:
             mlflow.log_metrics({"latency_s": round(latency, 2), "answer_correct": 0})
             mlflow.set_tag("status", "error")
             print(f"  [{task['task_id']}] ERROR: {exc}")
-            return {
+            record = {
                 **task, "config": config_name, "latency_s": round(latency, 2),
                 "answer_correct": False, "num_tool_calls": 0,
                 "status": f"error: {exc}",
             }
+    return record
 
 
 def run_benchmark(config_name: str, temperature: float) -> list[dict]:
@@ -205,7 +206,7 @@ def run_benchmark(config_name: str, temperature: float) -> list[dict]:
 
     llm = ChatOpenAI(
         base_url="http://localhost:1234/v1", api_key="lm-studio",
-        model="google/gemma-4-26b-a4b", temperature=temperature, max_tokens=1024,
+        model="google/gemma-4-26b-a4b", temperature=temperature, max_tokens=1024,  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     )
     agent = create_agent(model=llm, tools=TOOLS, system_prompt=SYSTEM_PROMPT)
     results: list[dict] = []
@@ -220,12 +221,12 @@ def run_benchmark(config_name: str, temperature: float) -> list[dict]:
 
         df = pd.DataFrame(results)
         mlflow.log_metrics({
-            "overall_accuracy": round(df["answer_correct"].mean(), 3),
-            "avg_latency_s": round(df["latency_s"].mean(), 2),
+            "overall_accuracy": round(float(df["answer_correct"].mean()), 3),
+            "avg_latency_s": round(float(df["latency_s"].mean()), 2),
         })
         for cat in df["category"].unique():
             cat_df = df[df["category"] == cat]
-            mlflow.log_metric(f"accuracy_{cat}", round(cat_df["answer_correct"].mean(), 3))
+            mlflow.log_metric(f"accuracy_{cat}", round(float(cat_df["answer_correct"].mean()), 3))
 
         csv_path = f"/tmp/benchmark_{config_name}.csv"
         df.to_csv(csv_path, index=False)
@@ -309,11 +310,11 @@ def main() -> None:
 
     analyze_results(all_results)
     print("\n" + "=" * 60)
-    print("Done. View results at http://127.0.0.1:5000")
+    print("Done. View results at http://127.0.0.1:5555")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M4_agent_benchmarks/3_custom_benchmark")
     main()

@@ -91,22 +91,23 @@ def run_instance(
             })
             mlflow.set_tag("status", "success")
             print(f"  [{task_id[:8]}] L{level} match={exact_match} latency={latency:.1f}s")
-            return dict(
-                task_id=task_id, level=level, config=config_name,
-                latency_s=round(latency, 2), exact_match=exact_match,
-                response_length=len(answer), status="success",
-            )
+            record = {
+                "task_id": task_id, "level": level, "config": config_name,
+                "latency_s": round(latency, 2), "exact_match": exact_match,
+                "response_length": len(answer), "status": "success",
+            }
         except Exception as exc:
             latency = time.perf_counter() - start
             mlflow.log_metrics({"latency_s": round(latency, 2), "exact_match": 0})
             mlflow.set_tag("status", "error")
             mlflow.set_tag("error", str(exc)[:200])
             print(f"  [{task_id[:8]}] ERROR: {exc}")
-            return dict(
-                task_id=task_id, level=level, config=config_name,
-                latency_s=round(latency, 2), exact_match=False,
-                response_length=0, status=f"error: {exc}",
-            )
+            record = {
+                "task_id": task_id, "level": level, "config": config_name,
+                "latency_s": round(latency, 2), "exact_match": False,
+                "response_length": 0, "status": f"error: {exc}",
+            }
+    return record
 
 
 def run_config(
@@ -122,7 +123,7 @@ def run_config(
         api_key="lm-studio",
         model="google/gemma-4-26b-a4b",
         temperature=temperature,
-        max_tokens=1024,
+        max_tokens=1024,  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     )
     agent = create_agent(model=llm, tools=TOOLS, system_prompt=SYSTEM_PROMPT)
     results: list[dict] = []
@@ -145,8 +146,8 @@ def run_config(
 
         df = pd.DataFrame(results)
         mlflow.log_metrics({
-            "accuracy": round(df["exact_match"].mean(), 3),
-            "avg_latency_s": round(df["latency_s"].mean(), 2),
+            "accuracy": round(float(df["exact_match"].mean()), 3),
+            "avg_latency_s": round(float(df["latency_s"].mean()), 2),
             "success_rate": round((df["status"] == "success").mean(), 3),
         })
         csv_path = f"/tmp/gaia_{name}.csv"
@@ -203,11 +204,11 @@ def main() -> None:
 
     print_summary(all_results)
     print("=" * 60)
-    print("Done. View results at http://127.0.0.1:5000")
+    print("Done. View results at http://127.0.0.1:5555")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M4_agent_benchmarks/2_gaia")
     main()

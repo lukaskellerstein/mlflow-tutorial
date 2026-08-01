@@ -10,7 +10,7 @@ Learn how to create structured evaluation datasets, log them with lineage tracki
 ## Prerequisites
 
 - Completed: L1-M4.3 (Scorers and Judges)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts

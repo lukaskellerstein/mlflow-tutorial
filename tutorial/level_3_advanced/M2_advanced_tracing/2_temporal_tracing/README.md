@@ -10,7 +10,7 @@ This lesson integrates MLflow tracing with Temporal.io durable workflows. You wi
 ## Prerequisites
 
 - Completed: L2-M4.1 (LangGraph Tracing) -- familiarity with MLflow tracing concepts
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - Temporal server running at localhost:7233 (start with `podman compose up -d` from `infra/`)
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
@@ -152,7 +152,7 @@ Part 4: Analyzing MLflow traces
     Total workflow time: 63707.6 ms
 ```
 
-In the MLflow UI (http://127.0.0.1:5000), navigate to the experiment to see all traces. In the Temporal UI (http://localhost:8080), search for the workflow ID to see the execution history with activity scheduling and completion events.
+In the MLflow UI (http://127.0.0.1:5555), navigate to the experiment to see all traces. In the Temporal UI (http://localhost:8080), search for the workflow ID to see the execution history with activity scheduling and completion events.
 
 ## Key Takeaways
 

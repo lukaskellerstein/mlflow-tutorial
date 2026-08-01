@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L1/M1_tracking/1_tracking_fundamentals"
 
 LMSTUDIO_URL = "http://localhost:1234/v1"
@@ -51,9 +51,9 @@ def call_llm(
     return {
         "content": choice.message.content or "",
         "finish_reason": choice.finish_reason,
-        "prompt_tokens": response.usage.prompt_tokens,
-        "completion_tokens": response.usage.completion_tokens,
-        "total_tokens": response.usage.total_tokens,
+        "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+        "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+        "total_tokens": response.usage.total_tokens if response.usage else 0,
         "response_time_seconds": round(elapsed, 3),
     }
 
@@ -180,7 +180,7 @@ def main() -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             summary_path = os.path.join(tmpdir, "summary.md")
             with open(summary_path, "w") as f:
-                f.write(f"# LLM Call Summary\n\n")
+                f.write("# LLM Call Summary\n\n")
                 f.write(f"**Model:** {MODEL}\n")
                 f.write(f"**Prompt:** {prompt}\n\n")
                 f.write(f"## Response\n{result['content']}\n")

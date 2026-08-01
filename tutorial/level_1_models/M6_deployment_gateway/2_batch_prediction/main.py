@@ -14,11 +14,12 @@ import time
 import mlflow
 import pandas as pd
 from mlflow.models import infer_signature
+from mlflow.pyfunc import PythonModelContext
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-TRACKING_URI = "http://127.0.0.1:5000"
+TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L2/M7_deployment/2_batch_prediction"
 LLM_BASE_URL = "http://localhost:1234/v1"
 LLM_API_KEY = "lm-studio"
@@ -35,7 +36,7 @@ COST_PER_1K_TOKENS = 0.0001
 class LLMModel(mlflow.pyfunc.PythonModel):
     """Wraps an OpenAI-compatible LLM for batch scoring via mlflow.pyfunc."""
 
-    def load_context(self, context: mlflow.pyfunc.PythonModelContext) -> None:
+    def load_context(self, context: PythonModelContext) -> None:
         from openai import OpenAI
 
         self.client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
@@ -51,7 +52,7 @@ class LLMModel(mlflow.pyfunc.PythonModel):
                 max_tokens=256,
             )
             elapsed_ms = (time.perf_counter() - start) * 1000
-            text = completion.choices[0].message.content.strip()
+            text = (completion.choices[0].message.content or "").strip()
             used = completion.usage.total_tokens if completion.usage else 0
             responses.append(text)
             latencies.append(round(elapsed_ms, 1))
@@ -90,7 +91,7 @@ def part1_log_model() -> str:
         print(f"  Model URI: {model_uri}")
         print(f"  Signature: {signature}")
         print()
-        return model_uri
+    return model_uri
 
 
 # ── Part 2: Batch inference ───────────────────────────────────────────
@@ -120,8 +121,8 @@ def part2_batch_inference(model_uri: str) -> tuple[pd.DataFrame, float]:
 
     results_df = pd.concat([batch_prompts.reset_index(drop=True), results], axis=1)
 
-    for i, row in results_df.iterrows():
-        preview = row["response"][:80].replace("\n", " ")
+    for i, (_, row) in enumerate(results_df.iterrows()):
+        preview = str(row["response"])[:80].replace("\n", " ")
         print(f"  [{i+1}] {row['latency_ms']:.0f}ms | {row['tokens_used']} tok | {preview}...")
 
     print(f"\n  Total time: {total_time:.2f}s")
@@ -137,7 +138,7 @@ def part3_log_results(results_df: pd.DataFrame, total_time: float) -> None:
 
     with mlflow.start_run(run_name="batch_inference_results"):
         batch_size = len(results_df)
-        avg_latency = results_df["latency_ms"].mean()
+        avg_latency = float(results_df["latency_ms"].mean())
         total_tokens = int(results_df["tokens_used"].sum())
         cost_estimate = (total_tokens / 1000) * COST_PER_1K_TOKENS
 
@@ -158,7 +159,7 @@ def part3_log_results(results_df: pd.DataFrame, total_time: float) -> None:
             csv_path = os.path.join(tmp, "batch_results.csv")
             results_df.to_csv(csv_path, index=False)
             mlflow.log_artifact(csv_path, artifact_path="results")
-            print(f"  Logged artifact: results/batch_results.csv")
+            print("  Logged artifact: results/batch_results.csv")
     print()
 
 

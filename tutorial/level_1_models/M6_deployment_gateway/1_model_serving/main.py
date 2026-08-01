@@ -13,8 +13,9 @@ import json
 import mlflow
 import pandas as pd
 from mlflow.models import infer_signature
+from mlflow.pyfunc import PythonModelContext
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L1/M6_deployment_gateway/1_model_serving")
 
 MODEL_NAME = "L1-llm-serving-demo"
@@ -34,16 +35,18 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
         self.default_temperature = default_temperature
         self.client = None
 
-    def load_context(self, context: mlflow.pyfunc.PythonModelContext) -> None:
+    def load_context(self, context: PythonModelContext) -> None:
         from openai import OpenAI
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
-    def predict(self, context: mlflow.pyfunc.PythonModelContext,
+    def predict(self, context: PythonModelContext,
                 model_input: pd.DataFrame, params: dict | None = None) -> list:
         answers = []
         for _, row in model_input.iterrows():
-            temp = float(row.get("temperature", self.default_temperature))
-            max_tok = int(row.get("max_tokens", 256))
+            temp = float(row.get("temperature") or self.default_temperature)
+            max_tok = int(row.get("max_tokens") or 256)
+            if self.client is None:
+                raise RuntimeError("load_context() has not run; client is not initialised")
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -53,7 +56,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
                 temperature=temp,
                 max_tokens=max_tok,
             )
-            answers.append(response.choices[0].message.content)
+            answers.append(response.choices[0].message.content or "")
         return answers
 
 
@@ -78,7 +81,7 @@ def part1_log_model(temperature: float, run_name: str) -> str:
     signature = infer_signature(input_example, output_example)
     print(f"  Model signature:\n{signature}\n")
 
-    with mlflow.start_run(run_name=run_name) as run:
+    with mlflow.start_run(run_name=run_name):
         info = mlflow.pyfunc.log_model(
             name="model",
             python_model=LLMChatModel(
@@ -94,7 +97,8 @@ def part1_log_model(temperature: float, run_name: str) -> str:
         mlflow.log_param("default_temperature", temperature)
         print(f"  Model logged: {info.model_uri}")
         print(f"  Registered as: {MODEL_NAME}")
-        return info.model_uri
+        model_uri = info.model_uri
+    return model_uri
 
 
 # ── Part 2: Test Locally ─────────────────────────────────────────────────
@@ -149,7 +153,7 @@ def part3_register_versions(uri_v1: str, uri_v2: str) -> None:
         client.set_registered_model_alias(MODEL_NAME, "challenger", v2)
         print(f"  Alias 'champion'   -> v{v1} (creative, temp=0.7)")
         print(f"  Alias 'challenger' -> v{v2} (deterministic, temp=0.3)")
-        print(f"\n  Serve each version:")
+        print("\n  Serve each version:")
         print(f"    mlflow models serve -m models:/{MODEL_NAME}@champion -p 5001")
         print(f"    mlflow models serve -m models:/{MODEL_NAME}@challenger -p 5002")
     else:
@@ -195,7 +199,7 @@ def part4_serving_commands() -> None:
             "data": [["What is Python?"], ["What is an API?"]],
         }
     }
-    print(f"\n  Batch prediction (multiple questions):")
+    print("\n  Batch prediction (multiple questions):")
     print("    curl -X POST http://127.0.0.1:5001/invocations \\")
     print('      -H "Content-Type: application/json" \\')
     print(f"      -d '{json.dumps(batch_payload)}'")
@@ -234,7 +238,7 @@ def part5_monitoring() -> None:
     ], 1):
         print(f"    {i}. {tip}")
 
-    print(f"""
+    print("""
   Deployment comparison:
     Serving  -- REST API, language-agnostic, production use
     Loading  -- in-process, Python only, scripts and notebooks
@@ -256,7 +260,7 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! Try serving with the command from Part 4.")
-    print("View runs in MLflow UI: http://127.0.0.1:5000")
+    print("View runs in MLflow UI: http://127.0.0.1:5555")
     print(f"Registered model: {MODEL_NAME}")
     print("=" * 60)
 

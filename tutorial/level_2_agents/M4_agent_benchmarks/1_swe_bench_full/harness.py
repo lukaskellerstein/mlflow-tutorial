@@ -9,7 +9,7 @@ import os
 import re
 import subprocess
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 CONTAINER_RUNTIME = os.environ.get("SWE_BENCH_RUNTIME", "podman")
@@ -40,6 +40,7 @@ def ensure_image_built() -> None:
     result = subprocess.run(
         [CONTAINER_RUNTIME, "image", "inspect", IMAGE_NAME],
         capture_output=True,
+        check=False,
     )
     if result.returncode == 0:
         print(f"  Image {IMAGE_NAME} already exists.")
@@ -52,6 +53,7 @@ def ensure_image_built() -> None:
         capture_output=True,
         text=True,
         timeout=CONTAINER_TIMEOUT,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f"Image build failed:\n{result.stderr}")
@@ -69,11 +71,13 @@ def start_container(instance_id: str) -> str:
     subprocess.run(
         [CONTAINER_RUNTIME, "rm", "-f", name],
         capture_output=True,
+        check=False,
     )
     result = subprocess.run(
         [CONTAINER_RUNTIME, "run", "-d", "--name", name, IMAGE_NAME, "sleep", "infinity"],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(f"Container start failed:\n{result.stderr}")
@@ -90,6 +94,7 @@ def exec_in_container(
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,
         )
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
@@ -148,19 +153,20 @@ def apply_patch(
             capture_output=True,
             check=True,
         )
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError as exc:
+        print(f"    Failed to copy patch into container: {exc}")
         return False
     finally:
         os.unlink(host_path)
 
-    rc, out, err = exec_in_container(
+    rc, _out, _err = exec_in_container(
         container_id,
         f"cd /workspace/repo && git apply /workspace/{patch_name} 2>&1",
     )
     if rc == 0:
         return True
 
-    rc2, out2, err2 = exec_in_container(
+    rc2, _out2, _err2 = exec_in_container(
         container_id,
         f"cd /workspace/repo && git apply --reject /workspace/{patch_name} 2>&1",
     )
@@ -175,7 +181,7 @@ def run_tests(
         return 0, 0, "No tests specified"
 
     tests_str = " ".join(test_names)
-    rc, out, err = exec_in_container(
+    _rc, out, err = exec_in_container(
         container_id,
         f"cd /workspace/repo && python -m pytest --no-header -rN --tb=short -q {tests_str} 2>&1",
         timeout=TEST_TIMEOUT,
@@ -211,8 +217,10 @@ def cleanup_container(container_id: str) -> None:
     subprocess.run(
         [CONTAINER_RUNTIME, "stop", "-t", "5", container_id],
         capture_output=True,
+        check=False,
     )
     subprocess.run(
         [CONTAINER_RUNTIME, "rm", "-f", container_id],
         capture_output=True,
+        check=False,
     )

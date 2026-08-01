@@ -18,7 +18,7 @@ import pandas as pd
 from mlflow.models import infer_signature
 from openai import OpenAI
 
-TRACKING_URI = "http://127.0.0.1:5000"
+TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L2/M2_advanced_models/2_custom_pyfunc"
 
 # Sample documents about MLflow for the RAG knowledge base
@@ -80,7 +80,6 @@ class RAGModel(mlflow.pyfunc.PythonModel):
 
     def predict(self, context, model_input, params=None):
         """Retrieve relevant docs and generate answers for each query."""
-        from openai import OpenAI
 
         params = params or {}
         temperature = params.get("temperature", 0.7)
@@ -106,7 +105,7 @@ class RAGModel(mlflow.pyfunc.PythonModel):
                 limit=top_k,
             )
             context_text = "\n".join(
-                [p.payload["text"] for p in search_results.points]
+                [(p.payload or {})["text"] for p in search_results.points]
             )
 
             # Generate answer with retrieved context
@@ -125,7 +124,7 @@ class RAGModel(mlflow.pyfunc.PythonModel):
                 ],
                 temperature=temperature,
             )
-            results.append(response.choices[0].message.content)
+            results.append(response.choices[0].message.content or "")
 
         return results
 
@@ -219,7 +218,7 @@ def main() -> None:
 
     single_df = pd.DataFrame({"query": ["What does MLflow do?"]})
     result = loaded.predict(single_df, params={"temperature": 0.2, "top_k": 2})
-    print(f"\n  Query: What does MLflow do? (temperature=0.2, top_k=2)")
+    print("\n  Query: What does MLflow do? (temperature=0.2, top_k=2)")
     print(f"  Answer: {result[0][:200]}...")
 
     print("\n" + "=" * 60)

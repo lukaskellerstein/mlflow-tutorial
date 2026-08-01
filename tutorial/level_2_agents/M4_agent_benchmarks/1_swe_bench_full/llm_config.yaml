@@ -24,7 +24,7 @@ providers:
     max_tokens: 4096
 
   mlflow_gateway:
-    base_url: http://localhost:5000/gateway/v1
+    base_url: http://localhost:5555/gateway/v1
     api_key: $MLFLOW_GATEWAY_API_KEY
     model: gemma-4
     max_tokens: 4096

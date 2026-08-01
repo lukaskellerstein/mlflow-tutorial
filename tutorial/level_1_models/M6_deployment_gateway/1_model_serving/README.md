@@ -10,7 +10,7 @@ MLflow can serve any logged model as a REST API with a single CLI command. This 
 ## Prerequisites
 
 - Completed: L1-M3 (Models and Flavors, Model Registry)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts

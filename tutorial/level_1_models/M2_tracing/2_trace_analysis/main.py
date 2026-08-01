@@ -7,11 +7,13 @@ usage, and build a summary report logged as an MLflow artifact.
 """
 
 import time
+from typing import cast
 
 import mlflow
 import pandas as pd
 from langchain_openai import ChatOpenAI
-
+from mlflow.entities import Trace
+from pydantic import SecretStr
 
 # ── Part 1: Generate traces by running several LLM calls ──────────────
 
@@ -47,7 +49,7 @@ def generate_traces(llm: ChatOpenAI) -> None:
             summarize_result = result
 
     # Multi-step: use the summarization output to generate a title
-    print(f"\n  Running: Multi-step (summarize + title)")
+    print("\n  Running: Multi-step (summarize + title)")
     title_response = llm.invoke([
         {"role": "system", "content": "You create short, catchy titles."},
         {"role": "user", "content": f"Create a title for this text:\n\n{summarize_result}"},
@@ -56,7 +58,7 @@ def generate_traces(llm: ChatOpenAI) -> None:
 
     # Give async logging a moment to flush
     time.sleep(2)
-    print(f"\n  Generated 4 LLM calls (5 total including multi-step)")
+    print("\n  Generated 4 LLM calls (5 total including multi-step)")
     print()
 
 
@@ -172,8 +174,8 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
 
         total_all = token_df["total_tokens"].sum()
         print(f"\n  Total tokens across all traces: {total_all}")
-        print(f"  Note: LMStudio local models do not have per-token pricing.")
-        print(f"  For cloud APIs, cost = input_tokens * rate + output_tokens * rate")
+        print("  Note: LMStudio local models do not have per-token pricing.")
+        print("  For cloud APIs, cost = input_tokens * rate + output_tokens * rate")
     else:
         print("\n  Token usage data not available in traces.")
         print("  (LMStudio may not report token counts via LangChain autolog.)")
@@ -215,7 +217,7 @@ def build_analysis_report(
 
         # Get token info for this trace
         token_row = token_df[token_df["trace_id"] == trace_id]
-        total_tokens = int(token_row["total_tokens"].iloc[0]) if not token_row.empty else 0
+        total_tokens = int(cast(pd.Series, token_row["total_tokens"]).iloc[0]) if not token_row.empty else 0
 
         report_rows.append({
             "trace_id": trace_id,
@@ -244,7 +246,7 @@ def build_analysis_report(
     # Aggregate stats
     print(f"\n  Total traces analyzed:  {len(report_df)}")
     print(f"  Total spans analyzed:   {report_df['num_spans'].sum()}")
-    avg_dur = report_df["total_duration_ms"].mean()
+    avg_dur = float(report_df["total_duration_ms"].mean())
     print(f"  Average trace duration: {avg_dur:.0f} ms")
     max_dur = report_df["total_duration_ms"].max()
     print(f"  Longest trace:          {max_dur} ms")
@@ -269,7 +271,7 @@ def build_analysis_report(
             "max_duration_ms": float(max_dur or 0),
         })
 
-        print(f"\n  Logged report artifacts and metrics to MLflow run.")
+        print("\n  Logged report artifacts and metrics to MLflow run.")
 
     # Clean up local CSV files
     import os
@@ -291,7 +293,7 @@ def main() -> None:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.7,
     )
     generate_traces(llm)
@@ -305,11 +307,11 @@ def main() -> None:
         print("  ERROR: Experiment not found. Did the chains run successfully?")
         return
 
-    traces = mlflow.search_traces(
+    traces = cast(list[Trace], mlflow.search_traces(
         locations=[experiment.experiment_id],
         return_type="list",
         flush=True,
-    )
+    ))
     print(f"  Found {len(traces)} traces\n")
 
     if not traces:
@@ -327,7 +329,7 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! Open the MLflow UI to explore:")
-    print("  http://127.0.0.1:5000")
+    print("  http://127.0.0.1:5555")
     print()
     print("  - Experiment: L1/M2_tracing/2_trace_analysis")
     print("  - Traces tab: browse individual trace timelines")
@@ -336,7 +338,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M2_tracing/2_trace_analysis")
 
     main()

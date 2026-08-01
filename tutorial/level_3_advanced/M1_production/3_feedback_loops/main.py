@@ -12,12 +12,13 @@ Build a production-quality feedback collection and analysis system that:
 import random
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar, cast
 
 import mlflow
 import pandas as pd
 from langchain_openai import ChatOpenAI
 from mlflow.entities import AssessmentSource, AssessmentSourceType
+from pydantic import SecretStr
 
 
 # ---------------------------------------------------------------------------
@@ -48,19 +49,19 @@ class FeedbackCollector:
     """
 
     # Simulated feedback templates keyed by sentiment
-    POSITIVE_COMMENTS = [
+    POSITIVE_COMMENTS: ClassVar[list[str]] = [
         "Very helpful, thanks!",
         "Exactly what I needed.",
         "Clear and concise answer.",
         "Great explanation!",
     ]
-    NEGATIVE_COMMENTS = [
+    NEGATIVE_COMMENTS: ClassVar[list[str]] = [
         "Too vague, needs more detail.",
         "This is incorrect.",
         "Didn't answer my question.",
         "Response was confusing.",
     ]
-    NEUTRAL_COMMENTS = [
+    NEUTRAL_COMMENTS: ClassVar[list[str]] = [
         "Okay, but could be better.",
         "Partially helpful.",
         "Decent but missing context.",
@@ -159,7 +160,7 @@ def generate_response(llm: ChatOpenAI, question: str, system_prompt: str) -> str
     """Generate a response to a question using the LLM."""
     messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": question}]
     result = llm.invoke(messages)
-    return result.content
+    return str(result.content)
 
 
 # ---------------------------------------------------------------------------
@@ -219,14 +220,14 @@ def print_analysis(analysis: dict[str, Any], label: str = "Feedback Analysis") -
 
     issues = analysis.get("issue_counts", {})
     if any(v > 0 for v in issues.values()):
-        print(f"\n  Common issues:")
+        print("\n  Common issues:")
         for issue, count in sorted(issues.items(), key=lambda x: -x[1]):
             if count > 0:
                 print(f"    - {issue}: {count}")
 
     low_qs = analysis.get("low_rated_questions", [])
     if low_qs:
-        print(f"\n  Questions needing improvement:")
+        print("\n  Questions needing improvement:")
         for q in low_qs:
             print(f"    - {q}")
 
@@ -311,7 +312,7 @@ def main() -> None:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.7,
     )
     collector = FeedbackCollector()
@@ -372,12 +373,12 @@ def main() -> None:
 
         # Log summary table
         mlflow.log_table(
-            data=df[["question", "rating", "thumbs_up", "comment", "iteration"]],
+            data=cast(pd.DataFrame, df[["question", "rating", "thumbs_up", "comment", "iteration"]]),
             artifact_file="feedback/summary_table.json",
         )
 
         print(f"\n  Feedback report saved ({len(all_fb)} records)")
-        print(f"  View in MLflow UI: http://127.0.0.1:5000")
+        print("  View in MLflow UI: http://127.0.0.1:5555")
 
     print("\n" + "=" * 60)
     print("Done! Check MLflow for traces with attached feedback assessments.")
@@ -386,6 +387,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L3/M1_production/3_feedback_loops")
     main()

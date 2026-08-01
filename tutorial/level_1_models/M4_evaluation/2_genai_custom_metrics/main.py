@@ -10,6 +10,7 @@ Combines custom metric building with batch evaluation across configs:
 """
 
 import json
+import math
 import re
 
 import mlflow
@@ -107,7 +108,7 @@ def llm_technical_quality(inputs, outputs, expectations) -> Feedback:
         temperature=0.0,
         max_tokens=1024,
     )
-    raw = resp.choices[0].message.content.strip()
+    raw = (resp.choices[0].message.content or "").strip()
 
     try:
         scores = json.loads(raw)
@@ -173,7 +174,7 @@ def has_example(outputs: str) -> bool:
 
 
 ALL_SCORERS = [
-    ResponseLength(min_length=20, max_length=500, unit="words"),
+    ResponseLength(min_length=20, max_length=500, unit="words"),  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     formatting_quality,
     llm_technical_quality,
     keyword_coverage,
@@ -202,7 +203,7 @@ def build_predict_fn(temperature: float):
             temperature=temperature,
             max_tokens=1024,
         )
-        return resp.choices[0].message.content
+        return resp.choices[0].message.content or ""
     return predict_fn
 
 
@@ -226,7 +227,7 @@ def evaluate_config(config: dict) -> dict:
         for name, value in result.metrics.items():
             mlflow.log_metric(name, value)
 
-    print(f"    Metrics:")
+    print("    Metrics:")
     for name, value in sorted(result.metrics.items()):
         print(f"      {name}: {value:.4f}")
     return result.metrics
@@ -248,7 +249,7 @@ def compare_and_check(all_metrics: dict[str, dict]) -> None:
     wins: dict[str, int] = {n: 0 for n in names}
     for m in metrics:
         vals = {n: all_metrics[n].get(m, float("nan")) for n in names}
-        valid = {k: v for k, v in vals.items() if v == v}
+        valid = {k: v for k, v in vals.items() if not math.isnan(v)}
         best = max(valid, key=lambda k: valid[k]) if valid else "n/a"
         if best in wins:
             wins[best] += 1
@@ -259,7 +260,7 @@ def compare_and_check(all_metrics: dict[str, dict]) -> None:
     print(f"\n  Overall best: {overall}")
 
     # Threshold gates
-    print(f"\n  --- Threshold Gates ---")
+    print("\n  --- Threshold Gates ---")
     thresholds = {"formatting_quality/mean": 0.4, "llm_technical_quality/mean": 0.5}
     for config_name, metrics_dict in all_metrics.items():
         print(f"\n  Config: {config_name}")
@@ -278,7 +279,7 @@ def main() -> None:
 
     # Show dataset
     print(f"\n  Evaluation dataset: {len(EVAL_DATA)} questions")
-    for i, row in EVAL_DATA.iterrows():
+    for i, (_, row) in enumerate(EVAL_DATA.iterrows()):
         print(f"    Q{i + 1}: {row['inputs']['question']}")
 
     # Show scorers
@@ -299,12 +300,12 @@ def main() -> None:
     compare_and_check(all_metrics)
 
     print("=" * 60)
-    print("Done! View results in MLflow UI: http://127.0.0.1:5000")
+    print("Done! View results in MLflow UI: http://127.0.0.1:5555")
     print("Experiment: L1/M4_evaluation/2_genai_custom_metrics")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M4_evaluation/2_genai_custom_metrics")
     main()

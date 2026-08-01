@@ -10,7 +10,7 @@ Design and implement comprehensive quality metrics for evaluating AI agents. Thi
 ## Prerequisites
 
 - Completed: L1-M4.2 (LLM Eval Basics), L1-M6.2 (Scorers & Judges), L2-M3.1 (Custom Metrics)
-- MLFlow server running at http://127.0.0.1:5000
+- MLFlow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts

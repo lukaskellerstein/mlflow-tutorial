@@ -6,7 +6,7 @@ All services needed for the MLflow tutorial, managed via a single Podman Compose
 
 | Service | Port | URL | Purpose |
 |---------|------|-----|---------|
-| MLflow | 5000 | http://localhost:5000 | Tracking server + UI |
+| MLflow | 5555 | http://localhost:5555 | Tracking server + UI |
 | Temporal UI | 8080 | http://localhost:8080 | Workflow dashboard |
 | Temporal gRPC | 7233 | localhost:7233 | Workflow engine |
 | Qdrant | 6333 | http://localhost:6333/dashboard | Vector DB |
@@ -52,7 +52,7 @@ podman compose up -d
 podman compose ps
 
 # MLflow UI
-open http://localhost:5000
+open http://localhost:5555
 
 # Temporal UI
 open http://localhost:8080
@@ -136,7 +136,7 @@ Data survives `podman compose down`. To reset everything: `podman compose down -
 │  │                                                │  │
 │  │  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │  │
 │  │  │ MLflow   │  │ Temporal │  │ Temporal UI │  │  │
-│  │  │ :5000    │  │ :7233    │  │ :8080       │  │  │
+│  │  │ :5555    │  │ :7233    │  │ :8080       │  │  │
 │  │  └────┬─────┘  └────┬─────┘  └─────────────┘  │  │
 │  │       │              │                         │  │
 │  │       └──────┬───────┘                         │  │
@@ -166,8 +166,8 @@ podman machine start
 
 **Port already in use:**
 ```bash
-# Find what's using the port (e.g., 5000)
-lsof -i :5000
+# Find what's using the port (e.g., 5555)
+lsof -i :5555
 # Kill it or change the port in compose.yml
 ```
 

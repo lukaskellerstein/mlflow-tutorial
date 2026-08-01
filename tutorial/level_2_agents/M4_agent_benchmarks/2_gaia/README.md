@@ -11,7 +11,7 @@ GAIA (General AI Assistants) is a benchmark of ~450 real-world questions that te
 
 - Completed: L2-M4.1 (SWE-Bench) for benchmark harness patterns
 - Completed: L2-M1.1 (LangChain Agents) for ReAct agent basics
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-26b-a4b` loaded
 - HuggingFace `datasets` library installed
 

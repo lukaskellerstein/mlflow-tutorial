@@ -28,7 +28,7 @@ graph TD
     end
 
     subgraph Podman Compose
-        ML[MLflow Server<br/>:5000]
+        ML[MLflow Server<br/>:5555]
         PG[(PostgreSQL<br/>:5432)]
         QD[(Qdrant<br/>:6333)]
         TMP[Temporal<br/>:7233]
@@ -134,7 +134,7 @@ uv run python main.py
 
 | Service | URL | Notes |
 |---------|-----|-------|
-| MLflow UI | http://localhost:5000 | Tracking, models, traces |
+| MLflow UI | http://localhost:5555 | Tracking, models, traces |
 | LMStudio | http://localhost:1234 | OpenAI-compatible API |
 | Temporal UI | http://localhost:8080 | Workflow orchestration |
 | Qdrant | http://localhost:6333/dashboard | Vector database |

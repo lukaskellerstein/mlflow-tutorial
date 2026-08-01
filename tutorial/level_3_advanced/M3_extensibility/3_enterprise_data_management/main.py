@@ -9,11 +9,11 @@ drift detection).
 import hashlib
 import json
 from collections import Counter
-from datetime import datetime, timezone
 from typing import Any
 
 import mlflow
 import pandas as pd
+from mlflow.data.pandas_dataset import from_pandas
 from mlflow.tracking import MlflowClient
 
 EXPERIMENT_NAME = "L3/M3_extensibility/3_enterprise_data_management"
@@ -188,7 +188,7 @@ class DatasetManager:
         return meta
 
     def log_to_mlflow(self, df: pd.DataFrame, meta: dict[str, Any]) -> None:
-        dataset = mlflow.data.from_pandas(df, source=f"{self.name}_v{meta['version']}")
+        dataset = from_pandas(df, source=f"{self.name}_v{meta['version']}")
         mlflow.log_input(dataset, context="evaluation")
         mlflow.set_tag("dataset.version", str(meta["version"]))
         mlflow.set_tag("dataset.digest", meta["digest"])
@@ -230,7 +230,7 @@ def part4_dataset_versioning() -> DatasetManager:
         manager.log_to_mlflow(v3, v3_meta)
     print(f"  v3: {v3_meta['num_rows']} rows, digest={v3_meta['digest']}")
 
-    print(f"\n  Lineage: linking eval runs to dataset versions...")
+    print("\n  Lineage: linking eval runs to dataset versions...")
     for ver_idx, label in [(0, "eval_on_v1"), (2, "eval_on_v3")]:
         meta = manager.versions[ver_idx]
         with mlflow.start_run(run_name=label):
@@ -268,7 +268,8 @@ def part5_quality_and_drift() -> None:
     for label, df in [("good", good), ("bad", bad)]:
         missing = int(df.isnull().sum().sum())
         dupes = int(df.iloc[:, 0].duplicated().sum()) if len(df.columns) > 0 else 0
-        empty_answers = int((df.get("expected_answer", pd.Series()).str.len() == 0).sum())
+        answers = df["expected_answer"] if "expected_answer" in df.columns else pd.Series(dtype=str)
+        empty_answers = int((answers.str.len() == 0).sum())
         passed = missing == 0 and dupes == 0 and empty_answers == 0
         with mlflow.start_run(run_name=f"quality_{label}"):
             mlflow.set_tag("quality.all_passed", str(passed))
@@ -290,7 +291,7 @@ def part5_quality_and_drift() -> None:
         mlflow.log_metric("drift.category.shift", round(shift, 4))
         mlflow.set_tag("drift.new_categories", json.dumps(new_cats))
 
-    print(f"\n  Drift detection:")
+    print("\n  Drift detection:")
     print(f"    Category shift: {shift:.4f}")
     print(f"    New categories: {new_cats}")
     print()
@@ -304,9 +305,9 @@ def main() -> None:
     print("L3-M3.3 -- Enterprise Patterns and Data Management")
     print("=" * 60)
 
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment(EXPERIMENT_NAME)
-    client = MlflowClient(tracking_uri="http://127.0.0.1:5000")
+    client = MlflowClient(tracking_uri="http://127.0.0.1:5555")
 
     part1_team_organization(client)
     part2_governance(client)
@@ -315,7 +316,7 @@ def main() -> None:
     part5_quality_and_drift()
 
     print("=" * 60)
-    print("Done! View results at http://127.0.0.1:5000")
+    print("Done! View results at http://127.0.0.1:5555")
     print(f"Experiment: {EXPERIMENT_NAME}")
     print("Also check: enterprise/* experiments for team organization")
     print("=" * 60)

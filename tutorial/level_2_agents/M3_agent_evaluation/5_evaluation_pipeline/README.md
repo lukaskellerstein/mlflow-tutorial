@@ -11,7 +11,7 @@ Build a complete, automated agent evaluation pipeline that goes from dataset cre
 
 - Completed: L3-M1.1 (Agent Testing), L3-M1.2 (Quality Metrics), L3-M1.4 (Agent Optimization)
 - Completed: L2-M3.1 (Custom Metrics), L2-M5.2 (LangGraph Agent Observability)
-- MLFlow server running at http://127.0.0.1:5000
+- MLFlow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -165,7 +165,7 @@ uv run python main.py
     accuracy: 1.000 -> 0.833 (delta: -0.167)
 ```
 
-In the MLflow UI at http://127.0.0.1:5000, you will see:
+In the MLflow UI at http://127.0.0.1:5555, you will see:
 - An `evaluation_pipeline` parent run with aggregate metrics and artifacts.
 - Nested `test_1` through `test_6` runs with per-test parameters and tags.
 - A `regression_check` run with baseline vs. current comparison.

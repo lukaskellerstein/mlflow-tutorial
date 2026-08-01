@@ -20,10 +20,8 @@ from deepagents.backends.protocol import (
     FileUploadResponse,
 )
 from deepagents.backends.sandbox import BaseSandbox
-from langchain_openai import ChatOpenAI
-
 from harness import CONTAINER_RUNTIME, exec_in_container
-
+from langchain_openai import ChatOpenAI
 
 # ── LLM config ──────────────────────────────────────────────────────────────
 
@@ -87,6 +85,7 @@ class ContainerSandbox(BaseSandbox):
                     input=content,
                     capture_output=True,
                     timeout=30,
+                    check=False,
                 )
                 if proc.returncode != 0:
                     results.append(FileUploadResponse(path=path, error=proc.stderr.decode()))
@@ -142,7 +141,7 @@ def build_agent(temperature: float, container_id: str):
         api_key=cfg["api_key"],
         model=cfg["model"],
         temperature=temperature,
-        max_tokens=cfg["max_tokens"],
+        max_tokens=cfg["max_tokens"],  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     )
     sandbox = ContainerSandbox(container_id)
     return create_deep_agent(model=llm, backend=sandbox, system_prompt=SYSTEM_PROMPT)

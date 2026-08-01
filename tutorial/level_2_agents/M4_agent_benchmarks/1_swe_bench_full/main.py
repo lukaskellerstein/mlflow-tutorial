@@ -11,12 +11,11 @@ import json
 import tempfile
 import time
 
+import agent as agent_mod
 import datasets
+import harness
 import mlflow
 import pandas as pd
-
-import agent as agent_mod
-import harness
 
 SAMPLE_SIZE = 2
 SAMPLE_REPO = "sympy/sympy"
@@ -81,7 +80,7 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
                 harness.apply_patch(container_id, instance["test_patch"], "test.patch")
 
             print(f"    Baseline check: running {len(f2p_tests)} FAIL_TO_PASS tests ...")
-            base_passed, base_failed, base_out = harness.run_tests(
+            base_passed, base_failed, _base_out = harness.run_tests(
                 container_id, f2p_tests, repo
             )
             print(f"    Baseline: {base_passed} passed, {base_failed} failed (expect failures)")
@@ -106,6 +105,7 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
             _, agent_diff, _ = harness.exec_in_container(
                 container_id, "cd /workspace/repo && git diff"
             )
+            save_text_artifact(str(agent_output), "agent_output")
             save_text_artifact(agent_diff or "(no changes)", "agent_diff")
             save_text_artifact(instance.get("patch", ""), "gold_patch")
 
@@ -172,6 +172,10 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
             harness.cleanup_container(container_id)
             return _error_result(iid, repo, config_name, latency, str(e))
 
+    return _error_result(
+        iid, repo, config_name, time.perf_counter() - start, "run did not complete"
+    )
+
 
 def _result(
     iid: str, repo: str, config: str, latency: float, status: str, **kwargs
@@ -217,10 +221,10 @@ def run_config(
             results.append(run_instance(temperature, inst, name))
 
         df = pd.DataFrame(results)
-        resolution_rate = df["resolved"].mean()
+        resolution_rate = float(df["resolved"].mean())
         mlflow.log_metrics({
             "resolution_rate": round(resolution_rate, 3),
-            "avg_latency_s": round(df["latency_s"].mean(), 2),
+            "avg_latency_s": round(float(df["latency_s"].mean()), 2),
         })
 
         csv_path = f"/tmp/swe_bench_full_{name}.csv"
@@ -260,7 +264,7 @@ def print_summary(all_results: list[dict]) -> None:
         ("Claude 3.5 Sonnet", 49.0),
         ("GPT-4o", 33.2),
         ("DeepSeek-V2.5", 27.0),
-        (f"Local gemma-4-26b (this run)", our_rate),
+        ("Local gemma-4-26b (this run)", our_rate),
     ]
     for name, rate in sorted(leaderboard, key=lambda x: -x[1]):
         marker = " <--" if "this run" in name else ""
@@ -325,11 +329,11 @@ def main() -> None:
 
     print_summary(all_results)
     print("\n" + "=" * 60)
-    print("Done. View results at http://127.0.0.1:5000")
+    print("Done. View results at http://127.0.0.1:5555")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M4_agent_benchmarks/1_swe_bench_full")
     main()

@@ -14,20 +14,22 @@ runs and printed as a comparison table.
 """
 
 import time
-from typing import Annotated
+from collections.abc import Callable
+from typing import Annotated, cast
 
 import mlflow
 import mlflow.langchain
 import pandas as pd
+from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
-from langchain.agents import create_agent
+from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # ── MLflow setup ──────────────────────────────────────────────────
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L2/M3_agent_evaluation/3_architecture_comparison")
 mlflow.langchain.autolog(log_traces=True)
 
@@ -35,7 +37,7 @@ mlflow.langchain.autolog(log_traces=True)
 llm = ChatOpenAI(
     model="google/gemma-4-26b-a4b",
     base_url="http://localhost:1234/v1",
-    api_key="lm-studio",
+    api_key=SecretStr("lm-studio"),
     temperature=0.0,
 )
 
@@ -119,7 +121,7 @@ def run_simple_chain(question: str) -> dict:
         {"role": "user", "content": question},
     ])
     elapsed = time.time() - start
-    answer = response.content
+    answer = str(response.content)
     token_est = len(answer.split())  # rough proxy
     return {"answer": answer, "latency": elapsed, "tool_calls": 0, "tokens_est": token_est}
 
@@ -164,7 +166,7 @@ def classify_node(state: PipelineState) -> dict:
                     "Categories: tech_lookup, general, math"},
         {"role": "user", "content": q},
     ])
-    cat = resp.content.strip().lower().replace("'", "").replace('"', '')
+    cat = str(resp.content).strip().lower().replace("'", "").replace('"', '')
     # Normalize to one of the known categories
     if "tech" in cat or "lookup" in cat:
         cat = "tech_lookup"
@@ -254,7 +256,7 @@ def score_tool_usage(tool_calls: int, needs_tool: bool) -> float:
 
 
 # ── Main evaluation loop ──────────────────────────────────────────
-ARCHITECTURES: list[tuple[str, callable]] = [
+ARCHITECTURES: list[tuple[str, Callable[[str], dict]]] = [
     ("simple_chain", run_simple_chain),
     ("react_agent", run_react_agent),
     ("multi_step_pipeline", run_pipeline),
@@ -262,7 +264,7 @@ ARCHITECTURES: list[tuple[str, callable]] = [
 
 
 def evaluate_architecture(
-    name: str, run_fn: callable, dataset: list[dict]
+    name: str, run_fn: Callable[[str], dict], dataset: list[dict]
 ) -> list[dict]:
     """Run an architecture on every test case and return per-case metrics."""
     rows = []
@@ -350,7 +352,7 @@ def main() -> None:
 
         # Token efficiency = quality / tokens (higher is better)
         summary["token_efficiency"] = (
-            summary["quality"] / summary["tokens_est"].clip(lower=1) * 100
+            summary["quality"] / cast(pd.Series, summary["tokens_est"]).clip(lower=1) * 100
         ).round(3)
 
         print(f"\n{'=' * 70}")
@@ -372,9 +374,9 @@ def main() -> None:
         mlflow.log_artifact(summary_path)
 
         # Log parent-level summary
-        best_quality = summary["quality"].idxmax()
-        fastest = summary["latency_s"].idxmin()
-        most_efficient = summary["token_efficiency"].idxmax()
+        best_quality = cast(pd.Series, summary["quality"]).idxmax()
+        fastest = cast(pd.Series, summary["latency_s"]).idxmin()
+        most_efficient = cast(pd.Series, summary["token_efficiency"]).idxmax()
 
         mlflow.log_params({
             "best_quality_arch": best_quality,
@@ -394,7 +396,7 @@ def main() -> None:
               f"(efficiency={summary.loc[most_efficient, 'token_efficiency']:.3f})")
 
         # Pareto frontier: architectures not dominated on both quality and latency
-        print(f"\n  Pareto Frontier (quality vs latency):")
+        print("\n  Pareto Frontier (quality vs latency):")
         pareto = []
         for arch in summary.index:
             dominated = False
@@ -415,7 +417,7 @@ def main() -> None:
         mlflow.set_tag("pareto_frontier", ", ".join(pareto))
 
         print(f"\n  Parent Run ID: {parent.info.run_id}")
-        print(f"  View in MLflow UI: http://127.0.0.1:5000")
+        print("  View in MLflow UI: http://127.0.0.1:5555")
 
     print(f"\n{'=' * 70}")
     print("  Done! Check nested runs in the MLflow UI for full details.")

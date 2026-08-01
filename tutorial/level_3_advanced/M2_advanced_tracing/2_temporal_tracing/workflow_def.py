@@ -16,7 +16,6 @@ from datetime import timedelta
 
 from temporalio import activity, workflow
 
-
 # ============================================================
 # Dataclasses for Temporal serialization
 # ============================================================

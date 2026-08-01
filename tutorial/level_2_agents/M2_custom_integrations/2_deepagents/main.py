@@ -12,17 +12,17 @@ import time
 
 import mlflow
 import pandas as pd
+from deepagents import SubAgent, create_deep_agent
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-
-from deepagents import create_deep_agent
+from pydantic import SecretStr
 
 
 def get_llm(temperature: float = 0.7) -> ChatOpenAI:
     return ChatOpenAI(
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         model="google/gemma-4-26b-a4b",
         temperature=temperature,
     )
@@ -173,8 +173,9 @@ def part1_basic_agent() -> dict:
                 print(f"      ... ({content.count(chr(10)) - 5} more lines)")
 
         print(f"\n  Duration: {duration}s | Steps: {total_steps} | Tool calls: {tool_calls}")
-        return {"run_id": run.info.run_id, "duration": duration,
-                "steps": total_steps, "tool_calls": tool_calls}
+        summary = {"run_id": run.info.run_id, "duration": duration,
+                   "steps": total_steps, "tool_calls": tool_calls}
+    return summary
 
 
 # ── Part 2: Sub-agent Orchestration ───────────────────────────────────────
@@ -185,7 +186,7 @@ def part2_subagent_orchestration() -> dict:
 
     llm = get_llm(temperature=0.0)
 
-    researcher = {
+    researcher: SubAgent = {
         "name": "researcher",
         "description": "Researches ONE topic using the knowledge base and statistics tools.",
         "system_prompt": (
@@ -197,7 +198,7 @@ def part2_subagent_orchestration() -> dict:
         "tools": [search_knowledge_base, get_industry_stats],
     }
 
-    analyst = {
+    analyst: SubAgent = {
         "name": "analyst",
         "description": "Analyzes research findings and produces a clear summary with recommendations.",
         "system_prompt": (
@@ -257,6 +258,8 @@ def part2_subagent_orchestration() -> dict:
                 print(f"    [result] {str(message.content)[:120]}")
 
         duration = round(time.time() - start, 2)
+        if result is None:
+            raise RuntimeError("Agent stream produced no steps")
         tool_calls = count_tool_calls(result["messages"])
         total_steps = len(result["messages"])
         task_calls = tool_calls.get("task", 0)
@@ -268,7 +271,7 @@ def part2_subagent_orchestration() -> dict:
             "subagent_handoffs": task_calls,
         })
 
-        print(f"\n  Files:")
+        print("\n  Files:")
         for path, file_data in result.get("files", {}).items():
             content = file_data.get("content", "")
             print(f"    {path} ({len(content)} chars)")
@@ -278,9 +281,10 @@ def part2_subagent_orchestration() -> dict:
         print(f"\n  Duration: {duration}s | Steps: {total_steps}")
         print(f"  Sub-agent handoffs (task calls): {task_calls}")
         print(f"  Tool calls: {tool_calls}")
-        return {"run_id": run.info.run_id, "duration": duration,
-                "steps": total_steps, "tool_calls": tool_calls,
-                "handoffs": task_calls}
+        summary = {"run_id": run.info.run_id, "duration": duration,
+                   "steps": total_steps, "tool_calls": tool_calls,
+                   "handoffs": task_calls}
+    return summary
 
 
 # ── Part 3: Single Agent Comparison ───────────────────────────────────────
@@ -302,7 +306,7 @@ def part3_comparison(multi_metrics: dict) -> None:
         ),
     )
 
-    with mlflow.start_run(run_name="single_agent_baseline") as run:
+    with mlflow.start_run(run_name="single_agent_baseline"):
         mlflow.log_params({
             "agent_type": "deep_agent_single",
             "model": "google/gemma-4-26b-a4b",
@@ -381,13 +385,13 @@ def main() -> None:
     part3_comparison(multi_metrics)
 
     print("\n" + "=" * 60)
-    print("Done! Check the MLflow UI at http://127.0.0.1:5000")
+    print("Done! Check the MLflow UI at http://127.0.0.1:5555")
     print("  Experiment: L2/M2_custom_integrations/2_deepagents")
     print("  Compare traces between single-agent and multi-agent runs.")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M2_custom_integrations/2_deepagents")
     main()

@@ -10,6 +10,7 @@ import json
 import os
 import tempfile
 import time
+from typing import cast
 
 import mlflow
 import pandas as pd
@@ -18,7 +19,7 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L1/M1_tracking/3_advanced_tracking_patterns"
 
 LMSTUDIO_URL = "http://localhost:1234/v1"
@@ -155,11 +156,13 @@ def part1_nested_runs(client: OpenAI) -> None:
     # Query children
     section("Step 3: Querying child runs with search_runs()")
     experiment = mlflow.get_experiment_by_name(EXPERIMENT_NAME)
-    child_runs = mlflow.search_runs(
+    if experiment is None:
+        raise RuntimeError(f"Experiment {EXPERIMENT_NAME!r} not found")
+    child_runs = cast(pd.DataFrame, mlflow.search_runs(
         experiment_ids=[experiment.experiment_id],
         filter_string=f"tags.mlflow.parentRunId = '{parent_run.info.run_id}'",
         order_by=["metrics.response_length DESC"],
-    )
+    ))
     summary_cols = [
         "params.temperature", "tags.prompt_variant",
         "metrics.response_length", "metrics.token_count", "metrics.latency_seconds",
@@ -224,6 +227,9 @@ def part2_async_logging(client: OpenAI) -> None:
         pre_results.append((r["response_length"], r["response_time_seconds"], r["total_tokens"]))
     print(f"  Collected {len(pre_results)} responses.\n")
 
+    sync_elapsed = 0.0
+    async_elapsed = 0.0
+
     # Synchronous
     mlflow.config.enable_async_logging(False)
     print("  Synchronous logging...")
@@ -249,7 +255,7 @@ def part2_async_logging(client: OpenAI) -> None:
     mlflow.config.enable_async_logging(False)
     print(f"    Time: {async_elapsed:.4f}s")
 
-    print(f"\n  Results:")
+    print("\n  Results:")
     print(f"    Sync:  {sync_elapsed:.4f}s")
     print(f"    Async: {async_elapsed:.4f}s")
     if sync_elapsed > 0:

@@ -50,7 +50,7 @@ class LLMModel(mlflow.pyfunc.PythonModel):
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
-            answers.append(resp.choices[0].message.content)
+            answers.append(resp.choices[0].message.content or "")
         return answers
 
 
@@ -79,7 +79,7 @@ def part1_pyfunc_flavor() -> str:
         )
         mlflow.log_param("flavor", "pyfunc")
         run_id = run.info.run_id
-        print(f"  Model logged with 'python_function' flavor")
+        print("  Model logged with 'python_function' flavor")
         print(f"  Run ID: {run_id}")
 
     # Load and test
@@ -113,7 +113,7 @@ def part2_openai_flavor() -> str:
         )
         mlflow.log_param("flavor", "openai")
         run_id = run.info.run_id
-        print(f"  Model logged with 'openai' flavor")
+        print("  Model logged with 'openai' flavor")
         print(f"  Run ID: {run_id}")
 
     # Load natively
@@ -174,7 +174,8 @@ def part4_manual_signature() -> str:
             signature=signature,
             input_example=pd.DataFrame({"text": ["Explain gradient descent."]}),
         )
-        return run.info.run_id
+        run_id = run.info.run_id
+    return run_id
 
 
 def part5_param_signature() -> None:
@@ -263,13 +264,13 @@ def main() -> None:
     part6_enforcement(pyfunc_run_id)
 
     print("=" * 60)
-    print("Done! Check the MLflow UI at http://127.0.0.1:5000")
+    print("Done! Check the MLflow UI at http://127.0.0.1:5555")
     print("Compare the runs to see different flavors and signatures.")
     print("Inspect each run's Artifacts tab to see the MLmodel file.")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M3_models_registry/1_models_flavors_signatures")
     main()

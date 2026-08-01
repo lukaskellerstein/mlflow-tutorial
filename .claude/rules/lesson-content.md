@@ -19,7 +19,7 @@ Every lesson's README.md follows this structure:
 
 ## Prerequisites
 - Completed: <list prior lessons, including cross-level prerequisites>
-- MLFlow server running at http://127.0.0.1:5000
+- MLFlow server running at http://127.0.0.1:5555
 - <any additional requirements>
 
 ## Concepts

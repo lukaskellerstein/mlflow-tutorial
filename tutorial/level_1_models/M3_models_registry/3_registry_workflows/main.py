@@ -78,7 +78,7 @@ class LLMAssistant(mlflow.pyfunc.PythonModel):
                 temperature=self.temperature,
                 max_tokens=1024,
             )
-            results.append(resp.choices[0].message.content)
+            results.append(resp.choices[0].message.content or "")
         return results
 
 
@@ -110,7 +110,7 @@ def build_and_register(llm_client: OpenAI) -> list[dict]:
             temperature=cfg["temperature"],
             max_tokens=1024,
         )
-        signature = infer_signature(sample_input, [resp.choices[0].message.content])
+        signature = infer_signature(sample_input, [resp.choices[0].message.content or ""])
 
         with mlflow.start_run(run_name=cfg["name"]) as run:
             mlflow.log_param("config_name", cfg["name"])
@@ -168,7 +168,7 @@ def evaluate_models(llm_client: OpenAI, results: list[dict]) -> list[dict]:
                 max_tokens=1024,
             )
             elapsed = time.time() - start
-            text = resp.choices[0].message.content
+            text = resp.choices[0].message.content or ""
             total_len += len(text)
             total_lat += elapsed
             print(f"    [{elapsed:.1f}s] {prompt[:40]:40s} -> {len(text)} chars")
@@ -299,11 +299,11 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! View the Model Registry in the MLflow UI:")
-    print(f"  http://127.0.0.1:5000/#/models/{MODEL_NAME}")
+    print(f"  http://127.0.0.1:5555/#/models/{MODEL_NAME}")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M3_models_registry/3_registry_workflows")
     main()

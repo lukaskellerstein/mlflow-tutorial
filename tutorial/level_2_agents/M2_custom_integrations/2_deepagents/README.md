@@ -10,7 +10,7 @@ This lesson uses the real DeepAgents library — LangChain-AI's opinionated agen
 ## Prerequisites
 
 - Completed: L2-M2.1 (Claude Agent SDK + MLflow)
-- MLFlow server running at http://127.0.0.1:5000
+- MLFlow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-26b-a4b` loaded (context length ≥ 16384)
 
 ## Concepts

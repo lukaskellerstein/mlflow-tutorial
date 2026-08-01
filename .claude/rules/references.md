@@ -50,7 +50,7 @@ Always consult these sources when building lessons. Do NOT guess at APIs — rea
 
 ## Infrastructure
 - All services run via `podman compose up -d` from `infra/`
-- MLflow: http://localhost:5000 (PostgreSQL backend)
+- MLflow: http://localhost:5555 (PostgreSQL backend)
 - LMStudio: http://localhost:1234 (native, not in Podman)
 - Temporal: http://localhost:8080 (UI), localhost:7233 (gRPC)
 - Qdrant: http://localhost:6333 (REST), localhost:6334 (gRPC)

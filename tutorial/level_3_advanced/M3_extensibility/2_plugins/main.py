@@ -23,8 +23,9 @@ from langchain_openai import ChatOpenAI
 from mlflow.tracking import MlflowClient
 from mlflow.tracking.context.abstract_context import RunContextProvider
 from mlflow.tracking.context.registry import _run_context_provider_registry
+from pydantic import SecretStr
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 
 EXPERIMENT_NAME = "L3/M4_advanced_features/1_plugins"
 
@@ -293,7 +294,7 @@ def part4_model_evaluator(llm: ChatOpenAI) -> list[dict[str, Any]]:
             print(f"  Response: {text[:100]}{'...' if len(text) > 100 else ''}")
 
             # Evaluate
-            metrics = evaluator.evaluate_response(text)
+            metrics = evaluator.evaluate_response(str(text))
             step_metrics = {k: v for k, v in metrics.items()}
             mlflow.log_metrics(step_metrics, step=i)
 
@@ -310,8 +311,8 @@ def part4_model_evaluator(llm: ChatOpenAI) -> list[dict[str, Any]]:
         # Log summary table
         df = pd.DataFrame(results)
         mlflow.log_table(df, artifact_file="evaluation_results.json")
-        avg_diversity = df["eval/word_diversity"].mean()
-        avg_length = df["eval/char_count"].mean()
+        avg_diversity = float(df["eval/word_diversity"].mean())
+        avg_length = float(df["eval/char_count"].mean())
         mlflow.log_metrics({
             "eval/avg_word_diversity": avg_diversity,
             "eval/avg_char_count": avg_length,
@@ -357,9 +358,9 @@ def part5_combined_demo(llm: ChatOpenAI) -> None:
         print(f"\n  [Metric Aggregator] Logged latency: {latency:.4f}s")
 
         # Custom Evaluator (Part 4) -- evaluate response quality
-        metrics = evaluator.evaluate_response(text)
+        metrics = evaluator.evaluate_response(str(text))
         mlflow.log_metrics(metrics)
-        print(f"  [Evaluator Plugin] Quality metrics logged:")
+        print("  [Evaluator Plugin] Quality metrics logged:")
         for k, v in metrics.items():
             print(f"    {k:<30s} = {v:.2f}")
 
@@ -391,14 +392,14 @@ def main() -> None:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.7,
     )
     part4_model_evaluator(llm)
     part5_combined_demo(llm)
 
     print("=" * 60)
-    print("  Done! View results in MLflow UI: http://127.0.0.1:5000")
+    print("  Done! View results in MLflow UI: http://127.0.0.1:5555")
     print(f"  Experiment: {EXPERIMENT_NAME}")
     print("  Check runs for auto-injected env.* tags and eval/* metrics.")
     print("=" * 60)

@@ -10,7 +10,7 @@ Build custom evaluation scorers that go beyond MLflow's built-in options, then u
 ## Prerequisites
 
 - Completed: L1-M4.1 (Evaluation Fundamentals)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts

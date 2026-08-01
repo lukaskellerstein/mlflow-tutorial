@@ -3,7 +3,23 @@ name = "mlflow-tutorial-L3-M3-3-enterprise-data-management"
 version = "0.1.0"
 description = "Enterprise Patterns and Data Management"
 requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=3.0",
+    "pandas>=2.0",
+]
 
-[project.dependencies]
-mlflow = ">=2.0"
-pandas = ">=2.0"
+[tool.basedpyright]
+typeCheckingMode = "standard"
+# mlflow lazy-loads its flavor submodules (mlflow.langchain, mlflow.genai,
+# mlflow.openai, ...). They exist at runtime but are not statically re-exported,
+# so the type checker reports them as private imports. Suppress that only.
+reportPrivateImportUsage = "none"
+# mlflow.ActiveRun.__exit__ returns `exc_type is None` (declared `bool`), so the
+# checker must assume `with mlflow.start_run()` may swallow an exception and skip
+# its body -- flagging every variable assigned inside as possibly unbound. It
+# never actually suppresses (it returns False whenever an exception is live).
+reportPossiblyUnboundVariable = "none"
+# MLflow base hooks (PythonModel.predict, RunContextProvider.in_context/tags)
+# have no return annotation and empty bodies, so the checker infers `None` and
+# rejects every override that actually returns a value.
+reportIncompatibleMethodOverride = "none"

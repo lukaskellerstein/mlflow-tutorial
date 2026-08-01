@@ -9,23 +9,27 @@ Combines LangGraph tracing with agent observability:
 """
 
 import time
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 import mlflow
 import mlflow.langchain
+from langchain_core.messages import AnyMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+from langgraph.graph.state import CompiledStateGraph
+from mlflow.entities import Trace
+from pydantic import SecretStr
 from typing_extensions import TypedDict
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L2/M1_agent_frameworks/2_langgraph_agents")
 mlflow.langchain.autolog(log_traces=True)
 
 llm = ChatOpenAI(
     model="google/gemma-4-26b-a4b",
     base_url="http://localhost:1234/v1",
-    api_key="lm-studio",
+    api_key=SecretStr("lm-studio"),
     temperature=0.0,
 )
 
@@ -38,7 +42,10 @@ class SimpleState(TypedDict):
     final_response: str
 
 
-def classify_input(state: SimpleState) -> dict:
+SimpleGraph = CompiledStateGraph[SimpleState, None, SimpleState, SimpleState]
+
+
+def classify_input(state: SimpleState) -> dict[str, Any]:
     """Classify input as simple or complex."""
     prompt = (
         "Classify the following request as SIMPLE or COMPLEX.\n"
@@ -48,32 +55,32 @@ def classify_input(state: SimpleState) -> dict:
         f"Request: {state['input_text']}"
     )
     response = llm.invoke([{"role": "user", "content": prompt}])
-    complexity = "simple" if "SIMPLE" in response.content.upper() else "complex"
+    complexity = "simple" if "SIMPLE" in str(response.content).upper() else "complex"
     return {"complexity": complexity}
 
 
-def process_simple(state: SimpleState) -> dict:
+def process_simple(state: SimpleState) -> dict[str, Any]:
     """Handle simple inputs with a brief response."""
     response = llm.invoke([{"role": "user", "content": (
         f"Give a brief, direct answer in 1-2 sentences.\n\nQuestion: {state['input_text']}"
     )}])
-    return {"final_response": response.content}
+    return {"final_response": str(response.content)}
 
 
-def process_complex(state: SimpleState) -> dict:
+def process_complex(state: SimpleState) -> dict[str, Any]:
     """Handle complex inputs with a detailed response."""
     response = llm.invoke([{"role": "user", "content": (
         f"Provide a thorough answer. Use a numbered list if appropriate.\n\n"
         f"Request: {state['input_text']}"
     )}])
-    return {"final_response": response.content}
+    return {"final_response": str(response.content)}
 
 
 def route_by_complexity(state: SimpleState) -> Literal["process_simple", "process_complex"]:
     return "process_simple" if state["complexity"] == "simple" else "process_complex"
 
 
-def build_simple_graph() -> StateGraph:
+def build_simple_graph() -> SimpleGraph:
     """Build the simple conditional routing graph."""
     builder = StateGraph(SimpleState)
     builder.add_node("classify_input", classify_input)
@@ -89,11 +96,14 @@ def build_simple_graph() -> StateGraph:
 # ── Part 2: Research Agent with Retry Loop ────────────────────────
 
 class ResearchState(TypedDict):
-    messages: Annotated[list, add_messages]
+    messages: Annotated[list[AnyMessage], add_messages]
     research_notes: str
     current_step: str
     quality_pass: bool
     retry_count: int
+
+
+ResearchGraph = CompiledStateGraph[ResearchState, None, ResearchState, ResearchState]
 
 
 KNOWLEDGE_BASE: dict[str, str] = {
@@ -104,15 +114,19 @@ KNOWLEDGE_BASE: dict[str, str] = {
 }
 
 
+def message_text(message: AnyMessage) -> str:
+    """Read a message's content as plain text."""
+    return str(message.content)
+
+
 def search_knowledge(query: str) -> str:
     """Search the local knowledge base."""
     results = [v for k, v in KNOWLEDGE_BASE.items() if k in query.lower()]
     return " ".join(results) if results else "No match. Topics: " + ", ".join(KNOWLEDGE_BASE)
 
 
-def analyze_query(state: ResearchState) -> dict:
-    last = state["messages"][-1]
-    last_content = last["content"] if isinstance(last, dict) else last.content
+def analyze_query(state: ResearchState) -> dict[str, Any]:
+    last_content = message_text(state["messages"][-1])
     response = llm.invoke([{"role": "user", "content": (
         f"Analyze this query and list 2-3 key topics to investigate. Be brief.\n\nQuery: {last_content}"
     )}])
@@ -120,17 +134,15 @@ def analyze_query(state: ResearchState) -> dict:
             "current_step": "analyze_query", "research_notes": "", "retry_count": 0}
 
 
-def search_knowledge_node(state: ResearchState) -> dict:
-    first = state["messages"][0]
-    query = first["content"] if isinstance(first, dict) else first.content
+def search_knowledge_node(state: ResearchState) -> dict[str, Any]:
+    query = message_text(state["messages"][0])
     findings = search_knowledge(query)
     return {"messages": [{"role": "assistant", "content": f"[Research] {findings[:200]}"}],
             "current_step": "search_knowledge", "research_notes": findings}
 
 
-def synthesize_answer(state: ResearchState) -> dict:
-    first = state["messages"][0]
-    query = first["content"] if isinstance(first, dict) else first.content
+def synthesize_answer(state: ResearchState) -> dict[str, Any]:
+    query = message_text(state["messages"][0])
     response = llm.invoke([{"role": "user", "content": (
         f"Write a concise answer (2-3 sentences) to the question.\n\n"
         f"Question: {query}\n\nNotes: {state.get('research_notes', '')}"
@@ -139,13 +151,11 @@ def synthesize_answer(state: ResearchState) -> dict:
             "current_step": "synthesize_answer"}
 
 
-def quality_check(state: ResearchState) -> dict:
-    def _get_content(m):
-        return m["content"] if isinstance(m, dict) else m.content
-    synthesis = [m for m in state["messages"] if str(_get_content(m)).startswith("[Synthesis]")]
-    answer = _get_content(synthesis[-1]) if synthesis else ""
+def quality_check(state: ResearchState) -> dict[str, Any]:
+    synthesis = [m for m in state["messages"] if message_text(m).startswith("[Synthesis]")]
+    answer = message_text(synthesis[-1]) if synthesis else ""
     response = llm.invoke([{"role": "user", "content": f"Rate this answer as PASS or FAIL. Reply with one word.\n\nAnswer: {answer}"}])
-    passed = "PASS" in response.content.upper()
+    passed = "PASS" in str(response.content).upper()
     return {"messages": [{"role": "assistant", "content": f"[QualityCheck] {'PASS' if passed else 'FAIL'}"}],
             "current_step": "quality_check", "quality_pass": passed,
             "retry_count": state.get("retry_count", 0) + (0 if passed else 1)}
@@ -159,7 +169,7 @@ def should_retry(state: ResearchState) -> Literal["search_knowledge", "__end__"]
     return "search_knowledge"
 
 
-def build_research_graph() -> StateGraph:
+def build_research_graph() -> ResearchGraph:
     graph = StateGraph(ResearchState)
     graph.add_node("analyze_query", analyze_query)
     graph.add_node("search_knowledge", search_knowledge_node)
@@ -175,9 +185,9 @@ def build_research_graph() -> StateGraph:
 
 # ── Trace Analysis ────────────────────────────────────────────────
 
-def analyze_trace(trace) -> dict:
+def analyze_trace(trace: Trace) -> dict[str, Any]:
     spans = trace.data.spans
-    entries = []
+    entries: list[dict[str, Any]] = []
     for span in spans:
         dur = round((span.end_time_ns - span.start_time_ns) / 1e6, 1) if span.end_time_ns and span.start_time_ns else None
         entries.append({"name": span.name, "duration_ms": dur})
@@ -186,7 +196,7 @@ def analyze_trace(trace) -> dict:
             "total_duration_ms": trace.info.execution_duration}
 
 
-def print_trace_analysis(label: str, trace, stats: dict) -> None:
+def print_trace_analysis(label: str, trace: Trace, stats: dict[str, Any]) -> None:
     print(f"\n  {'=' * 50}")
     print(f"  Trace: {label}  |  ID: {trace.info.trace_id}")
     print(f"  Duration: {stats['total_duration_ms']} ms  |  Spans: {stats['total_spans']}")
@@ -231,8 +241,8 @@ def main() -> None:
         "Explain how LangGraph agents work and their common patterns.",
     ]
 
-    all_stats = []
-    with mlflow.start_run(run_name="langgraph_agents_demo") as run:
+    all_stats: list[dict[str, Any]] = []
+    with mlflow.start_run(run_name="langgraph_agents_demo"):
         mlflow.set_tags({
             "agent_type": "langgraph_research_assistant",
             "model": "google/gemma-4-26b-a4b",
@@ -243,7 +253,7 @@ def main() -> None:
             print(f"\n  --- Query {idx}: {query[:60]}... ---")
             start = time.time()
             result = research_graph.invoke({
-                "messages": [{"role": "user", "content": query}],
+                "messages": [HumanMessage(content=query)],
                 "research_notes": "", "current_step": "",
                 "quality_pass": False, "retry_count": 0,
             })
@@ -251,8 +261,8 @@ def main() -> None:
 
             # Print final messages
             for msg in result["messages"]:
-                content = msg["content"] if isinstance(msg, dict) else msg.content
-                if str(content).startswith("[Synthesis]"):
+                content = message_text(msg)
+                if content.startswith("[Synthesis]"):
                     print(f"  Answer: {content[12:120]}...")
                     break
 

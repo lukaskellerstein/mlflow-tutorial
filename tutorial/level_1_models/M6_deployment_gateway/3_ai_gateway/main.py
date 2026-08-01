@@ -16,7 +16,7 @@ import tempfile
 import mlflow
 import pandas as pd
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L1/M6_deployment_gateway/3_ai_gateway")
 
 
@@ -160,7 +160,7 @@ def main() -> None:
             "avg_daily_cost_usd": round(usage_df["cost_usd"].mean(), 2),
             "avg_p50_latency_ms": round(usage_df["p50_latency_ms"].mean(), 1),
         }
-        print(f"\n  Simulated 7-day usage:")
+        print("\n  Simulated 7-day usage:")
         print(f"    Requests: {totals['total_requests']:,}  |  "
               f"Cost: ${totals['total_cost_usd']}  |  "
               f"Avg latency: {totals['avg_p50_latency_ms']} ms")
@@ -192,8 +192,8 @@ def main() -> None:
         mlflow.set_tag("lesson", "L1-M6.3")
 
     section("Done!")
-    print(f"  Experiment: L1/M6_deployment_gateway/3_ai_gateway")
-    print(f"  UI: http://127.0.0.1:5000")
+    print("  Experiment: L1/M6_deployment_gateway/3_ai_gateway")
+    print("  UI: http://127.0.0.1:5555")
     print("  Artifacts: gateway config, endpoint config, traffic split,")
     print("             budget policies, usage data, provider comparison")
 

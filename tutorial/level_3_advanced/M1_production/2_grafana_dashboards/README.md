@@ -12,7 +12,7 @@ You will learn how to define custom Prometheus metrics, instrument LLM calls, ge
 ## Prerequisites
 
 - Completed: L1-M1 (Tracking), L1-M4 (Evaluation), L3-M3.1 (Production Tracing)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 - Prometheus running at http://localhost:9090 (via `podman compose up -d` from `infra/`)
 - Grafana running at http://localhost:3000 (admin/admin)

@@ -10,7 +10,7 @@ MLflow provides two complementary approaches to tracing GenAI applications: auto
 ## Prerequisites
 
 - Completed: L1-M1 (Tracking)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
@@ -132,7 +132,7 @@ You will see five sections in the terminal:
 4. **Part 4** -- Batch analysis with explicit span control and custom attributes
 5. **Part 5** -- Combined auto + manual trace in one unified tree
 
-In the MLflow UI at http://127.0.0.1:5000, navigate to experiment **L1/M2_tracing/1_auto_and_manual_tracing** and open the Traces tab. Click any trace to see the span tree.
+In the MLflow UI at http://127.0.0.1:5555, navigate to experiment **L1/M2_tracing/1_auto_and_manual_tracing** and open the Traces tab. Click any trace to see the span tree.
 
 ## Key Takeaways
 

@@ -73,18 +73,19 @@ def run_instance(agent, instance: dict, config_name: str) -> dict:
                                 "response_length": len(last_msg)})
             mlflow.set_tag("status", "success")
             print(f"  [{iid}] latency={latency:.1f}s patch={patch_ok}")
-            return dict(instance_id=iid, repo=repo, config=config_name,
-                        latency_s=round(latency, 2), patch_generated=patch_ok,
-                        response_length=len(last_msg), status="success")
+            record = {"instance_id": iid, "repo": repo, "config": config_name,
+                      "latency_s": round(latency, 2), "patch_generated": patch_ok,
+                      "response_length": len(last_msg), "status": "success"}
         except Exception as exc:
             latency = time.perf_counter() - start
             mlflow.log_metrics({"latency_s": round(latency, 2), "patch_generated": 0})
             mlflow.set_tag("status", "error")
             mlflow.set_tag("error", str(exc)[:200])
             print(f"  [{iid}] ERROR: {exc}")
-            return dict(instance_id=iid, repo=repo, config=config_name,
-                        latency_s=round(latency, 2), patch_generated=False,
-                        response_length=0, status=f"error: {exc}")
+            record = {"instance_id": iid, "repo": repo, "config": config_name,
+                      "latency_s": round(latency, 2), "patch_generated": False,
+                      "response_length": 0, "status": f"error: {exc}"}
+    return record
 
 def run_config(name: str, temperature: float, instances: list[dict]) -> list[dict]:
     """Run the agent across all instances for a given config."""
@@ -93,7 +94,7 @@ def run_config(name: str, temperature: float, instances: list[dict]) -> list[dic
     print("=" * 60)
     llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio",
                      model="google/gemma-4-26b-a4b", temperature=temperature,
-                     max_tokens=1024)
+                     max_tokens=1024)  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     agent = create_agent(model=llm, tools=TOOLS, system_prompt=SYSTEM_PROMPT)
     results: list[dict] = []
     with mlflow.start_run(run_name=f"config_{name}", nested=True):
@@ -103,8 +104,8 @@ def run_config(name: str, temperature: float, instances: list[dict]) -> list[dic
         for inst in instances:
             results.append(run_instance(agent, inst, name))
         df = pd.DataFrame(results)
-        mlflow.log_metrics({"avg_latency_s": round(df["latency_s"].mean(), 2),
-                            "patch_rate": round(df["patch_generated"].mean(), 2),
+        mlflow.log_metrics({"avg_latency_s": round(float(df["latency_s"].mean()), 2),
+                            "patch_rate": round(float(df["patch_generated"].mean()), 2),
                             "total_response_chars": int(df["response_length"].sum())})
         csv_path = f"/tmp/swe_bench_{name}.csv"
         df.to_csv(csv_path, index=False)
@@ -155,10 +156,10 @@ def main() -> None:
 
     print_summary(all_results)
     print("=" * 60)
-    print("Done. View results at http://127.0.0.1:5000")
+    print("Done. View results at http://127.0.0.1:5555")
     print("=" * 60)
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M4_agent_benchmarks/1_swe_bench")
     main()

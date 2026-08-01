@@ -12,11 +12,12 @@ Automated quality gates for LLM deployments:
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import mlflow
 import pandas as pd
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 
 # ── Part 1: Quality Gate Definitions ──────────────────────
@@ -80,7 +81,7 @@ class EvaluationHarness:
         self.llm = ChatOpenAI(
             model=model_name,
             base_url="http://localhost:1234/v1",
-            api_key="lm-studio",
+            api_key=SecretStr("lm-studio"),
             temperature=temperature,
         )
 
@@ -111,16 +112,17 @@ class EvaluationHarness:
                     latency_ms = (time.time() - start) * 1000
                     all_latencies.append(latency_ms)
 
-                    output = result.content
+                    output = str(result.content)
                     correct = self._check_answer(output, tc["expected"])
                     case_results.append(correct)
                     if correct:
                         correct_count += 1
-                except Exception as e:
+                except Exception as exc:
                     latency_ms = (time.time() - start) * 1000
                     all_latencies.append(latency_ms)
                     case_results.append(False)
                     error_count += 1
+                    print(f"    Attempt {attempt + 1} failed: {exc}")
 
             # Consistency = fraction of runs that agreed with majority
             majority = sum(case_results) > len(case_results) / 2
@@ -305,12 +307,12 @@ def analyze_gate_history() -> None:
     print("  Gate History & Trend Analysis")
     print(f"{'=' * 60}")
 
-    runs = mlflow.search_runs(
+    runs = cast(pd.DataFrame, mlflow.search_runs(
         experiment_names=["L3/M3_production/4_cicd"],
         filter_string="tags.pipeline_type = 'cicd_quality_gate'",
         order_by=["start_time ASC"],
         max_results=20,
-    )
+    ))
 
     if runs.empty:
         print("  No gate history found.")
@@ -325,7 +327,9 @@ def analyze_gate_history() -> None:
         "metrics.error_rate": "error_rate",
     }
     available = [c for c in cols if c in runs.columns]
-    history = runs[available].rename(columns={k: v for k, v in cols.items() if k in available})
+    history = cast(pd.DataFrame, runs[available]).rename(
+        columns={k: v for k, v in cols.items() if k in available}
+    )
 
     print(f"\n  Found {len(history)} pipeline run(s):\n")
     for idx, row in history.iterrows():
@@ -378,12 +382,12 @@ def main() -> None:
     analyze_gate_history()
 
     print("=" * 60)
-    print("Done! Check the MLflow UI at http://127.0.0.1:5000")
+    print("Done! Check the MLflow UI at http://127.0.0.1:5555")
     print("Look at experiment: L3/M3_production/4_cicd")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L3/M1_production/4_cicd")
     main()

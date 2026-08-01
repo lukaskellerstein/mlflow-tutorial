@@ -13,10 +13,10 @@ import json
 
 import mlflow
 import mlflow.langchain
+from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langchain.agents import create_agent
-
+from pydantic import SecretStr
 from test_framework import (
     AgentTestRunner,
     TestCase,
@@ -78,7 +78,7 @@ def build_agent():
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.0,
     )
     return create_agent(llm, tools=TOOLS)
@@ -135,7 +135,7 @@ def main() -> None:
         print(f"  [{tc.difficulty:6s}] {tc.name}: {tc.input[:60]}")
 
     # --- Part 3: Run tests with nested MLflow runs ---
-    print(f"\n--- Part 3: Running automated test suite ---")
+    print("\n--- Part 3: Running automated test suite ---")
     with mlflow.start_run(run_name="agent_test_suite") as parent_run:
         mlflow.log_params({
             "agent_model": "google/gemma-4-26b-a4b",
@@ -171,12 +171,12 @@ def main() -> None:
 
         baseline_path = save_baseline(df, parent_run.info.run_id)
         print(f"  Baseline saved: {baseline_path}")
-        print(f"  (logged as MLflow artifact under 'baselines/')\n")
+        print("  (logged as MLflow artifact under 'baselines/')\n")
 
         compare_to_baseline(df, baseline_path)
 
         print(f"  Parent run ID: {parent_run.info.run_id}")
-        print(f"  View in MLflow UI: http://127.0.0.1:5000")
+        print("  View in MLflow UI: http://127.0.0.1:5555")
 
     print("=" * 60)
     print("Done! Explore nested test runs in the MLflow UI.")
@@ -185,6 +185,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M3_agent_evaluation/1_agent_testing")
     main()

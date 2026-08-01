@@ -17,6 +17,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 from mlflow.entities import Feedback
 from mlflow.genai.scorers import scorer
+from pydantic import SecretStr
 
 # ── Part 1: Build a simple in-memory RAG system ───────────────────────
 
@@ -328,7 +329,7 @@ def main() -> None:
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.0,
     )
 
@@ -381,12 +382,12 @@ def main() -> None:
 
     print(f"\n{'=' * 60}")
     print("Done! Open MLflow UI to explore results:")
-    print("  http://127.0.0.1:5000")
+    print("  http://127.0.0.1:5555")
     print("  Experiment: L2/M3_deep_evaluation/2_rag_evaluation")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M4_evaluation/3_rag_evaluation")
     main()

@@ -13,15 +13,16 @@ agent observability, and deployment patterns.
 """
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import mlflow
 import pandas as pd
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
+from pydantic import SecretStr
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L3/M4_capstones/1_agent_platform")
 
 # ---------------------------------------------------------------------------
@@ -57,7 +58,7 @@ def calculate(expression: str) -> str:
     try:
         allowed = set("0123456789+-*/.() ")
         if all(c in allowed for c in expression):
-            return str(eval(expression))  # noqa: S307
+            return str(eval(expression))  # nosec: reached only for whitelisted arithmetic chars
         return "Invalid expression — only basic arithmetic is supported."
     except Exception as e:
         return f"Calculation error: {e}"
@@ -96,7 +97,7 @@ class AgentRegistry:
         llm = ChatOpenAI(
             model="google/gemma-4-26b-a4b",
             base_url="http://localhost:1234/v1",
-            api_key="lm-studio",
+            api_key=SecretStr("lm-studio"),
             temperature=0.0,
         )
         agent = create_react_agent(
@@ -222,12 +223,12 @@ def evaluate_agent(
     """Run evaluation for a single agent, score results, check quality gates."""
     results = []
     for _, row in dataset.iterrows():
-        r = invoke_agent(agent, row["input"])
+        r = invoke_agent(agent, str(row["input"]))
         r["input"] = row["input"]
         r["expected"] = row["expected"]
         r["category"] = row["category"]
         # Score: does the output contain the expected keyword?
-        r["correct"] = r["expected"].lower() in r["output"].lower()
+        r["correct"] = str(r["expected"]).lower() in str(r["output"]).lower()
         results.append(r)
 
     n = len(results)
@@ -498,8 +499,8 @@ def run_platform() -> None:
     print(f"    Gates passed:       {passed_count}/{len(eval_results)}")
     print(f"    Deployed agent:     {deployed_agent_name or 'none'}")
     print(f"\n    Evaluation run ID:  {parent_run_id}")
-    print(f"    MLflow UI: http://127.0.0.1:5000")
-    print(f"    Experiment: L3/M5_capstones/1_agent_platform")
+    print("    MLflow UI: http://127.0.0.1:5555")
+    print("    Experiment: L3/M5_capstones/1_agent_platform")
     print("=" * 60)
 
 

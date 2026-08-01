@@ -65,7 +65,7 @@ def answer_question(question: str) -> str:
         temperature=0.0,
         max_tokens=1024,
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
 @scorer
@@ -97,7 +97,7 @@ def part1_genai_evaluate() -> None:
         data=eval_data,
         predict_fn=answer_question,
         scorers=[
-            ResponseLength(min_length=1, max_length=500, unit="words"),
+            ResponseLength(min_length=1, max_length=500, unit="words"),  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
             contains_expected,
         ],
     )
@@ -109,15 +109,15 @@ def part1_genai_evaluate() -> None:
     print("\n  --- Per-Row Results ---")
     table = results.result_df
     if table is not None:
-        for i, row in table.iterrows():
-            q = row.get("request", {}).get("question", "N/A")
+        for i, (_, row) in enumerate(table.iterrows()):
+            q = (row.get("request") or {}).get("question", "N/A")
             a = str(row.get("response", ""))
             if len(a) > 80:
                 a = a[:77] + "..."
             print(f"\n    Q{i + 1}: {q}")
             print(f"       Answer: {a}")
             for c in table.columns:
-                if c.endswith("/value") or c.endswith("/rationale"):
+                if c.endswith(("/value", "/rationale")):
                     print(f"       {c}: {row[c]}")
     print()
 
@@ -156,7 +156,7 @@ def judge_answer(question: str, ground_truth: str, model_answer: str) -> dict:
         temperature=0.0,
         max_tokens=1024,
     )
-    text = response.choices[0].message.content.strip()
+    text = (response.choices[0].message.content or "").strip()
 
     json_match = re.search(r"\{.*\}", text, re.DOTALL)
     if json_match:
@@ -289,13 +289,13 @@ def main() -> None:
     part4_combined(judge_results)
 
     print("=" * 60)
-    print("Done! See results in MLflow UI at http://127.0.0.1:5000")
+    print("Done! See results in MLflow UI at http://127.0.0.1:5555")
     print("Experiment: 'L1/M4_evaluation/1_evaluation_fundamentals'")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L1/M4_evaluation/1_evaluation_fundamentals")
 
     main()

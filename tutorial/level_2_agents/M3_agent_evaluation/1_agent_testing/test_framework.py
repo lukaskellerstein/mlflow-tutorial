@@ -170,7 +170,7 @@ def print_summary(results: list[TestResult], suite: list[TestCase]) -> None:
 
     failures = [r for r in results if not r.passed]
     if failures:
-        print(f"\n  Failed tests:")
+        print("\n  Failed tests:")
         for f in failures:
             reason = []
             if not f.output_correct:

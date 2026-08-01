@@ -10,17 +10,18 @@ L3-M1.4 (Agent Optimization), and L2-M3.1 (Custom Metrics).
 """
 
 import json
-import re
 import time
 from dataclasses import dataclass, field
+from typing import Any
 
 import mlflow
 import pandas as pd
+from langchain.agents import create_agent as create_react_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langchain.agents import create_agent as create_react_agent
+from pydantic import SecretStr
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L2/M3_agent_evaluation/5_evaluation_pipeline")
 
 # ---------------------------------------------------------------------------
@@ -56,7 +57,7 @@ def calculate(expression: str) -> str:
     try:
         allowed = set("0123456789+-*/.() ")
         if all(c in allowed for c in expression):
-            return str(eval(expression))  # noqa: S307
+            return str(eval(expression))  # nosec: reached only for whitelisted arithmetic chars
         return "Invalid expression — only basic arithmetic is supported."
     except Exception as e:
         return f"Calculation error: {e}"
@@ -70,7 +71,7 @@ def build_agent():
     llm = ChatOpenAI(
         model="google/gemma-4-26b-a4b",
         base_url="http://localhost:1234/v1",
-        api_key="lm-studio",
+        api_key=SecretStr("lm-studio"),
         temperature=0.0,
     )
     return create_react_agent(llm, [search_knowledge, calculate])
@@ -114,7 +115,7 @@ class QualityGates:
 class AgentEvaluationPipeline:
     """End-to-end evaluation pipeline for an AI agent."""
 
-    agent: object = None
+    agent: Any = None
     dataset: pd.DataFrame = field(default_factory=pd.DataFrame)
     results: list[dict] = field(default_factory=list)
     quality_gates: QualityGates = field(default_factory=QualityGates)
@@ -135,7 +136,7 @@ class AgentEvaluationPipeline:
         """Execute the agent on each input and collect results."""
         print("\n  [Step 2/5] Running agent on test cases...")
         self.results = []
-        for idx, row in self.dataset.iterrows():
+        for idx, (_, row) in enumerate(self.dataset.iterrows()):
             start = time.time()
             try:
                 response = self.agent.invoke(
@@ -394,11 +395,11 @@ def run_regression_check(current_metrics: dict) -> None:
         "tool_accuracy": min(current_metrics.get("tool_accuracy", 0.5) + 0.15, 1.0),
         "avg_latency_s": max(current_metrics.get("avg_latency_s", 5.0) - 1.0, 1.0),
     }
-    print(f"\n  Simulated baseline (previous run):")
+    print("\n  Simulated baseline (previous run):")
     for k, v in baseline.items():
         print(f"    {k}: {v:.3f}")
 
-    print(f"\n  Current results:")
+    print("\n  Current results:")
     for k in baseline:
         v = current_metrics.get(k, 0)
         print(f"    {k}: {v:.3f}")
@@ -450,7 +451,7 @@ def main() -> None:
     run_regression_check(result["metrics"])
 
     print("\n" + "=" * 60)
-    print("  Done! View results in MLflow UI: http://127.0.0.1:5000")
+    print("  Done! View results in MLflow UI: http://127.0.0.1:5555")
     print("  Experiment: L3/M1_agent_evaluation/5_evaluation_pipeline")
     print("=" * 60)
 

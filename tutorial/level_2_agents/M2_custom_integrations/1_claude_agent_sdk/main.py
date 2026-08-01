@@ -19,20 +19,20 @@ import json
 import os
 import sys
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import anyio
 import mlflow
 from claude_agent_sdk import (
-    ClaudeSDKClient,
-    ClaudeAgentOptions,
     AssistantMessage,
+    ClaudeAgentOptions,
+    ClaudeSDKClient,
+    ResultMessage,
     TextBlock,
     ThinkingBlock,
     ToolUseBlock,
-    ResultMessage,
 )
-
+from mlflow.entities import Trace
 
 # ── Part 1: MCP server config and SDK setup ─────────────────────
 
@@ -187,11 +187,11 @@ def analyze_traces() -> None:
         print("  Experiment not found.")
         return
 
-    traces = mlflow.search_traces(
+    traces = cast(list[Trace], mlflow.search_traces(
         locations=[experiment.experiment_id],
         return_type="list",
         flush=True,
-    )
+    ))
     print(f"  Found {len(traces)} traces")
 
     for trace in traces[:3]:
@@ -201,7 +201,7 @@ def analyze_traces() -> None:
         print(f"\n  Trace {req_id[:12]}... | {status} | {dur_ms}ms")
 
         for span in trace.data.spans:
-            span_dur = (span.end_time_ns - span.start_time_ns) / 1e6
+            span_dur = ((span.end_time_ns or 0) - (span.start_time_ns or 0)) / 1e6
             print(f"    - {span.name} ({span_dur:.0f}ms)")
 
     if traces:
@@ -304,11 +304,11 @@ async def main() -> None:
     print("  4. mlflow.start_span() for tool call events")
     print("  5. Log metrics/artifacts to MLflow runs")
     print(f"\n  Run ID: {parent_id}")
-    print(f"  MLflow UI: http://127.0.0.1:5000")
+    print("  MLflow UI: http://127.0.0.1:5555")
     print("=" * 60)
 
 
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")
+    mlflow.set_tracking_uri("http://127.0.0.1:5555")
     mlflow.set_experiment("L2/M2_custom_integrations/1_claude_agent_sdk")
     anyio.run(main)

@@ -12,7 +12,7 @@ The lesson uses an external FastMCP server (STDIO transport) for custom tools an
 ## Prerequisites
 
 - Completed: L1-M2.1 (Auto-Tracing and Manual Tracing)
-- MLflow server running at http://127.0.0.1:5000
+- MLflow server running at http://127.0.0.1:5555
 - Claude Code CLI installed (`claude` command available)
 - Anthropic API key configured (via Claude Code subscription or `ANTHROPIC_API_KEY`)
 - **Note**: This lesson makes real API calls and incurs costs

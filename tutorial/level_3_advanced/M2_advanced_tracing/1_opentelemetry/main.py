@@ -20,7 +20,7 @@ from opentelemetry.sdk.trace.export import (
     SpanExportResult,
 )
 
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L3/M2_advanced_tracing/1_opentelemetry")
 
 
@@ -48,7 +48,7 @@ class PrintingSpanProcessor(SimpleSpanProcessor):
 
     def on_end(self, span) -> None:
         self.ended += 1
-        dur_ms = (span.end_time - span.start_time) / 1_000_000
+        dur_ms = ((span.end_time or 0) - (span.start_time or 0)) / 1_000_000
         print(f"    [Processor] ENDED:   {span.name!r} ({dur_ms:.1f}ms, {span.status.status_code.name})")
 
 
@@ -194,7 +194,7 @@ def main() -> None:
     part4_combined_tracing()
 
     print("=" * 60)
-    print("Done! Check MLflow UI at http://127.0.0.1:5000")
+    print("Done! Check MLflow UI at http://127.0.0.1:5555")
     print("Experiment: L2/M4_advanced_tracing/3_opentelemetry")
     print("=" * 60)
 

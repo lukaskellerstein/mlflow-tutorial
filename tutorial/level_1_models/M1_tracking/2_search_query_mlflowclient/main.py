@@ -7,6 +7,7 @@ delete/restore experiments and runs, ViewType, comparison reports).
 """
 
 import time
+from typing import cast
 
 import mlflow
 import pandas as pd
@@ -17,7 +18,7 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L1/M1_tracking/2_search_query_mlflowclient"
 
 LMSTUDIO_URL = "http://localhost:1234/v1"
@@ -51,9 +52,9 @@ def call_llm(
     choice = response.choices[0]
     return {
         "content": choice.message.content or "",
-        "prompt_tokens": response.usage.prompt_tokens,
-        "completion_tokens": response.usage.completion_tokens,
-        "total_tokens": response.usage.total_tokens,
+        "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+        "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+        "total_tokens": response.usage.total_tokens if response.usage else 0,
         "response_time_seconds": round(elapsed, 3),
         "response_length": len(choice.message.content or ""),
     }
@@ -121,35 +122,35 @@ def demo_search_runs(experiment_id: str) -> None:
     """Show various search_runs() queries."""
 
     section("Step 2: search_runs -- all runs (no filter)")
-    all_runs = mlflow.search_runs(experiment_ids=[experiment_id])
+    all_runs = cast(pd.DataFrame, mlflow.search_runs(experiment_ids=[experiment_id]))
     print(f"  Total runs found: {len(all_runs)}")
     available = [c for c in COLS if c in all_runs.columns]
     print(all_runs[available].to_string(index=False))
 
     section("Step 3: search_runs -- filter by temperature")
-    low_temp = mlflow.search_runs(
+    low_temp = cast(pd.DataFrame, mlflow.search_runs(
         experiment_ids=[experiment_id],
         filter_string="params.temperature = '0.3'",
-    )
+    ))
     print(f"  Runs with temperature 0.3: {len(low_temp)}")
     if not low_temp.empty:
         available = [c for c in COLS if c in low_temp.columns]
         print(low_temp[available].to_string(index=False))
 
     section("Step 4: search_runs -- order by total tokens DESC")
-    ordered = mlflow.search_runs(
+    ordered = cast(pd.DataFrame, mlflow.search_runs(
         experiment_ids=[experiment_id],
         order_by=["metrics.total_tokens DESC"],
-    )
+    ))
     print("  Runs ranked by total tokens (most first):")
     available = [c for c in COLS if c in ordered.columns]
     print(ordered[available].to_string(index=False))
 
     section("Step 5: Combined filter -- topic AND metric threshold")
-    combined = mlflow.search_runs(
+    combined = cast(pd.DataFrame, mlflow.search_runs(
         experiment_ids=[experiment_id],
         filter_string="params.prompt_topic = 'transformers' AND metrics.total_tokens > 100",
-    )
+    ))
     print(f"  Matching runs: {len(combined)}")
     if not combined.empty:
         available = [c for c in COLS if c in combined.columns]
@@ -168,12 +169,12 @@ def demo_search_experiments() -> None:
 def demo_dataframe_export(experiment_id: str) -> None:
     """Export search results to a pandas DataFrame and summarize."""
     section("Step 7: DataFrame export -- summary statistics")
-    df = mlflow.search_runs(experiment_ids=[experiment_id])
+    df = cast(pd.DataFrame, mlflow.search_runs(experiment_ids=[experiment_id]))
 
     if "params.prompt_topic" in df.columns and "metrics.total_tokens" in df.columns:
         summary = (
-            df.groupby("params.prompt_topic")["metrics.total_tokens"]
-            .agg(["count", "mean", "max"])
+            cast(pd.DataFrame, df.groupby("params.prompt_topic")["metrics.total_tokens"]
+                 .agg(["count", "mean", "max"]))
             .rename(columns={"count": "runs", "mean": "avg_tokens", "max": "max_tokens"})
             .sort_values("max_tokens", ascending=False)
         )
