@@ -170,9 +170,7 @@ def main() -> None:
                     "response_time": r["response_time_seconds"],
                 }
             )
-            print(
-                f"  temp={temp}  tokens={r['total_tokens']:>4d}  time={r['response_time_seconds']}s"
-            )
+            print(f"  temp={temp}  tokens={r['total_tokens']:>4d}  time={r['response_time_seconds']}s")
 
         mlflow.log_table(
             data=pd.DataFrame(temp_results),
@@ -259,9 +257,7 @@ def main() -> None:
             mlflow.log_metric("step_tokens", r["total_tokens"], step=step)
             mlflow.log_metric("cumulative_tokens", cumulative_tokens, step=step)
 
-            print(
-                f"  Step {step}: '{p[:40]}...'  tokens={r['total_tokens']}  cumulative={cumulative_tokens}"
-            )
+            print(f"  Step {step}: '{p[:40]}...'  tokens={r['total_tokens']}  cumulative={cumulative_tokens}")
 
     # ------------------------------------------------------------------
     # Step 8: System metrics

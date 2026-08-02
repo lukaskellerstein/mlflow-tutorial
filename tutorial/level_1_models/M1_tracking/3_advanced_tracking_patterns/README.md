@@ -89,9 +89,7 @@ with mlflow.start_run(run_name="LLM Config Sweep"):
         for variant_name, system_prompt in PROMPT_VARIANTS.items():
             with mlflow.start_run(run_name=f"temp_{temperature}_style_{variant_name}", nested=True):
                 mlflow.log_params({"temperature": temperature, "prompt_variant": variant_name})
-                result = call_llm(
-                    client, question, temperature=temperature, system_prompt=system_prompt
-                )
+                result = call_llm(client, question, temperature=temperature, system_prompt=system_prompt)
                 mlflow.log_metrics({"response_length": len(result), "latency_seconds": latency})
 ```
 

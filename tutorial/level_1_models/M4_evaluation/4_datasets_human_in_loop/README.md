@@ -75,9 +75,7 @@ def traced_qa(question, expected):
 Use `log_expectation()` for ground truth and `log_feedback()` for human judgments:
 
 ```python
-mlflow.log_expectation(
-    trace_id=trace_id, name="expected_answer", value="Paris", source=human_source
-)
+mlflow.log_expectation(trace_id=trace_id, name="expected_answer", value="Paris", source=human_source)
 mlflow.log_feedback(
     trace_id=trace_id,
     name="human_correctness",

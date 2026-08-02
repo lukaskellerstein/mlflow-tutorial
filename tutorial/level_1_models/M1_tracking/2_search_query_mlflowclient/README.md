@@ -70,9 +70,7 @@ mlflow.search_runs(..., filter_string="params.temperature = '0.3'")
 mlflow.search_runs(..., order_by=["metrics.total_tokens DESC"])
 
 # Combined filter
-mlflow.search_runs(
-    ..., filter_string="params.prompt_topic = 'transformers' AND metrics.total_tokens > 100"
-)
+mlflow.search_runs(..., filter_string="params.prompt_topic = 'transformers' AND metrics.total_tokens > 100")
 ```
 
 ### Step 6: List Experiments
