@@ -19,7 +19,9 @@ Reference files: [`rules/01-project-config.md`](rules/01-project-config.md)
 [`rules/09-code-quality.md`](rules/09-code-quality.md),
 [`rules/10-tech-stack.md`](rules/10-tech-stack.md),
 [`rules/11-communication.md`](rules/11-communication.md),
-[`rules/12-security.md`](rules/12-security.md).
+[`rules/12-security.md`](rules/12-security.md),
+[`rules/machine-tools.md`](rules/machine-tools.md) (the `nvim-tools` and
+`lukas-ps` CLIs — pre-approved, read-only).
 
 Path-scoped rules load automatically when you touch a matching file:
 [`tutorial-structure.md`](rules/tutorial-structure.md) (lesson conventions),
@@ -147,6 +149,9 @@ These actions are pre-approved. Run them yourself when the situation calls for i
 - `lms ls`, `lms ps` — what LMStudio has loaded.
 - `uv tree`, `uv lock --check`, `uv pip list` in any lesson directory.
 - `git status`, `git diff`, `git log` — any read-only git command.
+- This machine's own `nvim-tools` and `lukas-ps` are pre-approved too, and are
+  documented once in [`rules/machine-tools.md`](rules/machine-tools.md) — do not
+  restate them here.
 - Browsing the MLflow, Grafana, Temporal or Qdrant UIs with the Playwright MCP
   server. Close the browser when finished.
 

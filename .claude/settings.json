@@ -42,6 +42,15 @@
       "mcp__playwright-mlflow-tutor",
       "mcp__reference-langchain"
     ],
+    "ask": [
+      "Bash(podman compose down -v:*)",
+      "Bash(podman compose down --volumes:*)",
+      "Bash(podman-compose down -v:*)",
+      "Bash(podman volume rm:*)",
+      "Bash(podman volume prune:*)",
+      "Bash(podman system prune:*)",
+      "Bash(docker compose down -v:*)"
+    ],
     "deny": [
       "Bash(rm -rf /)",
       "Bash(rm -rf /*)",

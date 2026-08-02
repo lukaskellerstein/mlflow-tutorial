@@ -39,7 +39,7 @@ def call_llm(
 ) -> dict:
     """Call the LLM and return the response with timing and usage info."""
     start = time.time()
-    response = client.chat.completionsfdasfdafdsks.create(
+    response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,

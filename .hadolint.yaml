@@ -21,4 +21,10 @@ ignored:
   # 3.x, nothing here ships to production.
   - DL3007
 
+  # "Multiple consecutive RUN instructions. Consider consolidation." A RUN per
+  # step is often the deliberate choice — layer caching — and consolidating is
+  # an image-size tweak, not a correctness fix. Measured 2026-08-02: the one
+  # finding hadolint raised on an ordinary multi-step build.
+  - DL3059
+
 failure-threshold: warning

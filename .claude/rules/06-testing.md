@@ -66,8 +66,22 @@ service the change could touch is actually reachable on the ports in
 `01-project-config.md`. `podman compose ps` showing "running" is not enough; a
 container can be up and the service inside it broken.
 
-**Doc-only changes** (README, syllabus, notes): explicitly state why no runtime
-test is needed.
+**Every change** — repo-wide lint / format / type check:
+
+```bash
+nvim-tools --json --all
+```
+
+Your change must not add findings, measured against the baseline you took in the
+Understand step. How to read the output (including `gated-off`), and why this
+never replaces the project's own suite: [`machine-tools.md`](machine-tools.md).
+
+This one is not optional for doc-only work either. Markdown is the deliverable
+here as much as Python is — the lesson READMEs and `syllabus.md` are the teaching
+material, and markdownlint is the only thing checking them.
+
+**Doc-only changes** (README, syllabus, notes): run the check above, then
+explicitly state why no *runtime* test is needed.
 
 ## 4c. Fix and repeat
 
