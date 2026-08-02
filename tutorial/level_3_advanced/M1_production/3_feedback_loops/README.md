@@ -10,7 +10,7 @@ Production LLM systems need continuous improvement driven by real user feedback.
 ## Prerequisites
 
 - Completed: L3-3.1 (Production Tracing), L3-3.2 (Grafana Dashboards)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts

@@ -376,10 +376,7 @@ def main() -> None:
         print(f"{'=' * 70}")
         df = pd.DataFrame(all_results)
 
-        print(
-            f"\n  {'Variant':<22} {'Dimension':<18} {'Correct':>8} "
-            f"{'ToolSel':>8} {'Quality':>8} {'Latency':>8}"
-        )
+        print(f"\n  {'Variant':<22} {'Dimension':<18} {'Correct':>8} {'ToolSel':>8} {'Quality':>8} {'Latency':>8}")
         print("  " + "-" * 74)
         for _, row in df.iterrows():
             print(
@@ -409,11 +406,7 @@ def main() -> None:
         )
 
         for dim in df["dimension"].unique():
-            dim_best = (
-                cast(pd.DataFrame, df[df["dimension"] == dim])
-                .sort_values("quality", ascending=False)
-                .iloc[0]
-            )
+            dim_best = cast(pd.DataFrame, df[df["dimension"] == dim]).sort_values("quality", ascending=False).iloc[0]
             mlflow.set_tag(f"best_{dim}", dim_best["variant"])
             print(f"  Best {dim}: {dim_best['variant']} (quality={dim_best['quality']:.3f})")
 

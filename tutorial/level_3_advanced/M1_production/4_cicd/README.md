@@ -11,7 +11,7 @@ Deploy AI models with confidence by enforcing automated quality gates in your CI
 
 - Completed: L3-3.1 (Production Tracing), L3-3.3 (Feedback Loops)
 - Completed: L1-4.2 (LLM Eval Basics), L2-3.1 (Custom Metrics)
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts

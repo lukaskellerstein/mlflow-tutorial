@@ -260,9 +260,7 @@ def main() -> None:
     print("-" * 80)
     for r in results:
         answer_short = r["answer"][:40] + "..." if len(r["answer"]) > 40 else r["answer"]
-        print(
-            f"{r['task_index']:<6} {r['tool_calls']:<12} {r['total_steps']:<8} {r['latency']:<10.3f} {answer_short}"
-        )
+        print(f"{r['task_index']:<6} {r['tool_calls']:<12} {r['total_steps']:<8} {r['latency']:<10.3f} {answer_short}")
 
     # Step 4: Analyse traces
     analyse_traces()

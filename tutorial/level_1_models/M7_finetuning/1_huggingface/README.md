@@ -10,7 +10,7 @@ This lesson walks through fine-tuning a small language model (distilgpt2, ~82M p
 ## Prerequisites
 
 - Completed: L1-M3.1 (Models and Flavors), L1-M2.1 (Autologging)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - Internet connection (first run downloads distilgpt2, ~350 MB)
 
 ## Concepts
@@ -167,7 +167,7 @@ Done! View results in the MLflow UI:
 ============================================================
 ```
 
-In the MLflow UI at http://127.0.0.1:5555, you will see:
+In the MLflow UI at <http://127.0.0.1:5555>, you will see:
 - Training metrics (loss, learning rate) plotted over steps under the autolog run
 - The fine-tuned model artifact with tokenizer under the model logging run
 - A comparison run with tags indicating base vs fine-tuned evaluation

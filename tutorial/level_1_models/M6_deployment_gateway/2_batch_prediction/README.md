@@ -11,7 +11,7 @@ Batch LLM inference lets you score a collection of prompts in one pipeline run r
 
 - Completed: L1-8.1 (Model Serving Basics)
 - Completed: L2-8.1 (Serving Deep Dive)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts

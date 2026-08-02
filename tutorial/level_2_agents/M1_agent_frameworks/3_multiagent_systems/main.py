@@ -112,8 +112,7 @@ def writer_node(state: PipelineState) -> dict:
                 ),
                 (
                     "human",
-                    "Original draft:\n{draft}\n\nReviewer feedback:\n{feedback}\n\n"
-                    "Please revise the draft.",
+                    "Original draft:\n{draft}\n\nReviewer feedback:\n{feedback}\n\nPlease revise the draft.",
                 ),
             ]
         )
@@ -338,10 +337,7 @@ def log_pipeline_metrics(results: list[dict]) -> None:
             }
         )
 
-        print(
-            f"\n  Averages: duration={avg_duration:.1f}s, "
-            f"revisions={avg_revisions:.1f}, pass_rate={pass_rate:.0%}"
-        )
+        print(f"\n  Averages: duration={avg_duration:.1f}s, revisions={avg_revisions:.1f}, pass_rate={pass_rate:.0%}")
 
     print("  Metrics logged to MLflow run.")
 

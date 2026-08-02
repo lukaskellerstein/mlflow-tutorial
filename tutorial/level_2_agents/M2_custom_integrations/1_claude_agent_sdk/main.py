@@ -38,10 +38,7 @@ from mlflow.entities import Trace
 
 SERVER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "server.py")
 
-SYSTEM_PROMPT = (
-    "You are a helpful assistant. Use available tools when they help "
-    "answer the question. Be concise."
-)
+SYSTEM_PROMPT = "You are a helpful assistant. Use available tools when they help answer the question. Be concise."
 
 
 def build_options(max_turns: int = 3) -> ClaudeAgentOptions:
@@ -217,9 +214,7 @@ def analyze_traces() -> None:
             print(f"    - {span.name} ({span_dur:.0f}ms)")
 
     if traces:
-        durations = [
-            t.info.execution_time_ms for t in traces if t.info.execution_time_ms is not None
-        ]
+        durations = [t.info.execution_time_ms for t in traces if t.info.execution_time_ms is not None]
         if durations:
             print(f"\n  Average trace duration: {sum(durations) / len(durations):.0f}ms")
             print(f"  Total traces: {len(traces)}")

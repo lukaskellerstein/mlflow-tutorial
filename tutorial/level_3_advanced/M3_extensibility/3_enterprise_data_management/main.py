@@ -89,9 +89,7 @@ class ModelGovernance:
         checks_retry = {"load_test": True, "security_scan": True, "stakeholder_approval": True}
         self._promote(name, result.version, "staging", "champion", checks_retry)
 
-    def _promote(
-        self, name: str, version: str, from_stage: str, to_stage: str, checks: dict[str, bool]
-    ) -> None:
+    def _promote(self, name: str, version: str, from_stage: str, to_stage: str, checks: dict[str, bool]) -> None:
         failed = [c for c, ok in checks.items() if not ok]
         if failed:
             print(f"  REJECTED {from_stage}->{to_stage}: failed {failed}")
@@ -119,12 +117,8 @@ def part2_governance(client: MlflowClient) -> str:
             def predict(self, context, model_input, params=None):
                 return ["prediction"] * len(model_input)
 
-        mlflow.pyfunc.log_model(
-            name="model", python_model=SimpleModel(), input_example={"text": "hello"}
-        )
-        governance.register_and_promote(
-            f"runs:/{run_id}/model", "enterprise-demo-model", "alice@co.com"
-        )
+        mlflow.pyfunc.log_model(name="model", python_model=SimpleModel(), input_example={"text": "hello"})
+        governance.register_and_promote(f"runs:/{run_id}/model", "enterprise-demo-model", "alice@co.com")
     print()
     return run_id
 
@@ -170,11 +164,7 @@ def part3_cost_tracking() -> None:
             print(f"  {op:<20s} | {model:<25s} | ${cost:.6f}")
 
         df = pd.DataFrame(records)
-        summary = (
-            df.groupby("model")
-            .agg(calls=("model", "count"), total_cost=("cost_usd", "sum"))
-            .reset_index()
-        )
+        summary = df.groupby("model").agg(calls=("model", "count"), total_cost=("cost_usd", "sum")).reset_index()
         print(f"\n  Total estimated cost: ${df['cost_usd'].sum():.6f}")
         mlflow.log_metric("cost/total_usd", df["cost_usd"].sum())
         mlflow.log_table(summary, artifact_file="cost_report.json")
@@ -308,13 +298,8 @@ def part5_quality_and_drift() -> None:
         passed = missing == 0 and dupes == 0 and empty_answers == 0
         with mlflow.start_run(run_name=f"quality_{label}"):
             mlflow.set_tag("quality.all_passed", str(passed))
-            mlflow.log_metrics(
-                {"missing_cells": missing, "duplicates": dupes, "empty_answers": empty_answers}
-            )
-        print(
-            f"    {label}: {'PASS' if passed else 'FAIL'} "
-            f"(missing={missing}, dupes={dupes}, empty={empty_answers})"
-        )
+            mlflow.log_metrics({"missing_cells": missing, "duplicates": dupes, "empty_answers": empty_answers})
+        print(f"    {label}: {'PASS' if passed else 'FAIL'} (missing={missing}, dupes={dupes}, empty={empty_answers})")
 
     baseline = pd.DataFrame({"category": ["science", "biology", "math", "science"]})
     current = pd.DataFrame({"category": ["science", "physics", "math", "ai", "biology"]})

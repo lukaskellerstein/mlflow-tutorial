@@ -66,9 +66,7 @@ def build_prompt(question: str) -> str:
     return f"## Question\n{question}"
 
 
-def run_instance(
-    agent, question: str, expected: str, level: int, task_id: str, config_name: str
-) -> dict:
+def run_instance(agent, question: str, expected: str, level: int, task_id: str, config_name: str) -> dict:
     """Run the agent on one GAIA instance and log to MLflow."""
     with mlflow.start_run(run_name=f"{config_name}_{task_id[:8]}", nested=True):
         mlflow.log_params(
@@ -80,9 +78,7 @@ def run_instance(
         )
         start = time.perf_counter()
         try:
-            result = agent.invoke(
-                {"messages": [{"role": "user", "content": build_prompt(question)}]}
-            )
+            result = agent.invoke({"messages": [{"role": "user", "content": build_prompt(question)}]})
             latency = time.perf_counter() - start
             answer = result["messages"][-1].content
             answer_short = answer.strip().split("\n")[-1].strip()

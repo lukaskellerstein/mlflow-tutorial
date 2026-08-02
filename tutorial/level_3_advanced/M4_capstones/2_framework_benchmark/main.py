@@ -133,9 +133,7 @@ def build_react_agent() -> Callable[[str], dict]:
         messages = result["messages"]
         answer = messages[-1].content if messages else ""
         tc = sum(1 for m in messages if m.type == "tool")
-        tokens = sum(
-            len(m.content.split()) for m in messages if hasattr(m, "content") and m.content
-        )
+        tokens = sum(len(m.content.split()) for m in messages if hasattr(m, "content") and m.content)
         return {
             "answer": answer,
             "latency_s": elapsed,
@@ -348,9 +346,7 @@ class BenchmarkSuite:
                                     "tokens_est": 0,
                                 }
 
-                            correctness = self._score_correctness(
-                                result["answer"], tc.expected_keyword
-                            )
+                            correctness = self._score_correctness(result["answer"], tc.expected_keyword)
                             tool_score = self._score_tool_usage(result["tool_calls"], tc.needs_tool)
 
                             row = {
@@ -423,9 +419,7 @@ class BenchmarkSuite:
             )
             .round(3),
         )
-        self.summary_df["quality"] = (
-            (self.summary_df["correctness"] + self.summary_df["tool_usage"]) / 2
-        ).round(3)
+        self.summary_df["quality"] = ((self.summary_df["correctness"] + self.summary_df["tool_usage"]) / 2).round(3)
         self.summary_df["token_efficiency"] = (
             self.summary_df["quality"] / self.summary_df["tokens_est"].clip(lower=1) * 100
         ).round(3)
@@ -474,8 +468,7 @@ class BenchmarkSuite:
         lines.append("  Comparison Table: Agent x Metric")
         lines.append("  " + "-" * 66)
         header = (
-            f"  {'Agent':<22} {'Correct':>8} {'ToolUse':>8} "
-            f"{'Latency':>8} {'Tokens':>7} {'Quality':>8} {'Effic.':>8}"
+            f"  {'Agent':<22} {'Correct':>8} {'ToolUse':>8} {'Latency':>8} {'Tokens':>7} {'Quality':>8} {'Effic.':>8}"
         )
         lines.append(header)
         lines.append("  " + "-" * 66)
@@ -498,16 +491,10 @@ class BenchmarkSuite:
             fastest = self.summary_df["latency_s"].idxmin()
             most_eff = self.summary_df["token_efficiency"].idxmax()
 
+            lines.append(f"  Best quality:     {best_q} (score={self.summary_df.loc[best_q, 'quality']:.3f})")
+            lines.append(f"  Fastest:          {fastest} (latency={self.summary_df.loc[fastest, 'latency_s']:.3f}s)")
             lines.append(
-                f"  Best quality:     {best_q} (score={self.summary_df.loc[best_q, 'quality']:.3f})"
-            )
-            lines.append(
-                f"  Fastest:          {fastest} "
-                f"(latency={self.summary_df.loc[fastest, 'latency_s']:.3f}s)"
-            )
-            lines.append(
-                f"  Most efficient:   {most_eff} "
-                f"(efficiency={self.summary_df.loc[most_eff, 'token_efficiency']:.3f})"
+                f"  Most efficient:   {most_eff} (efficiency={self.summary_df.loc[most_eff, 'token_efficiency']:.3f})"
             )
 
         # --- Pareto frontier ---
@@ -539,17 +526,11 @@ class BenchmarkSuite:
             for other in self.summary_df.index:
                 if other == arch:
                     continue
-                other_better_quality = (
-                    self.summary_df.loc[other, "quality"] >= self.summary_df.loc[arch, "quality"]
-                )
-                other_lower_latency = (
-                    self.summary_df.loc[other, "latency_s"]
-                    <= self.summary_df.loc[arch, "latency_s"]
-                )
+                other_better_quality = self.summary_df.loc[other, "quality"] >= self.summary_df.loc[arch, "quality"]
+                other_lower_latency = self.summary_df.loc[other, "latency_s"] <= self.summary_df.loc[arch, "latency_s"]
                 strictly_better = (
                     self.summary_df.loc[other, "quality"] > self.summary_df.loc[arch, "quality"]
-                    or self.summary_df.loc[other, "latency_s"]
-                    < self.summary_df.loc[arch, "latency_s"]
+                    or self.summary_df.loc[other, "latency_s"] < self.summary_df.loc[arch, "latency_s"]
                 )
                 if other_better_quality and other_lower_latency and strictly_better:
                     dominated = True
@@ -569,12 +550,10 @@ class BenchmarkSuite:
         most_eff = self.summary_df["token_efficiency"].idxmax()
 
         recs.append(
-            f"  - Latency-sensitive apps: use '{fastest}' "
-            f"({self.summary_df.loc[fastest, 'latency_s']:.2f}s avg)"
+            f"  - Latency-sensitive apps: use '{fastest}' ({self.summary_df.loc[fastest, 'latency_s']:.2f}s avg)"
         )
         recs.append(
-            f"  - Quality-critical apps:  use '{best_q}' "
-            f"({self.summary_df.loc[best_q, 'quality']:.3f} quality)"
+            f"  - Quality-critical apps:  use '{best_q}' ({self.summary_df.loc[best_q, 'quality']:.3f} quality)"
         )
         recs.append(
             f"  - Cost-constrained apps:  use '{most_eff}' "
@@ -587,10 +566,7 @@ class BenchmarkSuite:
             cat_df = df[df["category"] == cat]
             cat_agg = cat_df.groupby("agent")["correctness"].mean()
             best_for_cat = cat_agg.idxmax()
-            recs.append(
-                f"  - '{cat}' tasks:  best agent is '{best_for_cat}' "
-                f"({cat_agg[best_for_cat]:.1%} correct)"
-            )
+            recs.append(f"  - '{cat}' tasks:  best agent is '{best_for_cat}' ({cat_agg[best_for_cat]:.1%} correct)")
 
         return recs
 

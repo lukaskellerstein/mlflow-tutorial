@@ -164,7 +164,5 @@ def build_prompt(instance: dict) -> str:
     )
     if hints.strip():
         prompt += f"\n## Hints\n{hints}\n"
-    prompt += (
-        "\nExplore the codebase to understand the issue, then edit the source files to fix the bug."
-    )
+    prompt += "\nExplore the codebase to understand the issue, then edit the source files to fix the bug."
     return prompt

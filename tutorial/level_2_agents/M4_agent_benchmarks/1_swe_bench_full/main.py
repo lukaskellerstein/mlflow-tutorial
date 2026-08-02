@@ -32,9 +32,7 @@ def select_instances(ds, repo: str, count: int) -> list[dict]:
 
 def save_text_artifact(text: str, filename: str) -> None:
     """Log a text string as an MLflow artifact."""
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".txt", prefix=filename + "_", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", prefix=filename + "_", delete=False) as f:
         f.write(text)
         mlflow.log_artifact(f.name)
 
@@ -103,9 +101,7 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
                 return _error_result(iid, repo, config_name, latency, f"agent error: {e}")
 
             # -- Step D: Capture diff and run tests ----------------------------
-            _, agent_diff, _ = harness.exec_in_container(
-                container_id, "cd /workspace/repo && git diff"
-            )
+            _, agent_diff, _ = harness.exec_in_container(container_id, "cd /workspace/repo && git diff")
             save_text_artifact(str(agent_output), "agent_output")
             save_text_artifact(agent_diff or "(no changes)", "agent_diff")
             save_text_artifact(instance.get("patch", ""), "gold_patch")
@@ -180,9 +176,7 @@ def run_instance(temperature: float, instance: dict, config_name: str) -> dict:
             harness.cleanup_container(container_id)
             return _error_result(iid, repo, config_name, latency, str(e))
 
-    return _error_result(
-        iid, repo, config_name, time.perf_counter() - start, "run did not complete"
-    )
+    return _error_result(iid, repo, config_name, time.perf_counter() - start, "run did not complete")
 
 
 def _result(iid: str, repo: str, config: str, latency: float, status: str, **kwargs) -> dict:
@@ -237,9 +231,7 @@ def run_config(name: str, temperature: float, instances: list[dict]) -> list[dic
         )
 
         csv_path = f"/tmp/swe_bench_full_{name}.csv"
-        df.drop(columns=["agent_patch", "test_output"], errors="ignore").to_csv(
-            csv_path, index=False
-        )
+        df.drop(columns=["agent_patch", "test_output"], errors="ignore").to_csv(csv_path, index=False)
         mlflow.log_artifact(csv_path)
 
     return results
@@ -334,9 +326,9 @@ def main() -> None:
             all_results.extend(run_config(name, temp, instances))
 
         combined_csv = "/tmp/swe_bench_full_combined.csv"
-        pd.DataFrame(all_results).drop(
-            columns=["agent_patch", "test_output"], errors="ignore"
-        ).to_csv(combined_csv, index=False)
+        pd.DataFrame(all_results).drop(columns=["agent_patch", "test_output"], errors="ignore").to_csv(
+            combined_csv, index=False
+        )
         mlflow.log_artifact(combined_csv)
 
     print_summary(all_results)

@@ -66,9 +66,7 @@ def process_simple(state: SimpleState) -> dict[str, Any]:
         [
             {
                 "role": "user",
-                "content": (
-                    f"Give a brief, direct answer in 1-2 sentences.\n\nQuestion: {state['input_text']}"
-                ),
+                "content": (f"Give a brief, direct answer in 1-2 sentences.\n\nQuestion: {state['input_text']}"),
             }
         ]
     )
@@ -82,8 +80,7 @@ def process_complex(state: SimpleState) -> dict[str, Any]:
             {
                 "role": "user",
                 "content": (
-                    f"Provide a thorough answer. Use a numbered list if appropriate.\n\n"
-                    f"Request: {state['input_text']}"
+                    f"Provide a thorough answer. Use a numbered list if appropriate.\n\nRequest: {state['input_text']}"
                 ),
             }
         ]
@@ -203,9 +200,7 @@ def quality_check(state: ResearchState) -> dict[str, Any]:
     )
     passed = "PASS" in str(response.content).upper()
     return {
-        "messages": [
-            {"role": "assistant", "content": f"[QualityCheck] {'PASS' if passed else 'FAIL'}"}
-        ],
+        "messages": [{"role": "assistant", "content": f"[QualityCheck] {'PASS' if passed else 'FAIL'}"}],
         "current_step": "quality_check",
         "quality_pass": passed,
         "retry_count": state.get("retry_count", 0) + (0 if passed else 1),
@@ -242,9 +237,7 @@ def analyze_trace(trace: Trace) -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
     for span in spans:
         dur = (
-            round((span.end_time_ns - span.start_time_ns) / 1e6, 1)
-            if span.end_time_ns and span.start_time_ns
-            else None
+            round((span.end_time_ns - span.start_time_ns) / 1e6, 1) if span.end_time_ns and span.start_time_ns else None
         )
         entries.append({"name": span.name, "duration_ms": dur})
     return {
@@ -355,8 +348,7 @@ def main() -> None:
         if all_stats:
             total_spans = sum(s["total_spans"] for s in all_stats)
             total_retries = sum(
-                max(0, sum(1 for n in s["names"] if "search_knowledge" in n.lower()) - 1)
-                for s in all_stats
+                max(0, sum(1 for n in s["names"] if "search_knowledge" in n.lower()) - 1) for s in all_stats
             )
             durations = [s["total_duration_ms"] for s in all_stats if s["total_duration_ms"]]
             avg_dur = sum(durations) / len(durations) if durations else 0

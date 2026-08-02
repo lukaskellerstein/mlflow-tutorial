@@ -67,9 +67,7 @@ class FeedbackCollector:
         "Decent but missing context.",
     ]
 
-    def simulate_feedback(
-        self, trace_id: str, question: str, response: str, *, seed: int = 0
-    ) -> UserFeedback:
+    def simulate_feedback(self, trace_id: str, question: str, response: str, *, seed: int = 0) -> UserFeedback:
         """Generate simulated feedback using a seeded RNG for reproducibility."""
         rng = random.Random(seed)
 
@@ -273,9 +271,7 @@ def run_iteration(
             if trace_id:
                 # Seed combines iteration and index for reproducible but
                 # varied feedback across iterations
-                fb = collector.simulate_feedback(
-                    trace_id, question, response, seed=iteration * 100 + idx
-                )
+                fb = collector.simulate_feedback(trace_id, question, response, seed=iteration * 100 + idx)
                 log_feedback_to_mlflow(fb)
                 feedbacks.append(fb)
             else:
@@ -325,17 +321,13 @@ def main() -> None:
     with mlflow.start_run(run_name="feedback_loop_experiment"):
         # --- Iteration 1: baseline prompt ------------------------------------
         print("\n--- Iteration 1: Baseline prompt (v1) ---")
-        fb1, analysis1 = run_iteration(
-            llm, collector, PROMPT_V1, iteration=1, run_name="iteration_1_baseline"
-        )
+        fb1, analysis1 = run_iteration(llm, collector, PROMPT_V1, iteration=1, run_name="iteration_1_baseline")
         print_analysis(analysis1, "Iteration 1 -- Baseline")
 
         # --- Iteration 2: improved prompt based on feedback ------------------
         print("\n--- Iteration 2: Improved prompt (v2) ---")
         print("  (Prompt improved based on feedback: more detail, examples, steps)")
-        fb2, analysis2 = run_iteration(
-            llm, collector, PROMPT_V2, iteration=2, run_name="iteration_2_improved"
-        )
+        fb2, analysis2 = run_iteration(llm, collector, PROMPT_V2, iteration=2, run_name="iteration_2_improved")
         print_analysis(analysis2, "Iteration 2 -- Improved")
 
         # --- Cross-iteration comparison --------------------------------------
@@ -344,15 +336,11 @@ def main() -> None:
         print("=" * 60)
         delta_rating = analysis2["avg_rating"] - analysis1["avg_rating"]
         delta_sat = analysis2["satisfaction_rate"] - analysis1["satisfaction_rate"]
-        print(
-            f"  Avg rating:        {analysis1['avg_rating']} -> {analysis2['avg_rating']}  ({delta_rating:+.2f})"
-        )
+        print(f"  Avg rating:        {analysis1['avg_rating']} -> {analysis2['avg_rating']}  ({delta_rating:+.2f})")
         print(
             f"  Satisfaction rate:  {analysis1['satisfaction_rate']:.0%} -> {analysis2['satisfaction_rate']:.0%}  ({delta_sat:+.0%})"
         )
-        print(
-            f"  Low-rated:         {analysis1['low_rated_count']} -> {analysis2['low_rated_count']}"
-        )
+        print(f"  Low-rated:         {analysis1['low_rated_count']} -> {analysis2['low_rated_count']}")
 
         mlflow.log_metrics(
             {
@@ -384,9 +372,7 @@ def main() -> None:
 
         # Log summary table
         mlflow.log_table(
-            data=cast(
-                pd.DataFrame, df[["question", "rating", "thumbs_up", "comment", "iteration"]]
-            ),
+            data=cast(pd.DataFrame, df[["question", "rating", "thumbs_up", "comment", "iteration"]]),
             artifact_file="feedback/summary_table.json",
         )
 

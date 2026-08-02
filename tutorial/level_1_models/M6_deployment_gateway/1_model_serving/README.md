@@ -10,7 +10,7 @@ MLflow can serve any logged model as a REST API with a single CLI command. This 
 ## Prerequisites
 
 - Completed: L1-M3 (Models and Flavors, Model Registry)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts
@@ -46,11 +46,13 @@ Client (curl / app)       MLflow Serving Process
 The `/invocations` endpoint accepts JSON in two formats:
 
 **dataframe_split** (recommended):
+
 ```json
 {"dataframe_split": {"columns": ["question"], "data": [["What is MLflow?"]]}}
 ```
 
 **instances**:
+
 ```json
 {"instances": [{"question": "What is MLflow?"}]}
 ```
@@ -113,6 +115,7 @@ mlflow models serve -m "models:/L1-llm-serving-demo@champion" --port 5001 --no-c
 ```
 
 For Docker:
+
 ```bash
 mlflow models build-docker --model-uri models:/L1-llm-serving-demo@champion --name mlflow-llm-server
 podman run -p 5001:8080 --add-host=host.containers.internal:host-gateway mlflow-llm-server

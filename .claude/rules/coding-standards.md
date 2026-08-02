@@ -97,6 +97,7 @@ embeddings = OpenAIEmbeddings(
 ```
 
 ### Which model to use where
+
 - **Level 1 lessons**: use `google/gemma-4-e4b` (fast, keeps lessons snappy)
 - **Level 2/3 agent and evaluation lessons**: use `google/gemma-4-26b-a4b` (better reasoning)
 - **LLM-as-judge / evaluation judges**: use `google/gemma-4-26b-a4b` (judge quality matters)

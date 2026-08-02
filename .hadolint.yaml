@@ -6,8 +6,19 @@
 # earn them, one at a time, each with the reason.
 
 ignored:
-  # DL3008 — pin apt versions. Reintroduce if this repo ships reproducible
-  # images; drop this line to turn the rule back on.
-  - DL3008
+  # The pin-versions family (apt / pip / npm / apk). One rationale, four rules:
+  # unpinned installs only matter if this repo ships reproducible images —
+  # drop the lines to turn them back on when it does. DL3008 was the first,
+  # ignored 2026-08-01; the siblings joined 2026-08-02 because they fire on the
+  # identical pattern and were only absent for lack of a pip/apk Dockerfile.
+  - DL3008 # apt-get install <pkg>=<ver>
+  - DL3013 # pip install <pkg>==<ver>
+  - DL3016 # npm install <pkg>@<ver>
+  - DL3018 # apk add <pkg>=<ver>
+
+  # DL3007 — no :latest tag. Tracking ghcr.io/mlflow/mlflow:latest is the
+  # documented project choice (CLAUDE.md): the tutorial follows current MLflow
+  # 3.x, nothing here ships to production.
+  - DL3007
 
 failure-threshold: warning

@@ -88,8 +88,7 @@ BENCHMARK_DATASET = [
         "category": "complex_complaint",
         "difficulty": 3,
         "input": (
-            "I received the wrong item for order #67890. The replacement "
-            "was also wrong. Please fix this immediately."
+            "I received the wrong item for order #67890. The replacement was also wrong. Please fix this immediately."
         ),
         "expected_answer": "escalated",
         "expected_tools": ["check_order", "escalate_ticket"],
@@ -187,8 +186,7 @@ def run_task(agent, task: dict, config_name: str) -> dict:
             )
             mlflow.set_tag("status", "success")
             print(
-                f"  [{task['task_id']}] D{task['difficulty']} "
-                f"correct={scores['answer_correct']} latency={latency:.1f}s"
+                f"  [{task['task_id']}] D{task['difficulty']} correct={scores['answer_correct']} latency={latency:.1f}s"
             )
             record = {
                 **task,

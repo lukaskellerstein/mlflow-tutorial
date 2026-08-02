@@ -311,11 +311,7 @@ def run_part3_error_tracing(llm: ChatOpenAI) -> list[TraceRecord]:
     rec = traced_llm_call(bad_llm, "This should fail", meta)
     records.append(rec)
     print(f"    Status: ERROR | Type: {rec.error_type}")
-    print(
-        f"    Error: {rec.error[:80]}..."
-        if rec.error and len(rec.error) > 80
-        else f"    Error: {rec.error}"
-    )
+    print(f"    Error: {rec.error[:80]}..." if rec.error and len(rec.error) > 80 else f"    Error: {rec.error}")
 
     # Error aggregation
     error_records = [r for r in records if r.error]

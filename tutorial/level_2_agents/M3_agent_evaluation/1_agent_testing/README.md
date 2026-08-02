@@ -11,7 +11,7 @@ Build a production-quality testing framework for LangGraph agents. You will crea
 
 - Completed: L2-5.2 (LangGraph Agent Observability)
 - Completed: L2-3.1 (Custom Metrics)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts

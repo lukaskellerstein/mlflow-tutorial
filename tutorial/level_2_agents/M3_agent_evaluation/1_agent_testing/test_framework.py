@@ -188,11 +188,7 @@ def print_summary(results: list[TestResult], suite: list[TestCase]) -> None:
     print(f"  Average duration:      {avg_dur:.2f}s")
 
     for diff in ("easy", "medium", "hard"):
-        subset = [
-            r
-            for r in results
-            if any(tc.difficulty == diff and tc.name == r.test_name for tc in suite)
-        ]
+        subset = [r for r in results if any(tc.difficulty == diff and tc.name == r.test_name for tc in suite)]
         if subset:
             p = sum(1 for r in subset if r.passed)
             print(f"  {diff.capitalize():8s} pass rate:   {p}/{len(subset)}")
@@ -205,9 +201,7 @@ def print_summary(results: list[TestResult], suite: list[TestCase]) -> None:
             if not f.output_correct:
                 reason.append("output mismatch")
             if not f.tool_usage_correct:
-                reason.append(
-                    f"tool mismatch (called={f.tools_called}, expected={f.expected_tools})"
-                )
+                reason.append(f"tool mismatch (called={f.tools_called}, expected={f.expected_tools})")
             if f.error:
                 reason.append(f"error: {f.error}")
             print(f"    - {f.test_name}: {'; '.join(reason)}")

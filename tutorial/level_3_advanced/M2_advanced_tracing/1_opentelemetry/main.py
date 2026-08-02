@@ -50,9 +50,7 @@ class PrintingSpanProcessor(SimpleSpanProcessor):
     def on_end(self, span) -> None:
         self.ended += 1
         dur_ms = ((span.end_time or 0) - (span.start_time or 0)) / 1_000_000
-        print(
-            f"    [Processor] ENDED:   {span.name!r} ({dur_ms:.1f}ms, {span.status.status_code.name})"
-        )
+        print(f"    [Processor] ENDED:   {span.name!r} ({dur_ms:.1f}ms, {span.status.status_code.name})")
 
 
 def _remove_processor(tp, target) -> None:
@@ -83,9 +81,7 @@ def part1_otel_foundation() -> None:
     tp = mlflow_provider.get()
     print(f"\n  TracerProvider type: {type(tp).__name__}")
     print(f"  Is OTel SDK TracerProvider? {isinstance(tp, TracerProvider)}")
-    if hasattr(tp, "_active_span_processor") and hasattr(
-        tp._active_span_processor, "_span_processors"
-    ):
+    if hasattr(tp, "_active_span_processor") and hasattr(tp._active_span_processor, "_span_processors"):
         for i, sp in enumerate(tp._active_span_processor._span_processors):
             print(f"  Registered processor [{i}]: {type(sp).__name__}")
     print()

@@ -198,10 +198,7 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
         print("  " + "-" * 60)
         for _, row in token_df.iterrows():
             tid = row["trace_id"][:28] + ".."
-            print(
-                f"  {tid:<30} {row['input_tokens']:>8} "
-                f"{row['output_tokens']:>8} {row['total_tokens']:>8}"
-            )
+            print(f"  {tid:<30} {row['input_tokens']:>8} {row['output_tokens']:>8} {row['total_tokens']:>8}")
 
         total_all = token_df["total_tokens"].sum()
         print(f"\n  Total tokens across all traces: {total_all}")
@@ -220,9 +217,7 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
 # ── Part 4: Build and log a summary analysis report ───────────────────
 
 
-def build_analysis_report(
-    traces: list, span_df: pd.DataFrame, token_df: pd.DataFrame
-) -> pd.DataFrame:
+def build_analysis_report(traces: list, span_df: pd.DataFrame, token_df: pd.DataFrame) -> pd.DataFrame:
     """Create a per-trace summary and log it as an MLflow artifact."""
     print("=" * 60)
     print("Part 4: Analysis Report")
@@ -249,9 +244,7 @@ def build_analysis_report(
 
         # Get token info for this trace
         token_row = token_df[token_df["trace_id"] == trace_id]
-        total_tokens = (
-            int(cast(pd.Series, token_row["total_tokens"]).iloc[0]) if not token_row.empty else 0
-        )
+        total_tokens = int(cast(pd.Series, token_row["total_tokens"]).iloc[0]) if not token_row.empty else 0
 
         report_rows.append(
             {

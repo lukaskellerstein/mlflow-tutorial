@@ -109,9 +109,7 @@ def part2_finetune(model, tokenizer, dataset):
         report_to="none",
         use_cpu=True,
     )
-    print(
-        f"  Config: {args.num_train_epochs} epochs, bs={args.per_device_train_batch_size}, lr={args.learning_rate}"
-    )
+    print(f"  Config: {args.num_train_epochs} epochs, bs={args.per_device_train_batch_size}, lr={args.learning_rate}")
     trainer = Trainer(model=model, args=args, train_dataset=dataset, data_collator=collator)
     print("  Training started...")
     trainer.train()

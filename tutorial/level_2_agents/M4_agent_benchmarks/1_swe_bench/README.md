@@ -11,7 +11,7 @@ This lesson builds an end-to-end evaluation pipeline that runs a LangChain/LangG
 
 - Completed: L2-M1 Agent Frameworks
 - Completed: L2-M3 Agent Evaluation
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` loaded
 - Internet connection (first run downloads the SWE-Bench dataset from Hugging Face)
 
@@ -131,7 +131,7 @@ After both configurations finish, aggregate metrics are computed and logged. A s
 
 ### Step 6: Review in MLflow UI
 
-Open http://127.0.0.1:5555, navigate to the `L2/M4_agent_benchmarks/1_swe_bench` experiment. You will see:
+Open <http://127.0.0.1:5555>, navigate to the `L2/M4_agent_benchmarks/1_swe_bench` experiment. You will see:
 
 - A parent run `swe_bench_eval` containing all metadata
 - Nested runs `config_precise` and `config_creative` with aggregate metrics

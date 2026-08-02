@@ -11,7 +11,7 @@ Established benchmarks like SWE-Bench and GAIA test general capabilities, but yo
 
 - Completed: L2-M4.1 (SWE-Bench) and L2-M4.2 (GAIA) for benchmark harness patterns
 - Completed: L2-M1.1 (LangChain Agents) for ReAct agent basics
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` loaded
 
 ## Concepts

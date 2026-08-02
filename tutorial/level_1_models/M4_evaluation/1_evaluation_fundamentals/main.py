@@ -294,14 +294,10 @@ def part4_combined(judge_results: list[dict]) -> None:
     print(f"  {'-' * 35} {'-' * 7} {'-' * 9} {'-' * 8}")
     for r in all_rows:
         q = r["question"][:33] + (".." if len(r["question"]) > 33 else "")
-        print(
-            f"  {q:<35s} {r['judge_score']:>7.2f} "
-            f"{r['keyword_overlap']:>9.3f} {r['custom_composite']:>8.3f}"
-        )
+        print(f"  {q:<35s} {r['judge_score']:>7.2f} {r['keyword_overlap']:>9.3f} {r['custom_composite']:>8.3f}")
 
     avgs = {
-        k: sum(r[k] for r in all_rows) / len(all_rows)
-        for k in ["judge_score", "keyword_overlap", "custom_composite"]
+        k: sum(r[k] for r in all_rows) / len(all_rows) for k in ["judge_score", "keyword_overlap", "custom_composite"]
     }
     print(
         f"  {'AVERAGE':<35s} {avgs['judge_score']:>7.2f} "

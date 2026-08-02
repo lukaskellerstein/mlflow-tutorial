@@ -11,7 +11,7 @@ This lesson builds the **real** SWE-Bench evaluation pipeline. Unlike the simpli
 
 - Completed: L2-M1 Agent Frameworks
 - Completed: L2-M3 Agent Evaluation
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` loaded
 - **Podman or Docker installed and running**
 - Internet connection (downloads dataset and clones repos)

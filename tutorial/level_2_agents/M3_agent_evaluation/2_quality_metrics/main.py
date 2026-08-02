@@ -123,12 +123,7 @@ def build_agent(temperature: float = 0.7) -> Any:
 def run_agent(agent: Any, query: str) -> dict[str, Any]:
     """Run agent, extract final answer and tool calls."""
     msgs = agent.invoke({"messages": [{"role": "user", "content": query}]})["messages"]
-    tools_used = [
-        tc["name"]
-        for m in msgs
-        if getattr(m, "type", "") == "ai" and m.tool_calls
-        for tc in m.tool_calls
-    ]
+    tools_used = [tc["name"] for m in msgs if getattr(m, "type", "") == "ai" and m.tool_calls for tc in m.tool_calls]
     answer = next(
         (
             m.content
@@ -221,15 +216,11 @@ def tool_selection_scorer(outputs: dict, expectations: dict) -> Feedback:
     if not expected and not used:
         return Feedback(value=1.0, rationale="No tools expected or used.", source=src)
     if not expected or not used:
-        return Feedback(
-            value=0.0, rationale=f"Used={list(used)}, expected={list(expected)}.", source=src
-        )
+        return Feedback(value=0.0, rationale=f"Used={list(used)}, expected={list(expected)}.", source=src)
     prec = len(used & expected) / len(used)
     rec = len(used & expected) / len(expected)
     f1 = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
-    return Feedback(
-        value=round(f1, 3), rationale=f"P={prec:.2f}, R={rec:.2f}, F1={f1:.3f}", source=src
-    )
+    return Feedback(value=round(f1, 3), rationale=f"P={prec:.2f}, R={rec:.2f}, F1={f1:.3f}", source=src)
 
 
 JUDGE_PROMPT = """\

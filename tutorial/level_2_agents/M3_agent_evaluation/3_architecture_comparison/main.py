@@ -271,9 +271,7 @@ ARCHITECTURES: list[tuple[str, Callable[[str], dict]]] = [
 ]
 
 
-def evaluate_architecture(
-    name: str, run_fn: Callable[[str], dict], dataset: list[dict]
-) -> list[dict]:
+def evaluate_architecture(name: str, run_fn: Callable[[str], dict], dataset: list[dict]) -> list[dict]:
     """Run an architecture on every test case and return per-case metrics."""
     rows = []
     for i, case in enumerate(dataset, 1):
@@ -416,14 +414,10 @@ def main() -> None:
         print(f"\n{'=' * 70}")
         print("  COST-QUALITY TRADEOFF ANALYSIS")
         print(f"{'=' * 70}")
-        print(
-            f"\n  Best quality:       {best_quality} "
-            f"(score={summary.loc[best_quality, 'quality']:.3f})"
-        )
+        print(f"\n  Best quality:       {best_quality} (score={summary.loc[best_quality, 'quality']:.3f})")
         print(f"  Fastest:            {fastest} (latency={summary.loc[fastest, 'latency_s']:.3f}s)")
         print(
-            f"  Most efficient:     {most_efficient} "
-            f"(efficiency={summary.loc[most_efficient, 'token_efficiency']:.3f})"
+            f"  Most efficient:     {most_efficient} (efficiency={summary.loc[most_efficient, 'token_efficiency']:.3f})"
         )
 
         # Pareto frontier: architectures not dominated on both quality and latency

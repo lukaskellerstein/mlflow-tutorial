@@ -152,10 +152,7 @@ class SimpleRAG:
         """Return top-k documents by TF-IDF cosine similarity."""
         query_tokens = _tokenize(query)
         query_vec = _tfidf_vector(query_tokens, self._idf)
-        scored = [
-            (self.docs[i], _cosine_similarity(query_vec, dv))
-            for i, dv in enumerate(self._doc_vectors)
-        ]
+        scored = [(self.docs[i], _cosine_similarity(query_vec, dv)) for i, dv in enumerate(self._doc_vectors)]
         scored.sort(key=lambda x: x[1], reverse=True)
         return [doc for doc, _ in scored[: self.top_k]]
 
@@ -183,8 +180,7 @@ EVAL_DATASET = [
     {
         "question": "What are Python decorators?",
         "expected_answer": (
-            "Decorators are functions that modify the behavior of other functions "
-            "using the @decorator syntax."
+            "Decorators are functions that modify the behavior of other functions using the @decorator syntax."
         ),
         "expected_doc_ids": ["doc6"],
     },

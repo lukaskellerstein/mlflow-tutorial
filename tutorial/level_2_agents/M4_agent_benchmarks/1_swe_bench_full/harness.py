@@ -84,9 +84,7 @@ def start_container(instance_id: str) -> str:
     return name
 
 
-def exec_in_container(
-    container_id: str, cmd: str, timeout: int = CONTAINER_TIMEOUT
-) -> tuple[int, str, str]:
+def exec_in_container(container_id: str, cmd: str, timeout: int = CONTAINER_TIMEOUT) -> tuple[int, str, str]:
     """Execute a command inside a container. Returns (returncode, stdout, stderr)."""
     try:
         result = subprocess.run(

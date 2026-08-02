@@ -218,8 +218,7 @@ PROMPT_VARIANTS = [
     ),
     (
         "concise_instruction",
-        "Answer the following geography question in as few words as possible. "
-        "Give only the answer, no explanation.",
+        "Answer the following geography question in as few words as possible. Give only the answer, no explanation.",
     ),
     (
         "role_assignment",
@@ -286,10 +285,7 @@ def main() -> None:
         # Use the best instruction variant so far as the base
         best_so_far = max(all_results, key=lambda r: r["avg_composite"])
         base_prompt = dict(PROMPT_VARIANTS)[best_so_far["variant"]]
-        print(
-            f"  Base prompt: '{best_so_far['variant']}' "
-            f"(composite={best_so_far['avg_composite']:.2f})"
-        )
+        print(f"  Base prompt: '{best_so_far['variant']}' (composite={best_so_far['avg_composite']:.2f})")
         print()
 
         for n_examples in range(4):  # 0, 1, 2, 3

@@ -153,10 +153,7 @@ class AgentEvaluationPipeline:
         """Load or create the evaluation dataset."""
         print("\n  [Step 1/5] Loading evaluation dataset...")
         self.dataset = create_eval_dataset()
-        print(
-            f"    Loaded {len(self.dataset)} test cases "
-            f"({self.dataset['category'].nunique()} categories)"
-        )
+        print(f"    Loaded {len(self.dataset)} test cases ({self.dataset['category'].nunique()} categories)")
         return self.dataset
 
     # -- Step 2 ------------------------------------------------------------ #
@@ -167,9 +164,7 @@ class AgentEvaluationPipeline:
         for idx, (_, row) in enumerate(self.dataset.iterrows()):
             start = time.time()
             try:
-                response = self.agent.invoke(
-                    {"messages": [{"role": "user", "content": row["input"]}]}
-                )
+                response = self.agent.invoke({"messages": [{"role": "user", "content": row["input"]}]})
                 latency = time.time() - start
                 answer = response["messages"][-1].content
 
@@ -308,9 +303,7 @@ class AgentEvaluationPipeline:
         for i, r in enumerate(self.results, 1):
             c = "Y" if r.get("score_correct") else "N"
             t = "Y" if r.get("score_tool_correct") else "N"
-            lines.append(
-                f"    {i}. correct={c} tool={t} latency={r['latency_s']}s | {r['input'][:45]}"
-            )
+            lines.append(f"    {i}. correct={c} tool={t} latency={r['latency_s']}s | {r['input'][:45]}")
         lines.append("=" * 60)
         report = "\n".join(lines)
         print(report)
@@ -455,18 +448,13 @@ def run_regression_check(current_metrics: dict) -> None:
         if regressions:
             print(f"\n  REGRESSIONS DETECTED ({len(regressions)}):")
             for reg in regressions:
-                print(
-                    f"    {reg['metric']}: {reg['baseline']:.3f} -> "
-                    f"{reg['current']:.3f} (delta: {reg['delta']})"
-                )
+                print(f"    {reg['metric']}: {reg['baseline']:.3f} -> {reg['current']:.3f} (delta: {reg['delta']})")
                 mlflow.set_tag(f"regression_{reg['metric']}", str(reg["delta"]))
         else:
             print("\n  No regressions detected.")
 
         # Log regression report
-        report = json.dumps(
-            {"baseline": baseline, "current": current_metrics, "regressions": regressions}, indent=2
-        )
+        report = json.dumps({"baseline": baseline, "current": current_metrics, "regressions": regressions}, indent=2)
         report_path = "/tmp/regression_report.json"
         with open(report_path, "w") as f:
             f.write(report)

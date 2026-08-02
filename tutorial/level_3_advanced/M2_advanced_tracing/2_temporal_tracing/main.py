@@ -53,9 +53,7 @@ TASK_PROMPTS = {
         "Analyze the sentiment of the following text. "
         "State whether it is positive, negative, or neutral and explain briefly."
     ),
-    "keywords": (
-        "Extract 5-7 key topics or keywords from the following text as a comma-separated list."
-    ),
+    "keywords": ("Extract 5-7 key topics or keywords from the following text as a comma-separated list."),
 }
 
 
@@ -172,10 +170,7 @@ def analyze_traces() -> None:
         # Per-activity breakdown
         activity_spans = [s for s in spans if s.name.startswith("activity_")]
         if activity_spans:
-            durations = {
-                s.name: ((s.end_time_ns or 0) - (s.start_time_ns or 0)) / 1e6
-                for s in activity_spans
-            }
+            durations = {s.name: ((s.end_time_ns or 0) - (s.start_time_ns or 0)) / 1e6 for s in activity_spans}
             slowest = max(durations, key=durations.get)  # type: ignore[arg-type]
             fastest = min(durations, key=durations.get)  # type: ignore[arg-type]
             print(f"\n    Slowest activity: {slowest} ({durations[slowest]:.1f} ms)")

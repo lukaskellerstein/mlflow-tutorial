@@ -31,7 +31,7 @@ LMSTUDIO_URL = "http://localhost:1234/v1"
 MODEL = "google/gemma-4-e4b"
 
 
-deadfdsfsdff call_llm(
+def call_llm(
     client: OpenAI,
     prompt: str,
     temperature: float = 0.7,

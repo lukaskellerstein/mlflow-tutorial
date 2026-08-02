@@ -11,7 +11,7 @@ Different agent architectures make fundamentally different tradeoffs between qua
 
 - Completed: L3-1.1 (Agent Testing), L3-1.2 (Quality Metrics)
 - Completed: L2-5.1 (LangChain Agents), L2-5.2 (LangGraph Agents)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts

@@ -351,9 +351,7 @@ def analyze_gate_history() -> None:
         "metrics.error_rate": "error_rate",
     }
     available = [c for c in cols if c in runs.columns]
-    history = cast(pd.DataFrame, runs[available]).rename(
-        columns={k: v for k, v in cols.items() if k in available}
-    )
+    history = cast(pd.DataFrame, runs[available]).rename(columns={k: v for k, v in cols.items() if k in available})
 
     print(f"\n  Found {len(history)} pipeline run(s):\n")
     for idx, row in history.iterrows():

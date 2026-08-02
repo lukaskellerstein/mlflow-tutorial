@@ -56,9 +56,7 @@ def text_analyzer(text: str) -> str:
         text: The text to analyze.
     """
     words = text.split()
-    sentences = [
-        s.strip() for s in text.replace("!", ".").replace("?", ".").split(".") if s.strip()
-    ]
+    sentences = [s.strip() for s in text.replace("!", ".").replace("?", ".").split(".") if s.strip()]
     word_count = len(words)
     char_count = len(text)
     sentence_count = len(sentences)
@@ -113,8 +111,7 @@ TEST_SUITE: list[TestCase] = [
     ),
     TestCase(
         name="text_word_count",
-        input="How many words are in the following text: "
-        '"The quick brown fox jumps over the lazy dog"?',
+        input='How many words are in the following text: "The quick brown fox jumps over the lazy dog"?',
         expected_output="9",
         expected_tools=["text_analyzer"],
         difficulty="easy",
@@ -129,8 +126,7 @@ TEST_SUITE: list[TestCase] = [
     ),
     TestCase(
         name="multi_tool",
-        input="First, calculate 50 * 4. Then analyze the text "
-        '"MLflow is great for tracking experiments."',
+        input='First, calculate 50 * 4. Then analyze the text "MLflow is great for tracking experiments."',
         expected_output="200",
         expected_tools=["calculator", "text_analyzer"],
         difficulty="hard",

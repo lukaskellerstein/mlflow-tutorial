@@ -12,7 +12,7 @@ This capstone builds a reusable benchmarking system that systematically compares
 - Completed: L3-1.3 (Architecture Comparison) -- this capstone extends and productionizes that lesson's approach
 - Completed: L3-1.5 (Evaluation Pipeline) -- reusable pipeline patterns
 - Completed: L2-5.1 (LangChain Agents), L2-5.2 (LangGraph Agents)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts

@@ -72,8 +72,7 @@ class RAGModel(mlflow.pyfunc.PythonModel):
             vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
         )
         points = [
-            PointStruct(id=i, vector=vec, payload={"text": doc})
-            for i, (vec, doc) in enumerate(zip(vectors, documents))
+            PointStruct(id=i, vector=vec, payload={"text": doc}) for i, (vec, doc) in enumerate(zip(vectors, documents))
         ]
         self.qdrant.upsert(collection_name="knowledge_base", points=points)
         print(f"  [load_context] Indexed {len(documents)} documents")

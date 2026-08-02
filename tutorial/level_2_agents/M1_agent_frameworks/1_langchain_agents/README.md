@@ -10,7 +10,7 @@ This lesson demonstrates how to build a LangChain ReAct agent using `langchain.a
 ## Prerequisites
 
 - Completed: L1-M2.1 (Autologging), L1-M2.2 (Manual Tracing)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
@@ -160,7 +160,7 @@ Part 4: Trace Analysis
 
 Note: Latency depends on your hardware and LMStudio load. The `google/gemma-4-e4b` model is small but still requires GPU inference time.
 
-In the MLflow UI at http://127.0.0.1:5555, navigate to the experiment **L2/M5_agent_observability/1_langchain_agents** to view:
+In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment **L2/M5_agent_observability/1_langchain_agents** to view:
 - The parent run with aggregate metrics
 - Nested child runs for each task
 - Full traces with span trees showing the ReAct loop

@@ -193,9 +193,7 @@ def part3_combined_evaluation(client: OpenAI, results: list[dict]) -> None:
 
         for i, result in enumerate(results):
             trace_id = result.get("trace_id")
-            judge = auto_judge_score(
-                client, result["question"], result["expected"], result["answer"]
-            )
+            judge = auto_judge_score(client, result["question"], result["expected"], result["answer"])
             score = judge["score"]
 
             auto_feedback = None
@@ -204,9 +202,7 @@ def part3_combined_evaluation(client: OpenAI, results: list[dict]) -> None:
                     trace_id=trace_id,
                     name="auto_judge_score",
                     value=score,
-                    source=AssessmentSource(
-                        source_type=AssessmentSourceType.LLM_JUDGE, source_id="google/gemma-4-e4b"
-                    ),
+                    source=AssessmentSource(source_type=AssessmentSourceType.LLM_JUDGE, source_id="google/gemma-4-e4b"),
                     rationale=judge["reasoning"],
                 )
 

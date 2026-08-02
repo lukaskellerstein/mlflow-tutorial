@@ -39,9 +39,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
 
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
-    def predict(
-        self, context: PythonModelContext, model_input: pd.DataFrame, params: dict | None = None
-    ) -> list:
+    def predict(self, context: PythonModelContext, model_input: pd.DataFrame, params: dict | None = None) -> list:
         answers = []
         for _, row in model_input.iterrows():
             temp = float(row.get("temperature") or self.default_temperature)

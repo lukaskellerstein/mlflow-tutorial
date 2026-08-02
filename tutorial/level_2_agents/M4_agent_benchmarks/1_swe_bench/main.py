@@ -54,11 +54,7 @@ SYSTEM_PROMPT = (
 def build_prompt(instance: dict) -> str:
     """Build the user message from a SWE-Bench instance."""
     hints = instance.get("hints_text", "") or ""
-    return (
-        f"Repository: {instance['repo']}\n\n"
-        f"## Problem\n{instance['problem_statement']}\n\n"
-        f"## Hints\n{hints}"
-    )
+    return f"Repository: {instance['repo']}\n\n## Problem\n{instance['problem_statement']}\n\n## Hints\n{hints}"
 
 
 def run_instance(agent, instance: dict, config_name: str) -> dict:
@@ -68,9 +64,7 @@ def run_instance(agent, instance: dict, config_name: str) -> dict:
         mlflow.log_params({"instance_id": iid, "repo": repo, "config": config_name})
         start = time.perf_counter()
         try:
-            result = agent.invoke(
-                {"messages": [{"role": "user", "content": build_prompt(instance)}]}
-            )
+            result = agent.invoke({"messages": [{"role": "user", "content": build_prompt(instance)}]})
             latency = time.perf_counter() - start
             last_msg = result["messages"][-1].content
             patch_ok = "+++" in last_msg or "---" in last_msg

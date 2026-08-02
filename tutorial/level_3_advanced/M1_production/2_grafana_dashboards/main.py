@@ -97,9 +97,7 @@ class InstrumentedLLMService:
             prompt_tokens = max(len(prompt) // 4, 1)
             completion_tokens = max(len(output_text) // 4, 1)
             LLM_TOKENS_USED.labels(model=self.model_name, direction="prompt").inc(prompt_tokens)
-            LLM_TOKENS_USED.labels(model=self.model_name, direction="completion").inc(
-                completion_tokens
-            )
+            LLM_TOKENS_USED.labels(model=self.model_name, direction="completion").inc(completion_tokens)
 
             # -- MLflow logging --
             mlflow.log_metrics(
@@ -149,9 +147,7 @@ class InstrumentedLLMService:
 def generate_grafana_dashboard() -> dict:
     """Return a Grafana dashboard JSON structure with four panels."""
 
-    def _panel(
-        title: str, expr: str, panel_id: int, y: int, panel_type: str = "timeseries"
-    ) -> dict:
+    def _panel(title: str, expr: str, panel_id: int, y: int, panel_type: str = "timeseries") -> dict:
         return {
             "id": panel_id,
             "type": panel_type,
@@ -292,9 +288,7 @@ def main() -> None:
         # Aggregate MLflow summary
         successes = sum(1 for r in results if r["status"] == "success")
         errors = len(results) - successes
-        avg_latency = sum(r["latency_s"] for r in results if r["status"] == "success") / max(
-            successes, 1
-        )
+        avg_latency = sum(r["latency_s"] for r in results if r["status"] == "success") / max(successes, 1)
         total_prompt_tok = sum(r.get("prompt_tokens", 0) for r in results)
         total_compl_tok = sum(r.get("completion_tokens", 0) for r in results)
 

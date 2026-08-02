@@ -12,7 +12,7 @@ This lesson integrates: experiment tracking (L1-M1), model management (L1-M2), e
 ## Prerequisites
 
 - Completed: All Level 1 and Level 2 modules, plus L3-M1 (Agent Evaluation)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Architecture
@@ -202,7 +202,7 @@ The script runs five phases with clear output for each:
     Deployed agent:     qa_agent
 ```
 
-In the MLflow UI at http://127.0.0.1:5555, you will see:
+In the MLflow UI at <http://127.0.0.1:5555>, you will see:
 - **Experiment**: `L3/M5_capstones/1_agent_platform`
 - **platform_evaluation** run with nested child runs for each agent
 - **deployment_pipeline** run with deployment decision tags

@@ -26,16 +26,14 @@ MODEL_CONFIGS = [
     {
         "name": "concise_assistant",
         "system_prompt": (
-            "You are a concise assistant. Answer questions in 1-2 "
-            "sentences maximum. Be direct and brief."
+            "You are a concise assistant. Answer questions in 1-2 sentences maximum. Be direct and brief."
         ),
         "temperature": 0.3,
     },
     {
         "name": "detailed_assistant",
         "system_prompt": (
-            "You are a thorough assistant. Provide detailed, "
-            "comprehensive answers with examples when helpful."
+            "You are a thorough assistant. Provide detailed, comprehensive answers with examples when helpful."
         ),
         "temperature": 0.7,
     },
@@ -60,11 +58,7 @@ class LLMAssistant(mlflow.pyfunc.PythonModel):
         from openai import OpenAI
 
         client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
-        questions = (
-            model_input["question"].tolist()
-            if isinstance(model_input, pd.DataFrame)
-            else [str(model_input)]
-        )
+        questions = model_input["question"].tolist() if isinstance(model_input, pd.DataFrame) else [str(model_input)]
         results = []
         for question in questions:
             resp = client.chat.completions.create(
@@ -193,10 +187,7 @@ def evaluate_models(llm_client: OpenAI, results: list[dict]) -> list[dict]:
                 }
             )
 
-        print(
-            f"    Summary: avg_length={avg_len:.0f}  "
-            f"avg_latency={avg_lat:.2f}s  quality={quality:.1f}"
-        )
+        print(f"    Summary: avg_length={avg_len:.0f}  avg_latency={avg_lat:.2f}s  quality={quality:.1f}")
     print()
     return results
 
@@ -215,8 +206,7 @@ def promote_best(client: MlflowClient, results: list[dict]) -> None:
 
     client.update_registered_model(
         MODEL_NAME,
-        description="LLM assistant with versioned configurations, "
-        "managed in L1-M3 Registry Workflows lesson.",
+        description="LLM assistant with versioned configurations, managed in L1-M3 Registry Workflows lesson.",
     )
 
     for entry in results:
@@ -227,18 +217,10 @@ def promote_best(client: MlflowClient, results: list[dict]) -> None:
         )
         client.update_model_version(MODEL_NAME, entry["version"], description=desc)
         client.set_model_version_tag(MODEL_NAME, entry["version"], "role", role)
-        client.set_model_version_tag(
-            MODEL_NAME, entry["version"], "temperature", str(entry["temperature"])
-        )
+        client.set_model_version_tag(MODEL_NAME, entry["version"], "temperature", str(entry["temperature"]))
 
-    print(
-        f"  champion   -> v{champion['version']} "
-        f"({champion['name']}, quality={champion['quality_score']:.1f})"
-    )
-    print(
-        f"  challenger -> v{challenger['version']} "
-        f"({challenger['name']}, quality={challenger['quality_score']:.1f})"
-    )
+    print(f"  champion   -> v{champion['version']} ({champion['name']}, quality={champion['quality_score']:.1f})")
+    print(f"  challenger -> v{challenger['version']} ({challenger['name']}, quality={challenger['quality_score']:.1f})")
     print()
 
 
@@ -270,9 +252,7 @@ def serve_champion() -> None:
     # Also load challenger for comparison
     challenger_uri = f"models:/{MODEL_NAME}@challenger"
     challenger_model = mlflow.pyfunc.load_model(challenger_uri)
-    challenger_answer = challenger_model.predict(
-        pd.DataFrame({"question": ["What is reinforcement learning?"]})
-    )
+    challenger_answer = challenger_model.predict(pd.DataFrame({"question": ["What is reinforcement learning?"]}))
     print(f"  Challenger answer: {challenger_answer[0][:100].replace(chr(10), ' ')}...")
     print()
 

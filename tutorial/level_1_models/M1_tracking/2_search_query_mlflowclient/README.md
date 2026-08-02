@@ -10,7 +10,7 @@ This lesson teaches you to programmatically search, filter, and manage MLflow ru
 ## Prerequisites
 
 - Completed: L1-M1.1 (Tracking Fundamentals)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts

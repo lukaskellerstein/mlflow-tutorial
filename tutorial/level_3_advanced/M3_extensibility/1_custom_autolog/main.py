@@ -289,9 +289,7 @@ def simplechat_autolog(
     assert _state._original_chat_with_history is not None
     assert _state._original_batch_chat is not None
     SimpleChat.chat = _make_chat_wrapper(_state._original_chat)
-    SimpleChat.chat_with_history = _make_chat_with_history_wrapper(
-        _state._original_chat_with_history
-    )
+    SimpleChat.chat_with_history = _make_chat_with_history_wrapper(_state._original_chat_with_history)
     SimpleChat.batch_chat = _make_batch_chat_wrapper(_state._original_batch_chat)
 
 

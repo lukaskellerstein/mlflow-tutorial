@@ -115,9 +115,7 @@ def formatting_quality(outputs, expectations) -> Feedback:
     composite = round(0.3 * sentence_score + 0.4 * overlap + 0.3 * length_score, 3)
     return Feedback(
         value=composite,
-        rationale=(
-            f"sentences={len(sentences)}, keyword_overlap={overlap:.2f}, word_count={word_count}"
-        ),
+        rationale=(f"sentences={len(sentences)}, keyword_overlap={overlap:.2f}, word_count={word_count}"),
         source=AssessmentSource(source_type="CODE", source_id="formatting_quality"),
     )
 
@@ -361,10 +359,7 @@ def compare_and_check(all_metrics: dict[str, dict]) -> None:
         for metric_name, min_value in thresholds.items():
             actual = metrics_dict.get(metric_name, 0.0)
             passed = actual >= min_value
-            print(
-                f"    [{'PASS' if passed else 'FAIL'}] {metric_name}: "
-                f"{actual:.3f} (threshold: {min_value})"
-            )
+            print(f"    [{'PASS' if passed else 'FAIL'}] {metric_name}: {actual:.3f} (threshold: {min_value})")
     print()
 
 
