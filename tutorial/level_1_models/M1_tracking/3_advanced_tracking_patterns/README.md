@@ -53,7 +53,7 @@ The tracking server still receives every metric -- it just happens in the backgr
 
 Use `artifact_path` to create a clean folder structure inside each run:
 
-```
+```text
 run/artifacts/
     config/
         llm/              -- model configuration
@@ -124,7 +124,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Nested Runs -- LLM Configuration Sweep
 ============================================================

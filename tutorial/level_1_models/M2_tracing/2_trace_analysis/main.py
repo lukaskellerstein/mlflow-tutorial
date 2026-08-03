@@ -1,5 +1,5 @@
 """
-L2-4.4 — Trace-based Debugging and Analysis
+L1-M2.2 — Trace-based Debugging and Analysis
 
 Demonstrates how to use mlflow.search_traces() to retrieve traces,
 analyze span durations to find latency bottlenecks, extract token

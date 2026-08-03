@@ -1,5 +1,5 @@
 """
-L3-1.3 — Agent Architecture Comparison
+L2-M3.3 — Agent Architecture Comparison
 
 Systematically compare three agent architectures on the same Q&A task
 with shared tools and evaluation criteria:
@@ -295,7 +295,7 @@ def evaluate_architecture(name: str, run_fn: Callable[[str], dict], dataset: lis
 
 def main() -> None:
     print("=" * 70)
-    print("  L3-1.3 — Agent Architecture Comparison")
+    print("  L2-M3.3 — Agent Architecture Comparison")
     print("=" * 70)
 
     all_rows: list[dict] = []

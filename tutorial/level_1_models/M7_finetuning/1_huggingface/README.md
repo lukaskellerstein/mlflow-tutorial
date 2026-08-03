@@ -1,4 +1,4 @@
-# L2-9.1 -- LLM Fine-Tuning with HuggingFace + MLflow
+# L1-M7.1 -- LLM Fine-Tuning with HuggingFace + MLflow
 
 **Level:** Practitioner
 **Duration:** ~1.5 hours
@@ -123,9 +123,9 @@ The first run downloads the distilgpt2 model (~350 MB). Subsequent runs use the 
 
 ## Expected Output
 
-```
+```text
 ============================================================
-  L2-9.1: LLM Fine-Tuning with HuggingFace + MLflow
+  L1-M7.1: LLM Fine-Tuning with HuggingFace + MLflow
 ============================================================
 
 ============================================================

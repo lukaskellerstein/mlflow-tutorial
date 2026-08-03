@@ -1,5 +1,5 @@
 """
-L2-M4.3 — OpenTelemetry Integration
+L3-M2.1 — OpenTelemetry Integration
 
 Demonstrates that MLflow tracing is built on OpenTelemetry (OTel):
 - Part 1: MLflow traces use OTel spans under the hood
@@ -192,7 +192,7 @@ def part4_combined_tracing() -> None:
 
 def main() -> None:
     print("=" * 60)
-    print("L2-M4.3 -- OpenTelemetry Integration")
+    print("L3-M2.1 -- OpenTelemetry Integration")
     print("=" * 60 + "\n")
 
     part1_otel_foundation()
@@ -202,7 +202,7 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! Check MLflow UI at http://127.0.0.1:5555")
-    print("Experiment: L2/M4_advanced_tracing/3_opentelemetry")
+    print("Experiment: L3/M2_advanced_tracing/1_opentelemetry")
     print("=" * 60)
 
 

@@ -15,7 +15,8 @@ All services needed for the MLflow tutorial, managed via a single Podman Compose
 | PostgreSQL | 5432 | — | Shared database (MLflow + Temporal) |
 | Elasticsearch | — | — | Temporal search/visibility (internal) |
 
-**Ollama** runs natively on macOS (not containerized) for Apple Silicon GPU access.
+**LMStudio** runs natively on macOS (not containerized) for Apple Silicon GPU access,
+serving an OpenAI-compatible API at <http://localhost:1234/v1/>.
 
 ## Prerequisites
 
@@ -28,17 +29,22 @@ All services needed for the MLflow tutorial, managed via a single Podman Compose
   podman machine start
   ```
 
-- [Ollama](https://ollama.ai/) installed natively
+- [LMStudio](https://lmstudio.ai/) installed natively
 
 ## Quick Start
 
-### 1. Pull Ollama models (native, not in compose)
+### 1. Start LMStudio and load models (native, not in compose)
 
 ```bash
-ollama pull gemma4:e2b
-ollama pull gemma4:26b
-ollama pull nomic-embed-text
+lms server start
+lms ls                                       # what is downloaded
+lms load google/gemma-4-e4b                  # Level 1 — small, fast
+lms load google/gemma-4-26b-a4b              # Level 2/3 — agents, eval judges
+lms load text-embedding-nomic-embed-text-v1.5  # RAG / vector DB lessons
+lms ps                                       # confirm what is loaded
 ```
+
+Load only what the lesson needs — the models are large and share GPU memory.
 
 ### 2. Start all services
 
@@ -70,7 +76,7 @@ open http://localhost:3000
 ### 4. Run a lesson
 
 ```bash
-cd ../tutorial/level_1/M1_tracking/1_first_run
+cd ../tutorial/level_1_models/M1_tracking/1_tracking_fundamentals
 uv sync
 uv run python main.py
 ```
@@ -126,14 +132,14 @@ Data survives `podman compose down`. To reset everything: `podman compose down -
 
 ## Architecture
 
-```
+```text
 ┌──────────────────────────────────────────────────────┐
 │                    Host (macOS)                       │
 │                                                      │
-│  ┌─────────┐                                         │
-│  │ Ollama  │  (native, GPU access)                   │
-│  │ :11434  │                                         │
-│  └─────────┘                                         │
+│  ┌───────────┐                                       │
+│  │ LMStudio  │  (native, GPU access)                 │
+│  │ :1234     │                                       │
+│  └───────────┘                                       │
 │                                                      │
 │  ┌────────────── Podman Compose ──────────────────┐  │
 │  │                                                │  │

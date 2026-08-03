@@ -47,7 +47,7 @@ Add deps with `uv add <pkg>` so the file stays valid.
 
 ## .gitignore Template
 
-```
+```text
 .venv/
 __pycache__/
 *.pyc

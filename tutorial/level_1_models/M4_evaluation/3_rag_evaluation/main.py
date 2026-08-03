@@ -1,5 +1,5 @@
 """
-L2-3.2 — RAG System Evaluation
+L1-M4.3 — RAG System Evaluation
 
 Build a simple RAG system with TF-IDF retrieval and evaluate retrieval
 quality vs. generation quality using custom scorers and mlflow.genai.evaluate().
@@ -334,7 +334,7 @@ def main() -> None:
     )
 
     print("=" * 60)
-    print("L2-3.2 — RAG System Evaluation")
+    print("L1-M4.3 — RAG System Evaluation")
     print("=" * 60)
     print()
     print(f"Knowledge base: {len(KNOWLEDGE_BASE)} documents")
@@ -383,7 +383,7 @@ def main() -> None:
     print(f"\n{'=' * 60}")
     print("Done! Open MLflow UI to explore results:")
     print("  http://127.0.0.1:5555")
-    print("  Experiment: L2/M3_deep_evaluation/2_rag_evaluation")
+    print("  Experiment: L1/M4_evaluation/3_rag_evaluation")
     print("=" * 60)
 
 

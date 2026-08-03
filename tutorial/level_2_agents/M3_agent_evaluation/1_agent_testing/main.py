@@ -1,5 +1,5 @@
 """
-L3-1.1 — Agent Testing Framework
+L2-M3.1 — Agent Testing Framework
 
 Build a production-quality agent testing framework that:
   1. Creates a LangGraph ReAct agent with calculator and text_analyzer tools
@@ -153,7 +153,7 @@ TEST_SUITE: list[TestCase] = [
 # ---------------------------------------------------------------------------
 def main() -> None:
     print("=" * 60)
-    print("L3-1.1 — Agent Testing Framework")
+    print("L2-M3.1 — Agent Testing Framework")
     print("=" * 60)
 
     # --- Part 1: Build the agent ---

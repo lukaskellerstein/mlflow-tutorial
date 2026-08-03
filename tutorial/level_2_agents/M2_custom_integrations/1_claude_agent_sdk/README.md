@@ -124,7 +124,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M2.1 — Claude Agent SDK + MLflow Integration
 ============================================================

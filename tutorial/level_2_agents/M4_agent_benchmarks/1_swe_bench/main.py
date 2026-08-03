@@ -114,8 +114,8 @@ def run_config(name: str, temperature: float, instances: list[dict]) -> list[dic
         api_key="lm-studio",
         model="google/gemma-4-26b-a4b",
         temperature=temperature,
-        max_tokens=1024,
-    )  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
+        max_tokens=1024,  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
+    )
     agent = create_agent(model=llm, tools=TOOLS, system_prompt=SYSTEM_PROMPT)
     results: list[dict] = []
     with mlflow.start_run(run_name=f"config_{name}", nested=True):

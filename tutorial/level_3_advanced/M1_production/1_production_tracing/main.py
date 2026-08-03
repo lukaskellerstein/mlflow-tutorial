@@ -1,5 +1,5 @@
 """
-L3-3.1 — Production Tracing Strategies
+L3-M1.1 — Production Tracing Strategies
 
 Demonstrates production-ready tracing patterns:
   1. Trace sampling strategies (all, percentage, errors-only, slow-requests)
@@ -413,7 +413,7 @@ def run_part4_performance(all_records: list[TraceRecord]) -> None:
 
 def main() -> None:
     print("=" * 60)
-    print("L3-3.1 — Production Tracing Strategies")
+    print("L3-M1.1 — Production Tracing Strategies")
     print("=" * 60)
 
     llm = ChatOpenAI(

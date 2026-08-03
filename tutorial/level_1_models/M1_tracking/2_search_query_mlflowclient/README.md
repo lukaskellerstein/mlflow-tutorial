@@ -119,7 +119,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Step 1: Creating sample runs with different configurations
 ============================================================

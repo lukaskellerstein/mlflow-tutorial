@@ -1,4 +1,4 @@
-# L2-M4.4 — Trace-based Debugging and Analysis
+# L1-M2.2 — Trace-based Debugging and Analysis
 
 **Level:** Practitioner
 **Duration:** ~45 minutes
@@ -128,7 +128,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 Part 1: Generating traces from LLM calls
   Running: Simple Q&A
   Result:  The speed of light in a vacuum is approximately 299,792,458 meters ...
@@ -165,7 +165,7 @@ Part 4: Analysis Report
 ```
 
 In the MLflow UI:
-- Navigate to experiment `L2/M4_advanced_tracing/4_trace_analysis`
+- Navigate to experiment `L1/M2_tracing/2_trace_analysis`
 - **Traces tab**: browse individual trace timelines and span hierarchies
 - **Runs tab**: find the `trace_analysis_report` run with CSV artifacts and summary metrics
 

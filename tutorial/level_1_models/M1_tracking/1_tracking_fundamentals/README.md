@@ -40,7 +40,7 @@ MLflow is an open-source platform for managing the complete machine learning and
 
 ### Architecture at a Glance
 
-```
+```text
  Your Code (main.py)
        |
        v
@@ -167,7 +167,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 MLflow -- The 5 Pillars
 ============================================================

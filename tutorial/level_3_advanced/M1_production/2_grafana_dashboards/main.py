@@ -1,5 +1,5 @@
 """
-L3-3.2 — Grafana Dashboards for MLflow
+L3-M1.2 — Grafana Dashboards for MLflow
 
 Export LLM service metrics to Prometheus and generate a Grafana dashboard
 configuration for production monitoring.  The script:
@@ -252,7 +252,7 @@ def main() -> None:
     metrics_port = 8099
 
     print("=" * 60)
-    print("L3-3.2 — Grafana Dashboards for MLflow")
+    print("L3-M1.2 — Grafana Dashboards for MLflow")
     print("=" * 60)
 
     # -- Part 1: Start Prometheus metrics server ----------------------------

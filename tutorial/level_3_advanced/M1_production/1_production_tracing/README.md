@@ -1,4 +1,4 @@
-# L3-3.1 — Production Tracing Strategies
+# L3-M1.1 — Production Tracing Strategies
 
 **Level:** Expert
 **Duration:** ~45 minutes
@@ -122,9 +122,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-3.1 — Production Tracing Strategies
+L3-M1.1 — Production Tracing Strategies
 ============================================================
 ============================================================
 Part 1: Trace Sampling Strategies
@@ -191,4 +191,4 @@ Production Tracing Strategy Comparison
 
 ## Next Steps
 
-Continue to L3-3.2 (Grafana Dashboards) to build real-time monitoring dashboards that visualize the metrics collected in this lesson.
+Continue to L3-M1.2 (Grafana Dashboards) to build real-time monitoring dashboards that visualize the metrics collected in this lesson.

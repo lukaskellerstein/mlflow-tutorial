@@ -1,5 +1,5 @@
 """
-L3-3.4 — CI/CD Quality Gates for AI Applications
+L3-M1.4 — CI/CD Quality Gates for AI Applications
 
 Automated quality gates for LLM deployments:
   1. Define configurable quality gates (accuracy, latency, consistency, error rate)
@@ -331,7 +331,7 @@ def analyze_gate_history() -> None:
     runs = cast(
         pd.DataFrame,
         mlflow.search_runs(
-            experiment_names=["L3/M3_production/4_cicd"],
+            experiment_names=["L3/M1_production/4_cicd"],
             filter_string="tags.pipeline_type = 'cicd_quality_gate'",
             order_by=["start_time ASC"],
             max_results=20,
@@ -376,7 +376,7 @@ def analyze_gate_history() -> None:
 # ── Main ──────────────────────────────────────────────────
 def main() -> None:
     print("=" * 60)
-    print("L3-3.4 — CI/CD Quality Gates for AI Applications")
+    print("L3-M1.4 — CI/CD Quality Gates for AI Applications")
     print("=" * 60)
 
     # --- Part 1: Define quality gates ---
@@ -405,7 +405,7 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! Check the MLflow UI at http://127.0.0.1:5555")
-    print("Look at experiment: L3/M3_production/4_cicd")
+    print("Look at experiment: L3/M1_production/4_cicd")
     print("=" * 60)
 
 

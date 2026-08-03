@@ -1,5 +1,5 @@
 """
-L3-5.2 — Framework Benchmark Capstone
+L3-M4.2 — Framework Benchmark Capstone
 
 Systematic cross-framework agent benchmark using MLflow.  Compares three
 agent implementation approaches on the same task set with standardized
@@ -624,7 +624,7 @@ def create_test_cases() -> list[TestCase]:
 
 def main() -> None:
     print("=" * 70)
-    print("  L3-5.2 — Framework Benchmark Capstone")
+    print("  L3-M4.2 — Framework Benchmark Capstone")
     print("=" * 70)
 
     # Build the benchmark suite
@@ -661,7 +661,7 @@ def main() -> None:
     print(f"\n{report}")
 
     print("\n  View detailed runs in MLflow UI: http://127.0.0.1:5555")
-    print("  Experiment: L3/M5_capstones/2_framework_benchmark")
+    print("  Experiment: L3/M4_capstones/2_framework_benchmark")
     print("=" * 70)
 
     # Cleanup temp files

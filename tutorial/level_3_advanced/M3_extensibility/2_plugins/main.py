@@ -1,5 +1,5 @@
 """
-L3-4.1 — MLflow Plugins and Extensibility
+L3-M3.2 — MLflow Plugins and Extensibility
 
 Demonstrates MLflow's plugin architecture through production-quality examples:
 - Plugin system overview (entry points, registries, extension types)
@@ -27,7 +27,7 @@ from pydantic import SecretStr
 
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 
-EXPERIMENT_NAME = "L3/M4_advanced_features/1_plugins"
+EXPERIMENT_NAME = "L3/M3_extensibility/2_plugins"
 
 
 # ── Part 1: Plugin Architecture Overview ───────────────────────────────── #
@@ -384,7 +384,7 @@ def part5_combined_demo(llm: ChatOpenAI) -> None:
 
 def main() -> None:
     print("=" * 60)
-    print("  L3-4.1 — MLflow Plugins and Extensibility")
+    print("  L3-M3.2 — MLflow Plugins and Extensibility")
     print("=" * 60)
     print()
 

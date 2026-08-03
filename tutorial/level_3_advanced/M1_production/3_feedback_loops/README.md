@@ -1,4 +1,4 @@
-# L3-3.3 -- Production Feedback Loops
+# L3-M1.3 -- Production Feedback Loops
 
 **Level:** Expert
 **Duration:** ~1.5 hours
@@ -9,7 +9,7 @@ Production LLM systems need continuous improvement driven by real user feedback.
 
 ## Prerequisites
 
-- Completed: L3-3.1 (Production Tracing), L3-3.2 (Grafana Dashboards)
+- Completed: L3-M1.1 (Production Tracing), L3-M1.2 (Grafana Dashboards)
 - MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
@@ -110,9 +110,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-3.3 -- Production Feedback Loops
+L3-M1.3 -- Production Feedback Loops
 ============================================================
 
 --- Iteration 1: Baseline prompt (v1) ---
@@ -139,7 +139,7 @@ L3-3.3 -- Production Feedback Loops
 ```
 
 In the MLflow UI:
-- Navigate to the experiment `L3/M3_production/3_feedback_loops`
+- Navigate to the experiment `L3/M1_production/3_feedback_loops`
 - Open any trace to see attached feedback assessments (thumbs_up, user_rating, user_comment)
 - Compare the two nested runs (iteration_1_baseline vs iteration_2_improved) side by side
 - Check the `feedback/summary_table.json` artifact for the full feedback dataset
@@ -154,4 +154,4 @@ In the MLflow UI:
 
 ## Next Steps
 
-Continue to L3-3.4 (CI/CD Quality Gates) to learn how to automate quality checks and prevent regressions when deploying prompt or model changes.
+Continue to L3-M1.4 (CI/CD Quality Gates) to learn how to automate quality checks and prevent regressions when deploying prompt or model changes.

@@ -31,6 +31,8 @@ def load_llm_config() -> dict:
     config_path = Path(__file__).parent / "llm_config.yaml"
     with open(config_path) as f:
         config = yaml.safe_load(f)
+    if not isinstance(config, dict):
+        raise ValueError(f"{config_path} must contain a YAML mapping at the top level")
 
     active = config["active"]
     provider = config["providers"][active]

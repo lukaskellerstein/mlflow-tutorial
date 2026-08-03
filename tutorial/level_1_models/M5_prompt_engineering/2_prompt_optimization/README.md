@@ -1,4 +1,4 @@
-# L1-M5.3 — Prompt Optimization
+# L1-M5.2 — Prompt Optimization
 
 **Level:** Essentials
 **Duration:** ~1 hour
@@ -97,7 +97,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Optimization Problem
 ============================================================

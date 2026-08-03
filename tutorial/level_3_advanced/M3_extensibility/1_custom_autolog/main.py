@@ -1,5 +1,5 @@
 """
-L3-2.4 — Building Custom Autolog Integrations
+L3-M3.1 — Building Custom Autolog Integrations
 
 Build a production-quality custom autolog implementation that:
   1. Explains how MLflow autolog works (monkey-patching / wrapper pattern)
@@ -312,7 +312,7 @@ def clear_callbacks() -> None:
 # ---------------------------------------------------------------------------
 def main() -> None:
     print("=" * 60)
-    print("L3-2.4 — Building Custom Autolog Integrations")
+    print("L3-M3.1 — Building Custom Autolog Integrations")
     print("=" * 60)
 
     # ── Part 1: Autolog Architecture ──────────────────────────────

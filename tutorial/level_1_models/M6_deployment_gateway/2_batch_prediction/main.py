@@ -1,5 +1,5 @@
 """
-L2-8.2 -- Batch LLM Inference Pipeline
+L1-M6.2 -- Batch LLM Inference Pipeline
 
 Demonstrates batch LLM inference with MLflow: wrap an LLM in a PyFunc model,
 run a batch of diverse prompts, collect responses with per-prompt timing and
@@ -20,7 +20,7 @@ from mlflow.pyfunc import PythonModelContext
 # Configuration
 # ---------------------------------------------------------------------------
 TRACKING_URI = "http://127.0.0.1:5555"
-EXPERIMENT_NAME = "L2/M7_deployment/2_batch_prediction"
+EXPERIMENT_NAME = "L1/M6_deployment_gateway/2_batch_prediction"
 LLM_BASE_URL = "http://localhost:1234/v1"
 LLM_API_KEY = "lm-studio"
 LLM_MODEL = "google/gemma-4-e4b"
@@ -208,7 +208,7 @@ def main() -> None:
 
     print()
     print("=" * 60)
-    print("L2-8.2 -- Batch LLM Inference Pipeline")
+    print("L1-M6.2 -- Batch LLM Inference Pipeline")
     print("=" * 60)
     print()
 

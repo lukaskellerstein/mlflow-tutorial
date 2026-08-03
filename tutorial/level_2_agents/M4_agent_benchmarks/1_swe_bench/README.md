@@ -44,7 +44,7 @@ SWE-Bench measures real-world software engineering capability, not just code gen
 
 The evaluation pipeline follows this structure:
 
-```
+```text
 Load Dataset --> Sample Instances --> For each config:
                                         Create Agent (LLM + Tools)
                                         For each instance:
@@ -150,7 +150,7 @@ Note: the first run will download the SWE-Bench Verified dataset from Hugging Fa
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M4.1 -- SWE-Bench Evaluation Pipeline
 ============================================================

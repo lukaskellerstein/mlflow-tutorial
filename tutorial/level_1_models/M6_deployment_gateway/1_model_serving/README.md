@@ -21,7 +21,7 @@ By placing client initialization in `load_context()` instead of `predict()`, the
 
 ### Serving Architecture
 
-```
+```text
 Client (curl / app)       MLflow Serving Process
    |                          |
    |  POST /invocations       |
@@ -133,7 +133,7 @@ Note: The script logs models, tests locally, and prints serving commands. It doe
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Log LLM Model (temperature=0.7)
 ============================================================

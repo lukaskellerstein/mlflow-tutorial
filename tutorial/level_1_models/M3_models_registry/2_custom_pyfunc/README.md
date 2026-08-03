@@ -1,4 +1,4 @@
-# L2-M2.2 — Custom PyFunc Models
+# L1-M3.2 — Custom PyFunc Models
 
 **Level:** Practitioner
 **Duration:** ~1 hour
@@ -135,7 +135,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Step 1: Preparing RAG model artifacts
 ============================================================
@@ -173,7 +173,7 @@ Step 4: Testing with custom params
 ============================================================
 Done!
 Open MLflow UI at http://127.0.0.1:5555
-Look for experiment: L2/M2_advanced_models/2_custom_pyfunc
+Look for experiment: L1/M3_models_registry/2_custom_pyfunc
 ============================================================
 ```
 

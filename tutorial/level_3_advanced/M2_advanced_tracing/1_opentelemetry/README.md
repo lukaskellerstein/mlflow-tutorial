@@ -1,4 +1,4 @@
-# L2-M4.3 -- OpenTelemetry Integration
+# L3-M2.1 -- OpenTelemetry Integration
 
 **Level:** Practitioner
 **Duration:** ~45 minutes
@@ -19,7 +19,7 @@ MLflow's tracing system is built directly on the OpenTelemetry (OTel) SDK. This 
 
 When you call `@mlflow.trace` or `mlflow.start_span()`, MLflow does not use a proprietary tracing format. Instead, it creates standard OpenTelemetry spans via the OTel SDK:
 
-```
+```text
 @mlflow.trace  -->  mlflow.start_span()  -->  OTel Tracer.start_span()
                                                      |
                                               TracerProvider
@@ -117,7 +117,7 @@ You will see four parts printed to the console:
 3. **Part 3** -- The `ConsoleSpanExporter` outputs raw JSON span data to stdout, plus configuration examples for Jaeger/Zipkin/Tempo.
 4. **Part 4** -- Shows a data pipeline trace with both MLflow and raw OTel spans, demonstrating coexistence.
 
-In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment `L2/M4_advanced_tracing/3_opentelemetry` and explore the traces. MLflow-managed spans will show structured inputs and outputs; raw OTel spans will appear with their attributes but without MLflow-specific metadata.
+In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment `L3/M2_advanced_tracing/1_opentelemetry` and explore the traces. MLflow-managed spans will show structured inputs and outputs; raw OTel spans will appear with their attributes but without MLflow-specific metadata.
 
 ## Key Takeaways
 

@@ -1,5 +1,5 @@
 """
-L2-M4.2 — Tracing Temporal.io Workflows
+L3-M2.2 — Tracing Temporal.io Workflows
 
 Integrates MLflow tracing with Temporal.io durable workflows. A three-activity
 text-analysis pipeline (summarize, sentiment, keywords) runs inside Temporal
@@ -33,7 +33,7 @@ from workflow_def import (
 
 # -- Configuration --
 TRACKING_URI = "http://127.0.0.1:5555"
-EXPERIMENT = "L2/M4_advanced_tracing/2_temporal_tracing"
+EXPERIMENT = "L3/M2_advanced_tracing/2_temporal_tracing"
 TASK_QUEUE = "mlflow-tutorial-text-analysis"
 MODEL = "google/gemma-4-26b-a4b"
 TEMPORAL_ADDRESS = "localhost:7233"

@@ -1,4 +1,4 @@
-# L2-5.1 — LangChain Agent Tracking
+# L2-M1.1 — LangChain Agent Tracking
 
 **Level:** Practitioner
 **Duration:** ~1 hour
@@ -121,7 +121,7 @@ uv run python main.py
 
 Terminal output will show each task being processed with the agent's answer, latency, and tool-call count, followed by a summary table and trace analysis:
 
-```
+```text
 ============================================================
 Task 1: What is 15 * 23?
 ============================================================
@@ -160,7 +160,7 @@ Part 4: Trace Analysis
 
 Note: Latency depends on your hardware and LMStudio load. The `google/gemma-4-e4b` model is small but still requires GPU inference time.
 
-In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment **L2/M5_agent_observability/1_langchain_agents** to view:
+In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment **L2/M1_agent_frameworks/1_langchain_agents** to view:
 - The parent run with aggregate metrics
 - Nested child runs for each task
 - Full traces with span trees showing the ReAct loop
@@ -175,4 +175,4 @@ In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment **L2/M5_
 
 ## Next Steps
 
-In L2-5.2 (LangGraph Agents), we will build a more complex agent using LangGraph's `StateGraph` directly, with custom state management and conditional routing between nodes, and track the full state-transition graph in MLflow.
+In L2-M1.2 (LangGraph Agents), we will build a more complex agent using LangGraph's `StateGraph` directly, with custom state management and conditional routing between nodes, and track the full state-transition graph in MLflow.

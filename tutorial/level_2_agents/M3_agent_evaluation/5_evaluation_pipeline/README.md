@@ -1,4 +1,4 @@
-# L3-1.5 — End-to-End Agent Evaluation Pipeline
+# L2-M3.5 — End-to-End Agent Evaluation Pipeline
 
 **Level:** Expert
 **Duration:** 2.5 hours
@@ -133,7 +133,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
   Agent Evaluation Pipeline — Starting
 ============================================================

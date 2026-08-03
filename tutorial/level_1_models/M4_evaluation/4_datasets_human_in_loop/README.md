@@ -112,7 +112,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Create, Log, and Run Inference on a Dataset
 ============================================================

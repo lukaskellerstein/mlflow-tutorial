@@ -1,4 +1,4 @@
-# L2-3.2 — RAG System Evaluation
+# L1-M4.3 — RAG System Evaluation
 
 **Level:** Practitioner
 **Duration:** 1.5 hours
@@ -160,9 +160,9 @@ uv run python main.py
 
 The terminal will show evaluation metrics for both strategies:
 
-```
+```text
 ============================================================
-L2-3.2 — RAG System Evaluation
+L1-M4.3 — RAG System Evaluation
 ============================================================
 
 Knowledge base: 7 documents
@@ -200,7 +200,7 @@ Comparison: Top-1 vs Top-3 Retrieval
   context_used/mean                       0.4000     0.2000      top_1
 ```
 
-In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment "L2/M3_deep_evaluation/2_rag_evaluation" to see:
+In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment "L1/M4_evaluation/3_rag_evaluation" to see:
 - The parent run "strategy_comparison" with two nested child runs
 - Side-by-side metric comparison
 - Evaluation results from `mlflow.genai.evaluate()` in the Evaluation tab

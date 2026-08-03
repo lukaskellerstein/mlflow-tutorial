@@ -24,7 +24,7 @@ The SWE-Bench leaderboard ranks coding agents by **resolution rate** — the per
 
 Evaluation follows this pipeline:
 
-```
+```text
 Clone repo at exact commit → Install dependencies → Apply test patch
     → Verify bug exists (tests fail) → Apply agent's patch
     → Run tests → Score: resolved / applied / failed
@@ -63,7 +63,7 @@ Containers provide isolated, reproducible environments for each evaluation.
 
 ### Architecture
 
-```
+```text
 main.py (orchestrator)
   ├── agent.py (DeepAgents agent with container sandbox)
   │     ├── ContainerSandbox(BaseSandbox) — wraps podman exec
@@ -180,7 +180,7 @@ SWE_BENCH_RUNTIME=docker uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M4.1 -- Full SWE-Bench Evaluation Pipeline
 ============================================================

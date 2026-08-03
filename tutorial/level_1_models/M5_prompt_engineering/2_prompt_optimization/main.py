@@ -1,5 +1,5 @@
 """
-L1-M5.3 — Prompt Optimization
+L1-M5.2 — Prompt Optimization
 
 Demonstrates systematic prompt optimization tracked with MLflow:
 - Define an evaluation dataset and custom scoring function
@@ -351,7 +351,7 @@ def main() -> None:
     print("=" * 60)
     print("Done! View the optimization runs in the MLflow UI:")
     print("  http://127.0.0.1:5555")
-    print("  Experiment: L1/M5_prompt_engineering/3_prompt_optimization")
+    print("  Experiment: L1/M5_prompt_engineering/2_prompt_optimization")
     print("  Expand 'prompt_optimization' to see all variants as nested runs.")
     print("=" * 60)
 

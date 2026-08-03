@@ -91,7 +91,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Simple Workflow with Conditional Routing
 ============================================================

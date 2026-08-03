@@ -1,4 +1,4 @@
-# L3-3.2 — Grafana Dashboards for MLflow
+# L3-M1.2 — Grafana Dashboards for MLflow
 
 **Level:** Expert
 **Duration:** 2 hours
@@ -134,9 +134,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-3.2 — Grafana Dashboards for MLflow
+L3-M1.2 — Grafana Dashboards for MLflow
 ============================================================
 
 --- Part 1: Starting Prometheus metrics server ---
@@ -178,4 +178,4 @@ You can also visit <http://localhost:8099/metrics> in your browser to see raw Pr
 
 ## Next Steps
 
-In **L3-3.3 (Feedback Loops)**, you will close the production loop by collecting user feedback on agent responses, detecting quality drift, and feeding production data back into evaluation datasets.
+In **L3-M1.3 (Feedback Loops)**, you will close the production loop by collecting user feedback on agent responses, detecting quality drift, and feeding production data back into evaluation datasets.

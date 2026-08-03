@@ -1,5 +1,5 @@
 """
-L3-5.1 — Capstone: Production AI Agent Platform
+L3-M4.1 — Capstone: Production AI Agent Platform
 
 A mini production agent platform that brings together the full MLflow tutorial:
   - Agent Registry: register and manage multiple agents
@@ -515,7 +515,7 @@ def run_platform() -> None:
     print(f"    Deployed agent:     {deployed_agent_name or 'none'}")
     print(f"\n    Evaluation run ID:  {parent_run_id}")
     print("    MLflow UI: http://127.0.0.1:5555")
-    print("    Experiment: L3/M5_capstones/1_agent_platform")
+    print("    Experiment: L3/M4_capstones/1_agent_platform")
     print("=" * 60)
 
 
@@ -524,7 +524,7 @@ def run_platform() -> None:
 # ---------------------------------------------------------------------------
 def main() -> None:
     print("=" * 60)
-    print("  L3-5.1 — Production AI Agent Platform (Capstone)")
+    print("  L3-M4.1 — Production AI Agent Platform (Capstone)")
     print("=" * 60)
     run_platform()
 

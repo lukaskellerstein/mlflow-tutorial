@@ -88,7 +88,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M4.3 -- Custom Domain-Specific Agent Benchmark
 ============================================================

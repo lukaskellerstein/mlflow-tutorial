@@ -1,5 +1,5 @@
 """
-L2-5.3 — Multi-Agent Systems
+L2-M1.3 — Multi-Agent Systems
 
 Demonstrates a multi-agent system with a supervisor/coordinator pattern
 using LangGraph, with full MLflow tracing:
@@ -242,7 +242,7 @@ def analyze_traces() -> None:
     print("Analyzing Traces")
     print("=" * 60)
 
-    experiment = mlflow.get_experiment_by_name("L2/M5_agent_observability/3_multiagent_systems")
+    experiment = mlflow.get_experiment_by_name("L2/M1_agent_frameworks/3_multiagent_systems")
     if experiment is None:
         print("  No experiment found.")
         return

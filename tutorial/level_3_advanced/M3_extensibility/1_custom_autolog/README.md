@@ -1,4 +1,4 @@
-# L3-2.4 — Building Custom Autolog Integrations
+# L3-M3.1 — Building Custom Autolog Integrations
 
 **Level:** Expert
 **Duration:** 2 hours
@@ -122,9 +122,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-2.4 — Building Custom Autolog Integrations
+L3-M3.1 — Building Custom Autolog Integrations
 ============================================================
 
 --- Part 1: How MLflow Autolog Works ---

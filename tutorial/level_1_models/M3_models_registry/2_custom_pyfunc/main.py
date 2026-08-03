@@ -1,5 +1,5 @@
 """
-L2-M2.2 — Custom PyFunc Models
+L1-M3.2 — Custom PyFunc Models
 
 Demonstrates wrapping a RAG pipeline as a custom MLflow PyFunc model:
 - PythonModel with load_context() for initializing LLM and vector DB
@@ -19,7 +19,7 @@ from mlflow.models import infer_signature
 from openai import OpenAI
 
 TRACKING_URI = "http://127.0.0.1:5555"
-EXPERIMENT_NAME = "L2/M2_advanced_models/2_custom_pyfunc"
+EXPERIMENT_NAME = "L1/M3_models_registry/2_custom_pyfunc"
 
 # Sample documents about MLflow for the RAG knowledge base
 DOCUMENTS = [

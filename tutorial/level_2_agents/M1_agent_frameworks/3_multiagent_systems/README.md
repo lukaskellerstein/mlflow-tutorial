@@ -1,4 +1,4 @@
-# L2-5.3 — Multi-Agent Systems
+# L2-M1.3 — Multi-Agent Systems
 
 **Level:** Practitioner
 **Duration:** ~1 hour
@@ -29,7 +29,7 @@ This lesson uses the **supervision** pattern: a supervisor (implemented as a con
 
 ### The Pipeline
 
-```
+```text
 START -> Researcher -> Writer -> Reviewer --(pass)--> END
                                     |
                                     +--(fail)--> Writer (revision loop, max 2)
@@ -134,7 +134,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Enabling LangChain auto-tracing: mlflow.langchain.autolog()
 ============================================================

@@ -61,7 +61,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 Part 1: Multi-Team Experiment Organization
   Created: enterprise/data-science/churn-prediction ...
   Searching experiments by team...

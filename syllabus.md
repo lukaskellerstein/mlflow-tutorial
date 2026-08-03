@@ -56,7 +56,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 ---
 
-# LEVEL 1 -- MODELS
+## LEVEL 1 -- MODELS
 
 *Goal: Complete mastery of MLflow for single-model and LLM workflows. Tracking, tracing, evaluation, deployment, prompts, gateway, and fine-tuning -- each topic covered end-to-end.*
 *LLM model: `google/gemma-4-e4b`*
@@ -64,9 +64,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L1-M1: Tracking
+### L1-M1: Tracking
 
-### L1-M1.1 -- Tracking Fundamentals and Logging
+#### L1-M1.1 -- Tracking Fundamentals and Logging
 
 **Duration:** 45 min
 **Topics:**
@@ -88,7 +88,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M1.2 -- Search, Query API, and MlflowClient
+#### L1-M1.2 -- Search, Query API, and MlflowClient
 
 **Duration:** 45 min
 **Topics:**
@@ -106,7 +106,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M1.3 -- Advanced Tracking Patterns
+#### L1-M1.3 -- Advanced Tracking Patterns
 
 **Duration:** 60 min
 **Topics:**
@@ -128,9 +128,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L1-M2: Tracing
+### L1-M2: Tracing
 
-### L1-M2.1 -- Auto-Tracing and Manual Tracing
+#### L1-M2.1 -- Auto-Tracing and Manual Tracing
 
 **Duration:** 45 min
 **Topics:**
@@ -151,7 +151,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M2.2 -- Trace Analysis and Debugging
+#### L1-M2.2 -- Trace Analysis and Debugging
 
 **Duration:** 45 min
 **Topics:**
@@ -167,9 +167,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L1-M3: Models and Registry
+### L1-M3: Models and Registry
 
-### L1-M3.1 -- Models, Flavors, and Signatures
+#### L1-M3.1 -- Models, Flavors, and Signatures
 
 **Duration:** 60 min
 **Topics:**
@@ -188,7 +188,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M3.2 -- Custom PyFunc Models
+#### L1-M3.2 -- Custom PyFunc Models
 
 **Duration:** 60 min
 **Topics:**
@@ -204,7 +204,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M3.3 -- Model Registry Workflows
+#### L1-M3.3 -- Model Registry Workflows
 
 **Duration:** 45 min
 **Topics:**
@@ -221,9 +221,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L1-M4: Evaluation
+### L1-M4: Evaluation
 
-### L1-M4.1 -- Evaluation Fundamentals
+#### L1-M4.1 -- Evaluation Fundamentals
 
 **Duration:** 60 min
 **Topics:**
@@ -245,7 +245,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M4.2 -- GenAI Framework and Custom Metrics
+#### L1-M4.2 -- GenAI Framework and Custom Metrics
 
 **Duration:** 60 min
 **Topics:**
@@ -265,7 +265,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M4.3 -- RAG System Evaluation
+#### L1-M4.3 -- RAG System Evaluation
 
 **Duration:** 60 min
 **Topics:**
@@ -282,7 +282,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M4.4 -- Datasets and Human-in-the-Loop
+#### L1-M4.4 -- Datasets and Human-in-the-Loop
 
 **Duration:** 60 min
 **Topics:**
@@ -302,9 +302,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L1-M5: Prompt Engineering
+### L1-M5: Prompt Engineering
 
-### L1-M5.1 -- Prompt Registry and Management
+#### L1-M5.1 -- Prompt Registry and Management
 
 **Duration:** 45 min
 **Topics:**
@@ -323,7 +323,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M5.2 -- Prompt Optimization
+#### L1-M5.2 -- Prompt Optimization
 
 **Duration:** 60 min
 **Topics:**
@@ -338,9 +338,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L1-M6: Deployment and Gateway
+### L1-M6: Deployment and Gateway
 
-### L1-M6.1 -- Model Serving
+#### L1-M6.1 -- Model Serving
 
 **Duration:** 60 min
 **Topics:**
@@ -359,7 +359,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M6.2 -- Batch Prediction
+#### L1-M6.2 -- Batch Prediction
 
 **Duration:** 45 min
 **Topics:**
@@ -374,7 +374,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M6.3 -- AI Gateway
+#### L1-M6.3 -- AI Gateway
 
 **Duration:** 60 min
 **Topics:**
@@ -392,9 +392,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L1-M7: Fine-Tuning
+### L1-M7: Fine-Tuning
 
-### L1-M7.1 -- HuggingFace Transformers + MLflow
+#### L1-M7.1 -- HuggingFace Transformers + MLflow
 
 **Duration:** 60 min
 **Topics:**
@@ -410,7 +410,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### Level 1 Summary
+#### Level 1 Summary
 
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
@@ -426,7 +426,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 ---
 
-# LEVEL 2 -- AI AGENTS
+## LEVEL 2 -- AI AGENTS
 
 *Goal: Complete mastery of AI agent building, observability, evaluation, and benchmarking with MLflow. Covers agent frameworks, custom integrations, agent-specific evaluation, and standardized benchmarks.*
 *Prerequisite: Level 1 completed*
@@ -435,9 +435,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L2-M1: Agent Frameworks
+### L2-M1: Agent Frameworks
 
-### L2-M1.1 -- LangChain Agent Tracking
+#### L2-M1.1 -- LangChain Agent Tracking
 
 **Duration:** 90 min
 **Topics:**
@@ -457,7 +457,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M1.2 -- LangGraph Agent Observability
+#### L2-M1.2 -- LangGraph Agent Observability
 
 **Duration:** 90 min
 **Topics:**
@@ -477,7 +477,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M1.3 -- Multi-Agent Systems
+#### L2-M1.3 -- Multi-Agent Systems
 
 **Duration:** 90 min
 **Topics:**
@@ -497,9 +497,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L2-M2: Custom Agent Integrations
+### L2-M2: Custom Agent Integrations
 
-### L2-M2.1 -- Claude Agent SDK + MLflow
+#### L2-M2.1 -- Claude Agent SDK + MLflow
 
 **Duration:** 90 min
 **Topics:**
@@ -518,7 +518,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M2.2 -- DeepAgents + MLflow
+#### L2-M2.2 -- DeepAgents + MLflow
 
 **Duration:** 90 min
 **Topics:**
@@ -537,9 +537,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L2-M3: Agent Evaluation
+### L2-M3: Agent Evaluation
 
-### L2-M3.1 -- Agent Testing Framework
+#### L2-M3.1 -- Agent Testing Framework
 
 **Duration:** 90 min
 **Topics:**
@@ -557,7 +557,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M3.2 -- Agent Quality Metrics
+#### L2-M3.2 -- Agent Quality Metrics
 
 **Duration:** 90 min
 **Topics:**
@@ -577,7 +577,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M3.3 -- Agent Architecture Comparison
+#### L2-M3.3 -- Agent Architecture Comparison
 
 **Duration:** 90 min
 **Topics:**
@@ -596,7 +596,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M3.4 -- Agent Optimization
+#### L2-M3.4 -- Agent Optimization
 
 **Duration:** 90 min
 **Topics:**
@@ -612,7 +612,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M3.5 -- Agent Evaluation Pipeline
+#### L2-M3.5 -- Agent Evaluation Pipeline
 
 **Duration:** 90 min
 **Topics:**
@@ -633,9 +633,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L2-M4: Agent Benchmarks
+### L2-M4: Agent Benchmarks
 
-### L2-M4.1 -- SWE-Bench Evaluation
+#### L2-M4.1 -- SWE-Bench Evaluation
 
 **Duration:** 90 min
 **Topics:**
@@ -654,7 +654,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M4.2 -- GAIA Benchmark
+#### L2-M4.2 -- GAIA Benchmark
 
 **Duration:** 90 min
 **Topics:**
@@ -672,7 +672,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L2-M4.3 -- Custom Domain-Specific Benchmark
+#### L2-M4.3 -- Custom Domain-Specific Benchmark
 
 **Duration:** 90 min
 **Topics:**
@@ -690,7 +690,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### Level 2 Summary
+#### Level 2 Summary
 
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
@@ -703,7 +703,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 ---
 
-# LEVEL 3 -- ADVANCED
+## LEVEL 3 -- ADVANCED
 
 *Goal: Production patterns, infrastructure, extensibility, and capstone projects. Full mastery of MLflow for production AI systems.*
 *Prerequisite: Levels 1 and 2 completed*
@@ -711,9 +711,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L3-M1: Production Operations
+### L3-M1: Production Operations
 
-### L3-M1.1 -- Production Tracing at Scale
+#### L3-M1.1 -- Production Tracing at Scale
 
 **Duration:** 90 min
 **Topics:**
@@ -729,7 +729,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L3-M1.2 -- Grafana Dashboards for MLflow
+#### L3-M1.2 -- Grafana Dashboards for MLflow
 
 **Duration:** 120 min
 **Topics:**
@@ -748,7 +748,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L3-M1.3 -- Feedback Loops and Continuous Improvement
+#### L3-M1.3 -- Feedback Loops and Continuous Improvement
 
 **Duration:** 90 min
 **Topics:**
@@ -765,7 +765,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L3-M1.4 -- CI/CD for AI Applications
+#### L3-M1.4 -- CI/CD for AI Applications
 
 **Duration:** 90 min
 **Topics:**
@@ -782,9 +782,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L3-M2: Advanced Tracing
+### L3-M2: Advanced Tracing
 
-### L3-M2.1 -- OpenTelemetry Integration
+#### L3-M2.1 -- OpenTelemetry Integration
 
 **Duration:** 60 min
 **Topics:**
@@ -799,7 +799,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L3-M2.2 -- Temporal.io Workflow Tracing
+#### L3-M2.2 -- Temporal.io Workflow Tracing
 
 **Duration:** 90 min
 **Topics:**
@@ -816,9 +816,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L3-M3: Extensibility
+### L3-M3: Extensibility
 
-### L3-M3.1 -- Custom Autolog Integrations
+#### L3-M3.1 -- Custom Autolog Integrations
 
 **Duration:** 120 min
 **Topics:**
@@ -835,7 +835,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L3-M3.2 -- MLflow Plugins
+#### L3-M3.2 -- MLflow Plugins
 
 **Duration:** 90 min
 **Topics:**
@@ -851,7 +851,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L3-M3.3 -- Enterprise Patterns and Data Management
+#### L3-M3.3 -- Enterprise Patterns and Data Management
 
 **Duration:** 90 min
 **Topics:**
@@ -872,9 +872,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## L3-M4: Capstones
+### L3-M4: Capstones
 
-### L3-M4.1 -- Capstone: Production AI Agent Platform
+#### L3-M4.1 -- Capstone: Production AI Agent Platform
 
 **Duration:** 2.5 hours
 **Topics:**
@@ -895,7 +895,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L3-M4.2 -- Capstone: Agent Framework Benchmark
+#### L3-M4.2 -- Capstone: Agent Framework Benchmark
 
 **Duration:** 2.5 hours
 **Topics:**
@@ -919,7 +919,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### Level 3 Summary
+#### Level 3 Summary
 
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
@@ -932,7 +932,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ---
 ---
 
-# Complete Course Summary
+## Complete Course Summary
 
 | Level | Focus | Lessons | Time |
 |-------|-------|---------|------|
@@ -943,9 +943,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-## Project Structure
+### Project Structure
 
-```
+```text
 tutorial/
 ├── syllabus.md                         # This file -- the master syllabus
 ├── level_1_models/
@@ -1010,7 +1010,7 @@ tutorial/
 │       └── 2_framework_benchmark/
 ```
 
-## MLflow Feature Coverage Matrix
+### MLflow Feature Coverage Matrix
 
 | Feature Area | Level 1 (Models) | Level 2 (Agents) | Level 3 (Advanced) |
 |---|---|---|---|

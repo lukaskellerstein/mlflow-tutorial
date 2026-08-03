@@ -161,7 +161,7 @@ podman compose down -v     # Stop and wipe all data
 
 ## Project Structure
 
-```
+```text
 syllabus.md                        # Full syllabus -- source of truth
 infra/                             # All infrastructure (Podman Compose)
   compose.yml                      #   Single file to start everything
@@ -188,7 +188,7 @@ tutorial/
 
 Each lesson directory contains:
 
-```
+```text
 N_lesson_name/
   pyproject.toml    # uv project with dependencies
   main.py           # Working lesson code

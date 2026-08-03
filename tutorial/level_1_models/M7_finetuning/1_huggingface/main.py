@@ -1,5 +1,5 @@
 """
-L2-9.1 -- LLM Fine-Tuning with HuggingFace + MLflow
+L1-M7.1 -- LLM Fine-Tuning with HuggingFace + MLflow
 
 Fine-tunes distilgpt2 on a small instruction dataset and tracks everything
 with MLflow: autolog for training metrics, model artifact logging, and
@@ -173,7 +173,7 @@ if __name__ == "__main__":
     mlflow.set_experiment("L1/M7_finetuning/1_huggingface")
 
     print("\n" + "=" * 60)
-    print("  L2-8.1: LLM Fine-Tuning with HuggingFace + MLflow")
+    print("  L1-M7.1: LLM Fine-Tuning with HuggingFace + MLflow")
     print("=" * 60 + "\n")
 
     # Part 1: Load model and data

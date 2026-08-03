@@ -1,5 +1,5 @@
 """
-L2-5.1 — LangChain Agent Tracking with MLflow
+L2-M1.1 — LangChain Agent Tracking with MLflow
 
 Demonstrates how to build a ReAct agent using langchain's create_agent
 (backed by LangGraph), instrument it with MLflow auto-tracing, and then
@@ -181,7 +181,7 @@ def analyse_traces() -> None:
     print("Part 4: Trace Analysis")
     print("=" * 60)
 
-    experiment = mlflow.get_experiment_by_name("L2/M5_agent_observability/1_langchain_agents")
+    experiment = mlflow.get_experiment_by_name("L2/M1_agent_frameworks/1_langchain_agents")
     if experiment is None:
         print("  No experiment found — skipping trace analysis.")
         return
@@ -237,7 +237,7 @@ def analyse_traces() -> None:
 
 def main() -> None:
     print("=" * 60)
-    print("L2-5.1 — LangChain Agent Tracking with MLflow")
+    print("L2-M1.1 — LangChain Agent Tracking with MLflow")
     print("=" * 60)
 
     # Step 1: Enable auto-tracing
@@ -268,7 +268,7 @@ def main() -> None:
     print("=" * 60)
     print("Done! View traces in the MLflow UI:")
     print("  http://127.0.0.1:5555/#/experiments")
-    print("  Look for experiment: L2/M5_agent_observability/1_langchain_agents")
+    print("  Look for experiment: L2/M1_agent_frameworks/1_langchain_agents")
     print("=" * 60)
 
 

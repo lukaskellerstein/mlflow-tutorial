@@ -78,7 +78,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M4.2 -- GAIA General Assistant Benchmark
 ============================================================

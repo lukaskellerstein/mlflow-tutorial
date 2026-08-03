@@ -1,5 +1,5 @@
 """
-L3-3.3 -- Production Feedback Loops
+L3-M1.3 -- Production Feedback Loops
 
 Build a production-quality feedback collection and analysis system that:
   1. Collects user feedback (thumbs up/down, ratings, text comments) per response
@@ -304,7 +304,7 @@ def run_iteration(
 # ---------------------------------------------------------------------------
 def main() -> None:
     print("=" * 60)
-    print("L3-3.3 -- Production Feedback Loops")
+    print("L3-M1.3 -- Production Feedback Loops")
     print("=" * 60)
 
     llm = ChatOpenAI(

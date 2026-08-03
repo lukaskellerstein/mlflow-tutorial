@@ -1,5 +1,5 @@
 """
-L3-1.2 — Agent Quality Metrics Design
+L2-M3.2 — Agent Quality Metrics Design
 
 Comprehensive quality metrics for AI agents: task completion (binary + partial),
 tool selection accuracy (precision/recall/F1), reasoning quality (LLM judge),
@@ -363,7 +363,7 @@ def compare_configs(ma: dict, mb: dict, la: str, lb: str) -> None:
 
 def main() -> None:
     print("=" * 70)
-    print("  L3-1.2 — Agent Quality Metrics Design")
+    print("  L2-M3.2 — Agent Quality Metrics Design")
     print("  Evaluating a LangGraph agent with 4 custom quality scorers")
     print("=" * 70)
 
@@ -398,7 +398,7 @@ def main() -> None:
     compare_configs(ma, mb, "temp=0.3", "temp=0.9")
     print(f"\n{'=' * 70}")
     print("  Done! View results: http://127.0.0.1:5555")
-    print("  Experiment: L3/M1_agent_evaluation/2_quality_metrics")
+    print("  Experiment: L2/M3_agent_evaluation/2_quality_metrics")
     print(f"{'=' * 70}")
 
 

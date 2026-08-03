@@ -1,5 +1,5 @@
 """
-L3-1.4 — Agent Optimization
+L2-M3.4 — Agent Optimization
 
 Systematically optimize a ReAct agent across three dimensions and track
 the improvement trajectory in MLflow:
@@ -268,7 +268,7 @@ def run_variant(label: str, agent, dimension: str, params: dict, all_results: li
 # ---------------------------------------------------------------------------
 def main() -> None:
     print("=" * 70)
-    print("  L3-1.4 — Agent Optimization")
+    print("  L2-M3.4 — Agent Optimization")
     print("=" * 70)
 
     all_results: list[dict] = []

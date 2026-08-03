@@ -1,5 +1,5 @@
 """
-L3-1.5 — End-to-End Agent Evaluation Pipeline
+L2-M3.5 — End-to-End Agent Evaluation Pipeline
 
 Complete automated evaluation pipeline for AI agents:
   Part 1: Build and run the full pipeline (dataset -> agent -> score -> gates -> report)
@@ -479,7 +479,7 @@ def main() -> None:
 
     print("\n" + "=" * 60)
     print("  Done! View results in MLflow UI: http://127.0.0.1:5555")
-    print("  Experiment: L3/M1_agent_evaluation/5_evaluation_pipeline")
+    print("  Experiment: L2/M3_agent_evaluation/5_evaluation_pipeline")
     print("=" * 60)
 
 
