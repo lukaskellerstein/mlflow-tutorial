@@ -21,7 +21,9 @@ Reference files: [`rules/01-project-config.md`](rules/01-project-config.md)
 [`rules/11-communication.md`](rules/11-communication.md),
 [`rules/12-security.md`](rules/12-security.md),
 [`rules/machine-tools.md`](rules/machine-tools.md) (the `nvim-tools` and
-`lukas-ps` CLIs — pre-approved, read-only).
+`lukas-ps` CLIs — pre-approved, read-only),
+[`rules/lsp.md`](rules/lsp.md) (the `LSP` tool — only in repos that opted in,
+and deferred, so it must be loaded before it can be called).
 
 Path-scoped rules load automatically when you touch a matching file:
 [`tutorial-structure.md`](rules/tutorial-structure.md) (lesson conventions),

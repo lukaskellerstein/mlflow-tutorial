@@ -9,6 +9,8 @@ description: "Step 1: Understand — read code, ask questions, identify gaps bef
   findings you introduce stay distinguishable from ones that were already there.
   For performance or RAM questions, `lukas-ps --json [name]` measures the real
   process tree. Both: [`machine-tools.md`](machine-tools.md).
+- For symbol questions — where is this defined, what breaks if I change this
+  signature — prefer the `LSP` tool when this repo has it: [`lsp.md`](lsp.md).
 - Ask clarifying questions if requirements are ambiguous
 - Identify gaps in the current design and opportunities for improvement
 - Understand the requirement completely before proceeding

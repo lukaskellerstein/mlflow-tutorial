@@ -115,7 +115,7 @@ with mlflow.start_run(run_name="temperature_comparison"):
 ### Always Check the MLFlow Source Code
 
 When implementing MLFlow features, verify the API exists and its signature by consulting:
-- Source code: `~/Projects/github/mlflow/mlflow`
-- Documentation: `/Users/lkellers/Projects/github/mlflow/mlflow/docs/docs`
+- Source code: `~/Projects/Github/mlflow/mlflow`
+- Documentation: `~/Projects/Github/mlflow/mlflow/docs/docs`
 
 Do NOT guess at API names or parameters. Read the source if unsure.
