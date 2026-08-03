@@ -1,4 +1,4 @@
-# L3-3.1 — Production Tracing Strategies
+# L3-M1.1 — Production Tracing Strategies
 
 **Level:** Expert
 **Duration:** ~45 minutes
@@ -10,7 +10,7 @@ In production, tracing every single LLM request creates unacceptable overhead. T
 ## Prerequisites
 
 - Completed: L1-M5 (Tracing basics), L2-M4 (Advanced Tracing)
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -69,12 +69,14 @@ Every traced call attaches production metadata via `span.set_attributes()` and `
 
 ```python
 with mlflow.start_span(name="llm_call") as span:
-    span.set_attributes({
-        "request_id": request_id,
-        "user_id": metadata["user_id"],
-        "environment": metadata["environment"],
-        "app_version": metadata["app_version"],
-    })
+    span.set_attributes(
+        {
+            "request_id": request_id,
+            "user_id": metadata["user_id"],
+            "environment": metadata["environment"],
+            "app_version": metadata["app_version"],
+        }
+    )
     # ... make LLM call ...
     mlflow.set_trace_tag(span.trace_id, "environment", "production")
 ```
@@ -100,12 +102,14 @@ Latency percentiles (p50, p95, p99) and token usage trends are computed from the
 
 ```python
 summary = build_performance_summary(records)
-mlflow.log_metrics({
-    "p50_latency_ms": summary["p50_ms"],
-    "p95_latency_ms": summary["p95_ms"],
-    "p99_latency_ms": summary["p99_ms"],
-    "total_token_estimate": summary["total_token_estimate"],
-})
+mlflow.log_metrics(
+    {
+        "p50_latency_ms": summary["p50_ms"],
+        "p95_latency_ms": summary["p95_ms"],
+        "p99_latency_ms": summary["p99_ms"],
+        "total_token_estimate": summary["total_token_estimate"],
+    }
+)
 ```
 
 ## Running the Lesson
@@ -118,9 +122,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-3.1 — Production Tracing Strategies
+L3-M1.1 — Production Tracing Strategies
 ============================================================
 ============================================================
 Part 1: Trace Sampling Strategies
@@ -187,4 +191,4 @@ Production Tracing Strategy Comparison
 
 ## Next Steps
 
-Continue to L3-3.2 (Grafana Dashboards) to build real-time monitoring dashboards that visualize the metrics collected in this lesson.
+Continue to L3-M1.2 (Grafana Dashboards) to build real-time monitoring dashboards that visualize the metrics collected in this lesson.

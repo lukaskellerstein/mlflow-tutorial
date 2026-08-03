@@ -1,4 +1,4 @@
-# L3-2.4 — Building Custom Autolog Integrations
+# L3-M3.1 — Building Custom Autolog Integrations
 
 **Level:** Expert
 **Duration:** 2 hours
@@ -11,7 +11,7 @@ MLflow provides built-in autolog integrations for major frameworks (LangChain, s
 
 - Completed: L1-M3.2 (LLM/GenAI Autologging), L1-M5.2 (Manual Tracing)
 - Completed: L3-M2.1 through L3-M2.3 (Custom integration patterns)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -78,6 +78,7 @@ def _make_chat_wrapper(original_fn):
         if _state.log_metrics:
             mlflow.log_metrics({"chat_latency_s": time.time() - start})
         return result
+
     return wrapper
 ```
 
@@ -121,9 +122,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-2.4 — Building Custom Autolog Integrations
+L3-M3.1 — Building Custom Autolog Integrations
 ============================================================
 
 --- Part 1: How MLflow Autolog Works ---

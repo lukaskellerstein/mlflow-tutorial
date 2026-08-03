@@ -1,4 +1,4 @@
-# L2-9.1 -- LLM Fine-Tuning with HuggingFace + MLflow
+# L1-M7.1 -- LLM Fine-Tuning with HuggingFace + MLflow
 
 **Level:** Practitioner
 **Duration:** ~1.5 hours
@@ -10,7 +10,7 @@ This lesson walks through fine-tuning a small language model (distilgpt2, ~82M p
 ## Prerequisites
 
 - Completed: L1-M3.1 (Models and Flavors), L1-M2.1 (Autologging)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - Internet connection (first run downloads distilgpt2, ~350 MB)
 
 ## Concepts
@@ -75,7 +75,8 @@ args = TrainingArguments(
 )
 
 trainer = Trainer(
-    model=model, args=args,
+    model=model,
+    args=args,
     train_dataset=tokenized_ds,
     data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
 )
@@ -122,9 +123,9 @@ The first run downloads the distilgpt2 model (~350 MB). Subsequent runs use the 
 
 ## Expected Output
 
-```
+```text
 ============================================================
-  L2-9.1: LLM Fine-Tuning with HuggingFace + MLflow
+  L1-M7.1: LLM Fine-Tuning with HuggingFace + MLflow
 ============================================================
 
 ============================================================
@@ -166,7 +167,7 @@ Done! View results in the MLflow UI:
 ============================================================
 ```
 
-In the MLflow UI at http://127.0.0.1:5555, you will see:
+In the MLflow UI at <http://127.0.0.1:5555>, you will see:
 - Training metrics (loss, learning rate) plotted over steps under the autolog run
 - The fine-tuned model artifact with tokenizer under the model logging run
 - A comparison run with tags indicating base vs fine-tuned evaluation

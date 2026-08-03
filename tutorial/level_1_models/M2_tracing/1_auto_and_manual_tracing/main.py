@@ -41,7 +41,7 @@ def part1_openai_autolog() -> None:
         max_tokens=1024,
     )
 
-    print(f'  Response: {(response.choices[0].message.content or "")[:200]}')
+    print(f"  Response: {(response.choices[0].message.content or '')[:200]}")
     print()
     print("  [Autolog captured]")
     print("    - Input messages, output content, token usage, latency")
@@ -82,9 +82,7 @@ def part2_langchain_autolog() -> None:
         system_prompt="You are a helpful assistant. Use tools when appropriate.",
     )
 
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": "What time is it right now?"}]}
-    )
+    result = agent.invoke({"messages": [{"role": "user", "content": "What time is it right now?"}]})
 
     final_message = result["messages"][-1].content
     print(f"  Response: {final_message[:200]}")
@@ -162,9 +160,7 @@ def analyze_texts(texts: list[str]) -> dict:
                 result = {
                     "text": text,
                     "word_count": len(words),
-                    "avg_word_length": round(
-                        sum(len(w) for w in words) / max(len(words), 1), 2
-                    ),
+                    "avg_word_length": round(sum(len(w) for w in words) / max(len(words), 1), 2),
                 }
                 total_words += len(words)
                 all_results.append(result)
@@ -193,7 +189,7 @@ def part4_start_span() -> None:
     summary = analyze_texts(texts)
     print(f"  Analyzed {summary['total_texts']} texts, {summary['total_words']} total words")
     for r in summary["results"]:
-        print(f"    - \"{r['text']}\" -> {r['word_count']} words, avg len {r['avg_word_length']}")
+        print(f'    - "{r["text"]}" -> {r["word_count"]} words, avg len {r["avg_word_length"]}')
     print(f"  Trace ID: {mlflow.get_last_active_trace_id()}")
     print()
     print("  The trace shows batch_analysis as the root span,")

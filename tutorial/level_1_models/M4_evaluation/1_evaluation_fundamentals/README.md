@@ -10,7 +10,7 @@ Learn three complementary approaches to evaluating LLM outputs, all using one sh
 ## Prerequisites
 
 - Completed: L1-M3 (Models and Registry)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
@@ -62,6 +62,7 @@ Use `ResponseLength` (built-in) and `contains_expected` (custom `@scorer`) to ev
 def contains_expected(inputs, outputs, expectations) -> bool:
     expected = expectations.get("expected_response", "")
     return expected.lower() in outputs.lower()
+
 
 results = mlflow.genai.evaluate(
     data=eval_data,

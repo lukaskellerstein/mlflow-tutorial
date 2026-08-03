@@ -10,7 +10,7 @@ MLflow can serve any logged model as a REST API with a single CLI command. This 
 ## Prerequisites
 
 - Completed: L1-M3 (Models and Flavors, Model Registry)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts
@@ -21,7 +21,7 @@ By placing client initialization in `load_context()` instead of `predict()`, the
 
 ### Serving Architecture
 
-```
+```text
 Client (curl / app)       MLflow Serving Process
    |                          |
    |  POST /invocations       |
@@ -46,11 +46,13 @@ Client (curl / app)       MLflow Serving Process
 The `/invocations` endpoint accepts JSON in two formats:
 
 **dataframe_split** (recommended):
+
 ```json
 {"dataframe_split": {"columns": ["question"], "data": [["What is MLflow?"]]}}
 ```
 
 **instances**:
+
 ```json
 {"instances": [{"question": "What is MLflow?"}]}
 ```
@@ -67,6 +69,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
 
     def load_context(self, context):
         from openai import OpenAI
+
         self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
     def predict(self, context, model_input, params=None):
@@ -112,6 +115,7 @@ mlflow models serve -m "models:/L1-llm-serving-demo@champion" --port 5001 --no-c
 ```
 
 For Docker:
+
 ```bash
 mlflow models build-docker --model-uri models:/L1-llm-serving-demo@champion --name mlflow-llm-server
 podman run -p 5001:8080 --add-host=host.containers.internal:host-gateway mlflow-llm-server
@@ -129,7 +133,7 @@ Note: The script logs models, tests locally, and prints serving commands. It doe
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Log LLM Model (temperature=0.7)
 ============================================================

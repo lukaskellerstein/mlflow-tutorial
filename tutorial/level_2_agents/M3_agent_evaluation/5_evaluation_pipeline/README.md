@@ -1,4 +1,4 @@
-# L3-1.5 — End-to-End Agent Evaluation Pipeline
+# L2-M3.5 — End-to-End Agent Evaluation Pipeline
 
 **Level:** Expert
 **Duration:** 2.5 hours
@@ -11,7 +11,7 @@ Build a complete, automated agent evaluation pipeline that goes from dataset cre
 
 - Completed: L3-M1.1 (Agent Testing), L3-M1.2 (Quality Metrics), L3-M1.4 (Agent Optimization)
 - Completed: L2-M3.1 (Custom Metrics), L2-M5.2 (LangGraph Agent Observability)
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -62,10 +62,12 @@ def search_knowledge(query: str) -> str:
     """Search a knowledge base for information on a topic."""
     ...
 
+
 @tool
 def calculate(expression: str) -> str:
     """Evaluate a simple math expression."""
     ...
+
 
 def build_agent():
     llm = ChatOpenAI(
@@ -82,10 +84,15 @@ def build_agent():
 The dataset includes 6 test cases across two categories (knowledge and math), each specifying which tool should be used:
 
 ```python
-{"input": "What is Python?", "expected": "high-level programming language",
- "category": "knowledge", "needs_tool": "search_knowledge"},
-{"input": "What is 25 * 4?", "expected": "100",
- "category": "math", "needs_tool": "calculate"},
+(
+    {
+        "input": "What is Python?",
+        "expected": "high-level programming language",
+        "category": "knowledge",
+        "needs_tool": "search_knowledge",
+    },
+)
+({"input": "What is 25 * 4?", "expected": "100", "category": "math", "needs_tool": "calculate"},)
 ```
 
 ### Step 3: The Pipeline Class
@@ -126,7 +133,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
   Agent Evaluation Pipeline — Starting
 ============================================================
@@ -165,7 +172,7 @@ uv run python main.py
     accuracy: 1.000 -> 0.833 (delta: -0.167)
 ```
 
-In the MLflow UI at http://127.0.0.1:5555, you will see:
+In the MLflow UI at <http://127.0.0.1:5555>, you will see:
 - An `evaluation_pipeline` parent run with aggregate metrics and artifacts.
 - Nested `test_1` through `test_6` runs with per-test parameters and tags.
 - A `regression_check` run with baseline vs. current comparison.

@@ -1,5 +1,5 @@
 """
-L2-M2.2 — Custom PyFunc Models
+L1-M3.2 — Custom PyFunc Models
 
 Demonstrates wrapping a RAG pipeline as a custom MLflow PyFunc model:
 - PythonModel with load_context() for initializing LLM and vector DB
@@ -19,7 +19,7 @@ from mlflow.models import infer_signature
 from openai import OpenAI
 
 TRACKING_URI = "http://127.0.0.1:5555"
-EXPERIMENT_NAME = "L2/M2_advanced_models/2_custom_pyfunc"
+EXPERIMENT_NAME = "L1/M3_models_registry/2_custom_pyfunc"
 
 # Sample documents about MLflow for the RAG knowledge base
 DOCUMENTS = [
@@ -72,8 +72,7 @@ class RAGModel(mlflow.pyfunc.PythonModel):
             vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
         )
         points = [
-            PointStruct(id=i, vector=vec, payload={"text": doc})
-            for i, (vec, doc) in enumerate(zip(vectors, documents))
+            PointStruct(id=i, vector=vec, payload={"text": doc}) for i, (vec, doc) in enumerate(zip(vectors, documents))
         ]
         self.qdrant.upsert(collection_name="knowledge_base", points=points)
         print(f"  [load_context] Indexed {len(documents)} documents")
@@ -104,9 +103,7 @@ class RAGModel(mlflow.pyfunc.PythonModel):
                 query=query_vector,
                 limit=top_k,
             )
-            context_text = "\n".join(
-                [(p.payload or {})["text"] for p in search_results.points]
-            )
+            context_text = "\n".join([(p.payload or {})["text"] for p in search_results.points])
 
             # Generate answer with retrieved context
             response = client.chat.completions.create(

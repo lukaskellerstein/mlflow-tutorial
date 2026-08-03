@@ -1,4 +1,4 @@
-# L3-1.1 — Agent Testing Framework
+# L2-M3.1 — Agent Testing Framework
 
 **Level:** Expert
 **Duration:** 2 hours
@@ -9,9 +9,9 @@ Build a production-quality testing framework for LangGraph agents. You will crea
 
 ## Prerequisites
 
-- Completed: L2-5.2 (LangGraph Agent Observability)
-- Completed: L2-3.1 (Custom Metrics)
-- MLflow server running at http://127.0.0.1:5555
+- Completed: L2-M1.2 (LangGraph Agent Observability)
+- Completed: L1-M4.2 (Custom Metrics)
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -45,7 +45,7 @@ Good test suites cover: simple cases (sanity checks), multi-tool scenarios, edge
 
 The framework uses MLflow nested runs:
 
-```
+```text
 agent_test_suite (parent run)
   +-- test_simple_addition (child run)
   +-- test_multiplication (child run)
@@ -57,7 +57,7 @@ The parent run holds aggregate metrics (pass rate, average duration). Each child
 
 ### Regression baselines
 
-After a test run, results are saved as a JSON baseline artifact. On subsequent runs, you can load the baseline and compare: which tests regressed (were passing, now failing)? Which improved? This is the foundation for CI/CD quality gates in L3-3.4.
+After a test run, results are saved as a JSON baseline artifact. On subsequent runs, you can load the baseline and compare: which tests regressed (were passing, now failing)? Which improved? This is the foundation for CI/CD quality gates in L3-M1.4.
 
 ## Step-by-Step
 
@@ -71,10 +71,12 @@ def calculator(expression: str) -> str:
     """Evaluate a mathematical expression."""
     ...
 
+
 @tool
 def text_analyzer(text: str) -> str:
     """Analyze text and return word count, char count, etc."""
     ...
+
 
 agent = create_agent(
     ChatOpenAI(
@@ -136,9 +138,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-1.1 — Agent Testing Framework
+L2-M3.1 — Agent Testing Framework
 ============================================================
 
 --- Part 1: Building LangGraph ReAct agent ---
@@ -169,7 +171,7 @@ L3-1.1 — Agent Testing Framework
   ...
 ```
 
-In the MLflow UI, navigate to the `L3/M1_agent_evaluation/1_agent_testing` experiment to see the parent `agent_test_suite` run with nested child runs for each test case. Each child run shows pass/fail metrics and test parameters.
+In the MLflow UI, navigate to the `L2/M3_agent_evaluation/1_agent_testing` experiment to see the parent `agent_test_suite` run with nested child runs for each test case. Each child run shows pass/fail metrics and test parameters.
 
 ## Key Takeaways
 
@@ -177,8 +179,8 @@ In the MLflow UI, navigate to the `L3/M1_agent_evaluation/1_agent_testing` exper
 - Nested MLflow runs provide clean organization: one parent per test suite, one child per test case, with aggregate metrics on the parent.
 - Regression baselines let you detect quality regressions when you change the model, prompt, or tools — save them as MLflow artifacts for traceability.
 - Setting `temperature=0.0` during testing reduces flakiness but does not eliminate it — LLM outputs are inherently non-deterministic.
-- Substring matching is a simple but effective correctness check for factual outputs; L3-1.2 introduces LLM-as-judge for more nuanced quality assessment.
+- Substring matching is a simple but effective correctness check for factual outputs; L2-M3.2 introduces LLM-as-judge for more nuanced quality assessment.
 
 ## Next Steps
 
-In **L3-1.2 (Agent Quality Metrics Design)**, you will build custom scorers for agent-specific behaviors — task completion rate with partial credit, tool selection precision/recall, and reasoning quality assessment using LLM judges. These metrics replace the simple pass/fail checks used here with nuanced, production-grade quality measurement.
+In **L2-M3.2 (Agent Quality Metrics Design)**, you will build custom scorers for agent-specific behaviors — task completion rate with partial credit, tool selection precision/recall, and reasoning quality assessment using LLM judges. These metrics replace the simple pass/fail checks used here with nuanced, production-grade quality measurement.

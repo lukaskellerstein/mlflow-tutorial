@@ -1,4 +1,4 @@
-# L2-5.3 — Multi-Agent Systems
+# L2-M1.3 — Multi-Agent Systems
 
 **Level:** Practitioner
 **Duration:** ~1 hour
@@ -10,7 +10,7 @@ This lesson builds a multi-agent system using LangGraph's supervisor pattern and
 ## Prerequisites
 
 - Completed: L1-M5.1 (Auto Tracing), L2-M5.2 (LangGraph Agents)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
@@ -29,7 +29,7 @@ This lesson uses the **supervision** pattern: a supervisor (implemented as a con
 
 ### The Pipeline
 
-```
+```text
 START -> Researcher -> Writer -> Reviewer --(pass)--> END
                                     |
                                     +--(fail)--> Writer (revision loop, max 2)
@@ -134,7 +134,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Enabling LangChain auto-tracing: mlflow.langchain.autolog()
 ============================================================

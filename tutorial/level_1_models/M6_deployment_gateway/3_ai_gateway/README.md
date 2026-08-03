@@ -10,7 +10,7 @@ The MLflow AI Gateway provides a unified, centralized interface for interacting 
 ## Prerequisites
 
 - Completed: L1-M6.1 (Model Serving)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - No cloud API keys required (this lesson is educational / config-focused)
 
 ## Concepts
@@ -68,7 +68,8 @@ routes:
 ```python
 endpoint = {
     "name": "team-chat",
-    "provider": "openai", "model": "gpt-4o",
+    "provider": "openai",
+    "model": "gpt-4o",
     "fallbacks": [
         {"provider": "openai", "model": "gpt-4o-mini"},
         {"provider": "anthropic", "model": "claude-sonnet-4-20250514"},
@@ -114,7 +115,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L1-M6.3 — AI Gateway
 ============================================================

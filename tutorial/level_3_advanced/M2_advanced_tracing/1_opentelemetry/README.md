@@ -1,4 +1,4 @@
-# L2-M4.3 -- OpenTelemetry Integration
+# L3-M2.1 -- OpenTelemetry Integration
 
 **Level:** Practitioner
 **Duration:** ~45 minutes
@@ -10,7 +10,7 @@ MLflow's tracing system is built directly on the OpenTelemetry (OTel) SDK. This 
 ## Prerequisites
 
 - Completed: L1-M5.1 (Auto Tracing), L1-M5.2 (Manual Tracing)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - Basic understanding of distributed tracing concepts (spans, traces, context propagation)
 
 ## Concepts
@@ -19,7 +19,7 @@ MLflow's tracing system is built directly on the OpenTelemetry (OTel) SDK. This 
 
 When you call `@mlflow.trace` or `mlflow.start_span()`, MLflow does not use a proprietary tracing format. Instead, it creates standard OpenTelemetry spans via the OTel SDK:
 
-```
+```text
 @mlflow.trace  -->  mlflow.start_span()  -->  OTel Tracer.start_span()
                                                      |
                                               TracerProvider
@@ -92,6 +92,7 @@ Finally, we create traces that mix MLflow-managed spans (with inputs/outputs vis
 ```python
 custom_tracer = tracer_provider.get_tracer("custom-otel-instrumentation")
 
+
 @mlflow.trace(name="pipeline")
 def pipeline():
     with custom_tracer.start_as_current_span("db_query") as span:
@@ -116,7 +117,7 @@ You will see four parts printed to the console:
 3. **Part 3** -- The `ConsoleSpanExporter` outputs raw JSON span data to stdout, plus configuration examples for Jaeger/Zipkin/Tempo.
 4. **Part 4** -- Shows a data pipeline trace with both MLflow and raw OTel spans, demonstrating coexistence.
 
-In the MLflow UI at http://127.0.0.1:5555, navigate to the experiment `L2/M4_advanced_tracing/3_opentelemetry` and explore the traces. MLflow-managed spans will show structured inputs and outputs; raw OTel spans will appear with their attributes but without MLflow-specific metadata.
+In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment `L3/M2_advanced_tracing/1_opentelemetry` and explore the traces. MLflow-managed spans will show structured inputs and outputs; raw OTel spans will appear with their attributes but without MLflow-specific metadata.
 
 ## Key Takeaways
 

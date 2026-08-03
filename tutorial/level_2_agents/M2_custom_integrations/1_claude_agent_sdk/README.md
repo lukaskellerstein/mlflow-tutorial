@@ -12,7 +12,7 @@ The lesson uses an external FastMCP server (STDIO transport) for custom tools an
 ## Prerequisites
 
 - Completed: L1-M2.1 (Auto-Tracing and Manual Tracing)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - Claude Code CLI installed (`claude` command available)
 - Anthropic API key configured (via Claude Code subscription or `ANTHROPIC_API_KEY`)
 - **Note**: This lesson makes real API calls and incurs costs
@@ -43,12 +43,15 @@ The FastMCP server defines two tools with simple return types:
 
 ```python
 from mcp.server.fastmcp import FastMCP
+
 mcp = FastMCP("tutorial_tools")
+
 
 @mcp.tool()
 def calculator(expression: str) -> dict:
     result = eval(expression)
     return {"expression": expression, "result": result}
+
 
 @mcp.tool()
 def knowledge_lookup(topic: str) -> dict:
@@ -61,7 +64,7 @@ Connect to the MCP server via STDIO and configure the agent:
 
 ```python
 options = ClaudeAgentOptions(
-    tools=[],           # no built-in tools (Bash, Read, etc.)
+    tools=[],  # no built-in tools (Bash, Read, etc.)
     mcp_servers={
         "tools": {
             "command": sys.executable,
@@ -121,7 +124,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M2.1 — Claude Agent SDK + MLflow Integration
 ============================================================

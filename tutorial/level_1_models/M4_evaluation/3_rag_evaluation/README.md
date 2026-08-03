@@ -1,4 +1,4 @@
-# L2-3.2 — RAG System Evaluation
+# L1-M4.3 — RAG System Evaluation
 
 **Level:** Practitioner
 **Duration:** 1.5 hours
@@ -10,7 +10,7 @@ Retrieval-Augmented Generation (RAG) systems combine a retrieval step (finding r
 ## Prerequisites
 
 - Completed: L1-M4.2 (LLM Eval Basics), L2-M3.1 (Custom Metrics)
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
@@ -104,10 +104,12 @@ def retrieval_precision(inputs, outputs, expectations) -> Feedback:
     precision = hits / len(retrieved)
     return Feedback(value=precision, rationale=f"Precision={precision:.2f}")
 
+
 @scorer(name="retrieval_recall")
 def retrieval_recall(inputs, outputs, expectations) -> Feedback:
     """Fraction of expected docs that were actually retrieved."""
     ...
+
 
 @scorer(name="context_used")
 def context_used(inputs, outputs) -> Feedback:
@@ -158,9 +160,9 @@ uv run python main.py
 
 The terminal will show evaluation metrics for both strategies:
 
-```
+```text
 ============================================================
-L2-3.2 — RAG System Evaluation
+L1-M4.3 — RAG System Evaluation
 ============================================================
 
 Knowledge base: 7 documents
@@ -198,7 +200,7 @@ Comparison: Top-1 vs Top-3 Retrieval
   context_used/mean                       0.4000     0.2000      top_1
 ```
 
-In the MLflow UI at http://127.0.0.1:5555, navigate to the experiment "L2/M3_deep_evaluation/2_rag_evaluation" to see:
+In the MLflow UI at <http://127.0.0.1:5555>, navigate to the experiment "L1/M4_evaluation/3_rag_evaluation" to see:
 - The parent run "strategy_comparison" with two nested child runs
 - Side-by-side metric comparison
 - Evaluation results from `mlflow.genai.evaluate()` in the Evaluation tab

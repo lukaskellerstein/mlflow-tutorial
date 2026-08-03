@@ -11,7 +11,7 @@ Established benchmarks like SWE-Bench and GAIA test general capabilities, but yo
 
 - Completed: L2-M4.1 (SWE-Bench) and L2-M4.2 (GAIA) for benchmark harness patterns
 - Completed: L2-M1.1 (LangChain Agents) for ReAct agent basics
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` loaded
 
 ## Concepts
@@ -55,7 +55,10 @@ We define three task categories for a customer support agent, each with increasi
 TASK_TAXONOMY = {
     "order_lookup": {"difficulty": 1, "required_tools": ["check_order"]},
     "refund_request": {"difficulty": 2, "required_tools": ["check_order", "check_refund_policy"]},
-    "complex_complaint": {"difficulty": 3, "required_tools": ["check_order", "check_refund_policy", "escalate_ticket"]},
+    "complex_complaint": {
+        "difficulty": 3,
+        "required_tools": ["check_order", "check_refund_policy", "escalate_ticket"],
+    },
 }
 ```
 
@@ -85,7 +88,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M4.3 -- Custom Domain-Specific Agent Benchmark
 ============================================================

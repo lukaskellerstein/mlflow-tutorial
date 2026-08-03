@@ -1,4 +1,4 @@
-# L2-M4.4 — Trace-based Debugging and Analysis
+# L1-M2.2 — Trace-based Debugging and Analysis
 
 **Level:** Practitioner
 **Duration:** ~45 minutes
@@ -10,7 +10,7 @@ Traces capture the full execution flow of your LLM applications, but their real 
 ## Prerequisites
 
 - Completed: L1-M5.1 (Auto Tracing), L1-M5.2 (Manual Tracing)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
 ## Concepts
@@ -45,13 +45,20 @@ We run four different LLM calls to produce a variety of traces with different co
 
 ```python
 mlflow.langchain.autolog()
-llm = ChatOpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio", model="google/gemma-4-e4b", temperature=0.7)
+llm = ChatOpenAI(
+    base_url="http://localhost:1234/v1",
+    api_key="lm-studio",
+    model="google/gemma-4-e4b",
+    temperature=0.7,
+)
 
 # Direct LLM invocation — simple Q&A
-response = llm.invoke([
-    SystemMessage(content="You are a helpful assistant. Answer in one sentence."),
-    HumanMessage(content="What is the speed of light?"),
-])
+response = llm.invoke(
+    [
+        SystemMessage(content="You are a helpful assistant. Answer in one sentence."),
+        HumanMessage(content="What is the speed of light?"),
+    ]
+)
 ```
 
 Each `llm.invoke()` call creates a separate trace with spans captured by autolog.
@@ -63,8 +70,8 @@ Use `mlflow.search_traces()` to programmatically fetch all traces from an experi
 ```python
 traces = mlflow.search_traces(
     experiment_ids=[experiment.experiment_id],
-    return_type="list",   # returns list of Trace objects
-    flush=True,           # ensure async writes are flushed
+    return_type="list",  # returns list of Trace objects
+    flush=True,  # ensure async writes are flushed
 )
 ```
 
@@ -103,10 +110,12 @@ Create a summary DataFrame and log it as an MLflow artifact:
 with mlflow.start_run(run_name="trace_analysis_report"):
     report_df.to_csv("trace_analysis_report.csv", index=False)
     mlflow.log_artifact("trace_analysis_report.csv")
-    mlflow.log_metrics({
-        "total_traces": len(report_df),
-        "avg_duration_ms": report_df["total_duration_ms"].mean(),
-    })
+    mlflow.log_metrics(
+        {
+            "total_traces": len(report_df),
+            "avg_duration_ms": report_df["total_duration_ms"].mean(),
+        }
+    )
 ```
 
 ## Running the Lesson
@@ -119,7 +128,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 Part 1: Generating traces from LLM calls
   Running: Simple Q&A
   Result:  The speed of light in a vacuum is approximately 299,792,458 meters ...
@@ -156,7 +165,7 @@ Part 4: Analysis Report
 ```
 
 In the MLflow UI:
-- Navigate to experiment `L2/M4_advanced_tracing/4_trace_analysis`
+- Navigate to experiment `L1/M2_tracing/2_trace_analysis`
 - **Traces tab**: browse individual trace timelines and span hierarchies
 - **Runs tab**: find the `trace_analysis_report` run with CSV artifacts and summary metrics
 

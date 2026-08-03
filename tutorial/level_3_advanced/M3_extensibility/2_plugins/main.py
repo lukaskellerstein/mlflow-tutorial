@@ -1,5 +1,5 @@
 """
-L3-4.1 — MLflow Plugins and Extensibility
+L3-M3.2 — MLflow Plugins and Extensibility
 
 Demonstrates MLflow's plugin architecture through production-quality examples:
 - Plugin system overview (entry points, registries, extension types)
@@ -27,7 +27,7 @@ from pydantic import SecretStr
 
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 
-EXPERIMENT_NAME = "L3/M4_advanced_features/1_plugins"
+EXPERIMENT_NAME = "L3/M3_extensibility/2_plugins"
 
 
 # ── Part 1: Plugin Architecture Overview ───────────────────────────────── #
@@ -195,6 +195,7 @@ def part3_metric_aggregator() -> None:
     with mlflow.start_run(run_name="metric-aggregator-demo"):
         # Simulate per-batch latency and quality metrics
         import random
+
         random.seed(42)
         latencies = [random.uniform(0.1, 2.0) for _ in range(10)]
         scores = [random.uniform(0.6, 1.0) for _ in range(10)]
@@ -301,11 +302,13 @@ def part4_model_evaluator(llm: ChatOpenAI) -> list[dict[str, Any]]:
             result_entry = {"prompt": prompt, "response": text, **metrics}
             results.append(result_entry)
 
-            print(f"  Evaluation: chars={metrics['eval/char_count']:.0f}, "
-                  f"words={metrics['eval/word_count']:.0f}, "
-                  f"diversity={metrics['eval/word_diversity']:.2f}, "
-                  f"code={metrics['eval/contains_code']:.0f}, "
-                  f"length_quality={metrics['eval/length_quality']:.1f}")
+            print(
+                f"  Evaluation: chars={metrics['eval/char_count']:.0f}, "
+                f"words={metrics['eval/word_count']:.0f}, "
+                f"diversity={metrics['eval/word_diversity']:.2f}, "
+                f"code={metrics['eval/contains_code']:.0f}, "
+                f"length_quality={metrics['eval/length_quality']:.1f}"
+            )
             print()
 
         # Log summary table
@@ -313,10 +316,12 @@ def part4_model_evaluator(llm: ChatOpenAI) -> list[dict[str, Any]]:
         mlflow.log_table(df, artifact_file="evaluation_results.json")
         avg_diversity = float(df["eval/word_diversity"].mean())
         avg_length = float(df["eval/char_count"].mean())
-        mlflow.log_metrics({
-            "eval/avg_word_diversity": avg_diversity,
-            "eval/avg_char_count": avg_length,
-        })
+        mlflow.log_metrics(
+            {
+                "eval/avg_word_diversity": avg_diversity,
+                "eval/avg_char_count": avg_length,
+            }
+        )
         print(f"  Summary: avg diversity={avg_diversity:.2f}, avg length={avg_length:.0f} chars")
 
     print()
@@ -379,7 +384,7 @@ def part5_combined_demo(llm: ChatOpenAI) -> None:
 
 def main() -> None:
     print("=" * 60)
-    print("  L3-4.1 — MLflow Plugins and Extensibility")
+    print("  L3-M3.2 — MLflow Plugins and Extensibility")
     print("=" * 60)
     print()
 

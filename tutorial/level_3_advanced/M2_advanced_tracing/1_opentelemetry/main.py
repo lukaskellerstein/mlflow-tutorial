@@ -1,5 +1,5 @@
 """
-L2-M4.3 — OpenTelemetry Integration
+L3-M2.1 — OpenTelemetry Integration
 
 Demonstrates that MLflow tracing is built on OpenTelemetry (OTel):
 - Part 1: MLflow traces use OTel spans under the hood
@@ -25,6 +25,7 @@ mlflow.set_experiment("L3/M2_advanced_tracing/1_opentelemetry")
 
 
 # ── Helper classes ────────────────────────────────────────
+
 
 class _NoOpExporter(SpanExporter):
     def export(self, spans):
@@ -54,15 +55,14 @@ class PrintingSpanProcessor(SimpleSpanProcessor):
 
 def _remove_processor(tp, target) -> None:
     """Remove a specific processor instance from a TracerProvider."""
-    if hasattr(tp, '_active_span_processor'):
+    if hasattr(tp, "_active_span_processor"):
         proc = tp._active_span_processor
-        if hasattr(proc, '_span_processors'):
-            proc._span_processors = tuple(
-                sp for sp in proc._span_processors if sp is not target
-            )
+        if hasattr(proc, "_span_processors"):
+            proc._span_processors = tuple(sp for sp in proc._span_processors if sp is not target)
 
 
 # ── Part 1: MLflow tracing IS OpenTelemetry ───────────────
+
 
 def part1_otel_foundation() -> None:
     print("=" * 60)
@@ -81,13 +81,14 @@ def part1_otel_foundation() -> None:
     tp = mlflow_provider.get()
     print(f"\n  TracerProvider type: {type(tp).__name__}")
     print(f"  Is OTel SDK TracerProvider? {isinstance(tp, TracerProvider)}")
-    if hasattr(tp, '_active_span_processor') and hasattr(tp._active_span_processor, '_span_processors'):
+    if hasattr(tp, "_active_span_processor") and hasattr(tp._active_span_processor, "_span_processors"):
         for i, sp in enumerate(tp._active_span_processor._span_processors):
             print(f"  Registered processor [{i}]: {type(sp).__name__}")
     print()
 
 
 # ── Part 2: Custom SpanProcessor ──────────────────────────
+
 
 def part2_custom_span_processor() -> None:
     print("=" * 60)
@@ -118,6 +119,7 @@ def part2_custom_span_processor() -> None:
 
 # ── Part 3: Export concepts ───────────────────────────────
 
+
 def part3_export_concepts() -> None:
     print("=" * 60)
     print("Part 3: Exporting Traces to OTel Backends")
@@ -143,6 +145,7 @@ def part3_export_concepts() -> None:
 
 
 # ── Part 4: Combining MLflow + custom OTel spans ─────────
+
 
 def part4_combined_tracing() -> None:
     print("=" * 60)
@@ -171,8 +174,11 @@ def part4_combined_tracing() -> None:
         return [{**r, "score": len(r["name"]) * r["value"]} for r in records]
 
     data = [
-        {"name": "alpha", "value": 10}, {"name": "beta", "value": 20},
-        {"name": "", "value": 30}, {"name": "delta", "value": 40}, {"value": 50},
+        {"name": "alpha", "value": 10},
+        {"name": "beta", "value": 20},
+        {"name": "", "value": 30},
+        {"name": "delta", "value": 40},
+        {"value": 50},
     ]
     result = pipeline(data)
     print(f"  Processed {result['processed']}/{len(data)} records")
@@ -183,9 +189,10 @@ def part4_combined_tracing() -> None:
 
 # ── Main ──────────────────────────────────────────────────
 
+
 def main() -> None:
     print("=" * 60)
-    print("L2-M4.3 -- OpenTelemetry Integration")
+    print("L3-M2.1 -- OpenTelemetry Integration")
     print("=" * 60 + "\n")
 
     part1_otel_foundation()
@@ -195,7 +202,7 @@ def main() -> None:
 
     print("=" * 60)
     print("Done! Check MLflow UI at http://127.0.0.1:5555")
-    print("Experiment: L2/M4_advanced_tracing/3_opentelemetry")
+    print("Experiment: L3/M2_advanced_tracing/1_opentelemetry")
     print("=" * 60)
 
 

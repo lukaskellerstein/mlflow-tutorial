@@ -1,5 +1,5 @@
 """
-L2-3.2 — RAG System Evaluation
+L1-M4.3 — RAG System Evaluation
 
 Build a simple RAG system with TF-IDF retrieval and evaluate retrieval
 quality vs. generation quality using custom scorers and mlflow.genai.evaluate().
@@ -134,14 +134,16 @@ class SimpleRAG:
         self._doc_vectors = [_tfidf_vector(t, self._idf) for t in self._corpus_tokens]
 
         self._chain = (
-            ChatPromptTemplate.from_messages([
-                (
-                    "system",
-                    "Answer the question using ONLY the provided context. "
-                    "If the context does not contain the answer, say 'I don't know'.",
-                ),
-                ("human", "Context:\n{context}\n\nQuestion: {question}"),
-            ])
+            ChatPromptTemplate.from_messages(
+                [
+                    (
+                        "system",
+                        "Answer the question using ONLY the provided context. "
+                        "If the context does not contain the answer, say 'I don't know'.",
+                    ),
+                    ("human", "Context:\n{context}\n\nQuestion: {question}"),
+                ]
+            )
             | llm
             | StrOutputParser()
         )
@@ -150,10 +152,7 @@ class SimpleRAG:
         """Return top-k documents by TF-IDF cosine similarity."""
         query_tokens = _tokenize(query)
         query_vec = _tfidf_vector(query_tokens, self._idf)
-        scored = [
-            (self.docs[i], _cosine_similarity(query_vec, dv))
-            for i, dv in enumerate(self._doc_vectors)
-        ]
+        scored = [(self.docs[i], _cosine_similarity(query_vec, dv)) for i, dv in enumerate(self._doc_vectors)]
         scored.sort(key=lambda x: x[1], reverse=True)
         return [doc for doc, _ in scored[: self.top_k]]
 
@@ -181,8 +180,7 @@ EVAL_DATASET = [
     {
         "question": "What are Python decorators?",
         "expected_answer": (
-            "Decorators are functions that modify the behavior of other functions "
-            "using the @decorator syntax."
+            "Decorators are functions that modify the behavior of other functions using the @decorator syntax."
         ),
         "expected_doc_ids": ["doc6"],
     },
@@ -292,14 +290,16 @@ def run_evaluation(rag: SimpleRAG, strategy_name: str) -> dict:
     results = []
     for item in EVAL_DATASET:
         rag_output = rag.answer(item["question"])
-        results.append({
-            "inputs": {"question": item["question"]},
-            "outputs": rag_output,
-            "expectations": {
-                "expected_answer": item["expected_answer"],
-                "expected_doc_ids": item["expected_doc_ids"],
-            },
-        })
+        results.append(
+            {
+                "inputs": {"question": item["question"]},
+                "outputs": rag_output,
+                "expectations": {
+                    "expected_answer": item["expected_answer"],
+                    "expected_doc_ids": item["expected_doc_ids"],
+                },
+            }
+        )
 
     eval_df = pd.DataFrame(results)
 
@@ -334,7 +334,7 @@ def main() -> None:
     )
 
     print("=" * 60)
-    print("L2-3.2 — RAG System Evaluation")
+    print("L1-M4.3 — RAG System Evaluation")
     print("=" * 60)
     print()
     print(f"Knowledge base: {len(KNOWLEDGE_BASE)} documents")
@@ -383,7 +383,7 @@ def main() -> None:
     print(f"\n{'=' * 60}")
     print("Done! Open MLflow UI to explore results:")
     print("  http://127.0.0.1:5555")
-    print("  Experiment: L2/M3_deep_evaluation/2_rag_evaluation")
+    print("  Experiment: L1/M4_evaluation/3_rag_evaluation")
     print("=" * 60)
 
 

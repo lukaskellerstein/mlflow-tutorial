@@ -17,17 +17,19 @@ from langchain_core.messages import HumanMessage
 @dataclass
 class TestCase:
     """A single agent test case."""
+
     name: str
     input: str
-    expected_output: str           # substring or keyword expected in answer
-    expected_tools: list[str]      # tools the agent should use
-    difficulty: str                # easy / medium / hard
+    expected_output: str  # substring or keyword expected in answer
+    expected_tools: list[str]  # tools the agent should use
+    difficulty: str  # easy / medium / hard
     tags: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
 class TestResult:
     """Result of running a single test case."""
+
     test_name: str
     passed: bool
     output_correct: bool
@@ -72,9 +74,7 @@ class AgentTestRunner:
         """Execute one test case and return the result."""
         start = time.time()
         try:
-            result = self.agent.invoke(
-                {"messages": [HumanMessage(content=tc.input)]}
-            )
+            result = self.agent.invoke({"messages": [HumanMessage(content=tc.input)]})
             elapsed = time.time() - start
             agent_output = result["messages"][-1].content
             tools_called = self._extract_tools_called(result["messages"])
@@ -82,20 +82,29 @@ class AgentTestRunner:
             tools_ok = self._check_tools(tools_called, tc.expected_tools)
 
             return TestResult(
-                test_name=tc.name, passed=output_ok and tools_ok,
-                output_correct=output_ok, tool_usage_correct=tools_ok,
-                agent_output=agent_output[:500], expected_output=tc.expected_output,
-                tools_called=tools_called, expected_tools=tc.expected_tools,
+                test_name=tc.name,
+                passed=output_ok and tools_ok,
+                output_correct=output_ok,
+                tool_usage_correct=tools_ok,
+                agent_output=agent_output[:500],
+                expected_output=tc.expected_output,
+                tools_called=tools_called,
+                expected_tools=tc.expected_tools,
                 duration_s=round(elapsed, 2),
             )
         except Exception as e:
             elapsed = time.time() - start
             return TestResult(
-                test_name=tc.name, passed=False,
-                output_correct=False, tool_usage_correct=False,
-                agent_output="", expected_output=tc.expected_output,
-                tools_called=[], expected_tools=tc.expected_tools,
-                duration_s=round(elapsed, 2), error=str(e),
+                test_name=tc.name,
+                passed=False,
+                output_correct=False,
+                tool_usage_correct=False,
+                agent_output="",
+                expected_output=tc.expected_output,
+                tools_called=[],
+                expected_tools=tc.expected_tools,
+                duration_s=round(elapsed, 2),
+                error=str(e),
             )
 
     def run_suite(self) -> list[TestResult]:
@@ -107,19 +116,30 @@ class AgentTestRunner:
             results.append(tr)
 
             with mlflow.start_run(run_name=f"test_{tc.name}", nested=True):
-                mlflow.log_params({
-                    "test_name": tc.name, "difficulty": tc.difficulty,
-                    "expected_tools": json.dumps(tc.expected_tools),
-                    "expected_output": tc.expected_output[:250],
-                    "input": tc.input[:250],
-                })
-                mlflow.log_metrics({
-                    "passed": int(tr.passed), "output_correct": int(tr.output_correct),
-                    "tool_usage_correct": int(tr.tool_usage_correct),
-                    "duration_s": tr.duration_s,
-                })
-                mlflow.set_tags({"status": "PASS" if tr.passed else "FAIL",
-                                 "difficulty": tc.difficulty, **tc.tags})
+                mlflow.log_params(
+                    {
+                        "test_name": tc.name,
+                        "difficulty": tc.difficulty,
+                        "expected_tools": json.dumps(tc.expected_tools),
+                        "expected_output": tc.expected_output[:250],
+                        "input": tc.input[:250],
+                    }
+                )
+                mlflow.log_metrics(
+                    {
+                        "passed": int(tr.passed),
+                        "output_correct": int(tr.output_correct),
+                        "tool_usage_correct": int(tr.tool_usage_correct),
+                        "duration_s": tr.duration_s,
+                    }
+                )
+                mlflow.set_tags(
+                    {
+                        "status": "PASS" if tr.passed else "FAIL",
+                        "difficulty": tc.difficulty,
+                        **tc.tags,
+                    }
+                )
 
             print(f"{'PASS' if tr.passed else 'FAIL'}  ({tr.duration_s}s)")
             if tr.error:
@@ -132,15 +152,22 @@ class AgentTestRunner:
 # ---------------------------------------------------------------------------
 def build_results_dataframe(results: list[TestResult]) -> pd.DataFrame:
     """Convert test results into a pandas DataFrame."""
-    return pd.DataFrame([{
-        "test_name": r.test_name, "passed": r.passed,
-        "output_correct": r.output_correct,
-        "tool_usage_correct": r.tool_usage_correct,
-        "duration_s": r.duration_s,
-        "tools_called": json.dumps(r.tools_called),
-        "expected_tools": json.dumps(r.expected_tools),
-        "agent_output": r.agent_output[:200], "error": r.error or "",
-    } for r in results])
+    return pd.DataFrame(
+        [
+            {
+                "test_name": r.test_name,
+                "passed": r.passed,
+                "output_correct": r.output_correct,
+                "tool_usage_correct": r.tool_usage_correct,
+                "duration_s": r.duration_s,
+                "tools_called": json.dumps(r.tools_called),
+                "expected_tools": json.dumps(r.expected_tools),
+                "agent_output": r.agent_output[:200],
+                "error": r.error or "",
+            }
+            for r in results
+        ]
+    )
 
 
 def print_summary(results: list[TestResult], suite: list[TestCase]) -> None:
@@ -155,15 +182,13 @@ def print_summary(results: list[TestResult], suite: list[TestCase]) -> None:
     print("  Test Suite Summary")
     print(f"{'=' * 60}")
     print(f"  Total tests:           {total}")
-    print(f"  Passed:                {passed}/{total}  ({100*passed/total:.0f}%)")
+    print(f"  Passed:                {passed}/{total}  ({100 * passed / total:.0f}%)")
     print(f"  Output correct:        {output_ok}/{total}")
     print(f"  Tool usage correct:    {tools_ok}/{total}")
     print(f"  Average duration:      {avg_dur:.2f}s")
 
     for diff in ("easy", "medium", "hard"):
-        subset = [r for r in results if any(
-            tc.difficulty == diff and tc.name == r.test_name for tc in suite
-        )]
+        subset = [r for r in results if any(tc.difficulty == diff and tc.name == r.test_name for tc in suite)]
         if subset:
             p = sum(1 for r in subset if r.passed)
             print(f"  {diff.capitalize():8s} pass rate:   {p}/{len(subset)}")
@@ -176,8 +201,7 @@ def print_summary(results: list[TestResult], suite: list[TestCase]) -> None:
             if not f.output_correct:
                 reason.append("output mismatch")
             if not f.tool_usage_correct:
-                reason.append(f"tool mismatch (called={f.tools_called}, "
-                              f"expected={f.expected_tools})")
+                reason.append(f"tool mismatch (called={f.tools_called}, expected={f.expected_tools})")
             if f.error:
                 reason.append(f"error: {f.error}")
             print(f"    - {f.test_name}: {'; '.join(reason)}")
@@ -241,9 +265,13 @@ def compare_to_baseline(current_df: pd.DataFrame, baseline_path: str) -> None:
     if not regressions and not improvements:
         print("\n  No changes from baseline.")
 
-    mlflow.log_metrics({
-        "baseline_pass_rate": baseline_rate, "current_pass_rate": current_rate,
-        "delta_pass_rate": delta, "regressions_count": len(regressions),
-        "improvements_count": len(improvements),
-    })
+    mlflow.log_metrics(
+        {
+            "baseline_pass_rate": baseline_rate,
+            "current_pass_rate": current_rate,
+            "delta_pass_rate": delta,
+            "regressions_count": len(regressions),
+            "improvements_count": len(improvements),
+        }
+    )
     print()

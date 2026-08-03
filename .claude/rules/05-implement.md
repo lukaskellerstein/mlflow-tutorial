@@ -12,6 +12,8 @@ Write clean code from the start. Follow these rules during implementation:
 - Refactor continuously — improve code structure immediately when you see issues
 - Remove dead code — delete unused functions, variables, imports, and commented code
 - After writing code: review comments, clean up imports, check for side effects
+- Before changing a shared signature, check callers with `findReferences` rather
+  than grep: [`lsp.md`](lsp.md)
 
 Python style for lesson code is `coding-standards.md`; MLflow API usage is
 `mlflow-patterns.md`; lesson README format is `lesson-content.md`. Those three are

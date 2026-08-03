@@ -1,5 +1,5 @@
 """
-L3-1.3 — Agent Architecture Comparison
+L2-M3.3 — Agent Architecture Comparison
 
 Systematically compare three agent architectures on the same Q&A task
 with shared tools and evaluation criteria:
@@ -44,15 +44,15 @@ llm = ChatOpenAI(
 # ── Shared tools ──────────────────────────────────────────────────
 KNOWLEDGE: dict[str, str] = {
     "python": "Python is a high-level programming language known for readability. "
-              "It supports multiple paradigms and has a vast ecosystem of libraries.",
+    "It supports multiple paradigms and has a vast ecosystem of libraries.",
     "mlflow": "MLflow is an open-source platform for the ML lifecycle. It provides "
-              "tracking, model registry, evaluation, and deployment capabilities.",
+    "tracking, model registry, evaluation, and deployment capabilities.",
     "docker": "Docker is a containerization platform that packages applications "
-              "and dependencies into lightweight, portable containers.",
+    "and dependencies into lightweight, portable containers.",
     "kubernetes": "Kubernetes is an open-source container orchestration system that "
-                  "automates deployment, scaling, and management of containers.",
+    "automates deployment, scaling, and management of containers.",
     "langchain": "LangChain is a framework for building LLM-powered applications. "
-                 "It provides abstractions for chains, agents, memory, and tools.",
+    "It provides abstractions for chains, agents, memory, and tools.",
 }
 
 
@@ -116,10 +116,12 @@ EVAL_DATASET = [
 def run_simple_chain(question: str) -> dict:
     """Prompt -> LLM -> answer.  No tool access."""
     start = time.time()
-    response = llm.invoke([
-        {"role": "system", "content": "Answer the question concisely in 1-2 sentences."},
-        {"role": "user", "content": question},
-    ])
+    response = llm.invoke(
+        [
+            {"role": "system", "content": "Answer the question concisely in 1-2 sentences."},
+            {"role": "user", "content": question},
+        ]
+    )
     elapsed = time.time() - start
     answer = str(response.content)
     token_est = len(answer.split())  # rough proxy
@@ -131,7 +133,7 @@ _react_agent = create_agent(
     model=llm,
     tools=TOOLS,
     system_prompt="You are a helpful assistant. Use the provided tools when the "
-                  "question is about a technology topic. Answer concisely.",
+    "question is about a technology topic. Answer concisely.",
 )
 
 
@@ -159,14 +161,18 @@ def classify_node(state: PipelineState) -> dict:
     """Classify the question as 'tech_lookup', 'general', or 'math'."""
     user_msg = state["messages"][-1]
     q = user_msg.content if hasattr(user_msg, "content") else str(user_msg)
-    resp = llm.invoke([
-        {"role": "system",
-         "content": "Classify the following question into exactly one category. "
-                    "Reply with ONLY the category name, nothing else.\n"
-                    "Categories: tech_lookup, general, math"},
-        {"role": "user", "content": q},
-    ])
-    cat = str(resp.content).strip().lower().replace("'", "").replace('"', '')
+    resp = llm.invoke(
+        [
+            {
+                "role": "system",
+                "content": "Classify the following question into exactly one category. "
+                "Reply with ONLY the category name, nothing else.\n"
+                "Categories: tech_lookup, general, math",
+            },
+            {"role": "user", "content": q},
+        ]
+    )
+    cat = str(resp.content).strip().lower().replace("'", "").replace('"', "")
     # Normalize to one of the known categories
     if "tech" in cat or "lookup" in cat:
         cat = "tech_lookup"
@@ -228,12 +234,14 @@ _pipeline = _build_pipeline()
 def run_pipeline(question: str) -> dict:
     """Classify -> process -> respond pipeline."""
     start = time.time()
-    result = _pipeline.invoke({
-        "messages": [{"role": "user", "content": question}],
-        "category": "",
-        "context": "",
-        "answer": "",
-    })
+    result = _pipeline.invoke(
+        {
+            "messages": [{"role": "user", "content": question}],
+            "category": "",
+            "context": "",
+            "answer": "",
+        }
+    )
     elapsed = time.time() - start
     answer = result.get("answer", "")
     # The pipeline uses the lookup tool directly in the process node
@@ -263,42 +271,44 @@ ARCHITECTURES: list[tuple[str, Callable[[str], dict]]] = [
 ]
 
 
-def evaluate_architecture(
-    name: str, run_fn: Callable[[str], dict], dataset: list[dict]
-) -> list[dict]:
+def evaluate_architecture(name: str, run_fn: Callable[[str], dict], dataset: list[dict]) -> list[dict]:
     """Run an architecture on every test case and return per-case metrics."""
     rows = []
     for i, case in enumerate(dataset, 1):
         result = run_fn(case["question"])
         correctness = score_correctness(result["answer"], case["expected_keyword"])
         tool_score = score_tool_usage(result["tool_calls"], case["needs_tool"])
-        rows.append({
-            "architecture": name,
-            "case": i,
-            "question": case["question"],
-            "answer": result["answer"][:120],
-            "correctness": correctness,
-            "tool_usage": tool_score,
-            "latency_s": round(result["latency"], 3),
-            "tokens_est": result["tokens_est"],
-        })
+        rows.append(
+            {
+                "architecture": name,
+                "case": i,
+                "question": case["question"],
+                "answer": result["answer"][:120],
+                "correctness": correctness,
+                "tool_usage": tool_score,
+                "latency_s": round(result["latency"], 3),
+                "tokens_est": result["tokens_est"],
+            }
+        )
     return rows
 
 
 def main() -> None:
     print("=" * 70)
-    print("  L3-1.3 — Agent Architecture Comparison")
+    print("  L2-M3.3 — Agent Architecture Comparison")
     print("=" * 70)
 
     all_rows: list[dict] = []
 
     with mlflow.start_run(run_name="architecture_comparison") as parent:
-        mlflow.set_tags({
-            "comparison_type": "architecture",
-            "num_architectures": str(len(ARCHITECTURES)),
-            "num_test_cases": str(len(EVAL_DATASET)),
-            "model": "google/gemma-4-26b-a4b",
-        })
+        mlflow.set_tags(
+            {
+                "comparison_type": "architecture",
+                "num_architectures": str(len(ARCHITECTURES)),
+                "num_test_cases": str(len(EVAL_DATASET)),
+                "model": "google/gemma-4-26b-a4b",
+            }
+        )
 
         for arch_name, arch_fn in ARCHITECTURES:
             print(f"\n{'─' * 70}")
@@ -316,36 +326,46 @@ def main() -> None:
                 total_tokens = sum(r["tokens_est"] for r in rows)
                 avg_tokens = total_tokens / len(rows)
 
-                mlflow.log_params({
-                    "architecture": arch_name,
-                    "model": "google/gemma-4-26b-a4b",
-                    "num_cases": len(rows),
-                })
-                mlflow.log_metrics({
-                    "avg_correctness": round(avg_correct, 3),
-                    "avg_tool_usage": round(avg_tool, 3),
-                    "avg_latency_s": round(avg_latency, 3),
-                    "total_tokens_est": total_tokens,
-                    "avg_tokens_est": round(avg_tokens, 1),
-                })
+                mlflow.log_params(
+                    {
+                        "architecture": arch_name,
+                        "model": "google/gemma-4-26b-a4b",
+                        "num_cases": len(rows),
+                    }
+                )
+                mlflow.log_metrics(
+                    {
+                        "avg_correctness": round(avg_correct, 3),
+                        "avg_tool_usage": round(avg_tool, 3),
+                        "avg_latency_s": round(avg_latency, 3),
+                        "total_tokens_est": total_tokens,
+                        "avg_tokens_est": round(avg_tokens, 1),
+                    }
+                )
 
                 # Print per-case results
                 for r in rows:
                     status = "PASS" if r["correctness"] == 1.0 else "FAIL"
                     print(f"  [{status}] Q{r['case']}: {r['question'][:50]}")
                     print(f"         Answer: {r['answer'][:80]}")
-                    print(f"         Correctness={r['correctness']:.0f}  "
-                          f"ToolUsage={r['tool_usage']:.1f}  "
-                          f"Latency={r['latency_s']:.2f}s")
+                    print(
+                        f"         Correctness={r['correctness']:.0f}  "
+                        f"ToolUsage={r['tool_usage']:.1f}  "
+                        f"Latency={r['latency_s']:.2f}s"
+                    )
 
         # ── Build comparison table ────────────────────────────────
         df = pd.DataFrame(all_rows)
-        summary = df.groupby("architecture").agg(
-            correctness=("correctness", "mean"),
-            tool_usage=("tool_usage", "mean"),
-            latency_s=("latency_s", "mean"),
-            tokens_est=("tokens_est", "sum"),
-        ).round(3)
+        summary = (
+            df.groupby("architecture")
+            .agg(
+                correctness=("correctness", "mean"),
+                tool_usage=("tool_usage", "mean"),
+                latency_s=("latency_s", "mean"),
+                tokens_est=("tokens_est", "sum"),
+            )
+            .round(3)
+        )
 
         # Add composite score: quality (equal weight correctness + tool_usage)
         summary["quality"] = ((summary["correctness"] + summary["tool_usage"]) / 2).round(3)
@@ -359,14 +379,18 @@ def main() -> None:
         print("  COMPARISON TABLE: Architecture x Metric")
         print(f"{'=' * 70}")
         print()
-        header = (f"  {'Architecture':<22} {'Correct':>8} {'ToolUse':>8} "
-                  f"{'Latency':>8} {'Tokens':>7} {'Quality':>8} {'Efficiency':>10}")
+        header = (
+            f"  {'Architecture':<22} {'Correct':>8} {'ToolUse':>8} "
+            f"{'Latency':>8} {'Tokens':>7} {'Quality':>8} {'Efficiency':>10}"
+        )
         print(header)
         print("  " + "-" * 74)
         for arch, row in summary.iterrows():
-            print(f"  {arch:<22} {row['correctness']:>8.3f} {row['tool_usage']:>8.3f} "
-                  f"{row['latency_s']:>7.2f}s {int(row['tokens_est']):>7} "
-                  f"{row['quality']:>8.3f} {row['token_efficiency']:>10.3f}")
+            print(
+                f"  {arch:<22} {row['correctness']:>8.3f} {row['tool_usage']:>8.3f} "
+                f"{row['latency_s']:>7.2f}s {int(row['tokens_est']):>7} "
+                f"{row['quality']:>8.3f} {row['token_efficiency']:>10.3f}"
+            )
 
         # Log comparison artifact
         summary_path = "comparison_table.csv"
@@ -378,22 +402,23 @@ def main() -> None:
         fastest = cast(pd.Series, summary["latency_s"]).idxmin()
         most_efficient = cast(pd.Series, summary["token_efficiency"]).idxmax()
 
-        mlflow.log_params({
-            "best_quality_arch": best_quality,
-            "fastest_arch": fastest,
-            "most_efficient_arch": most_efficient,
-        })
+        mlflow.log_params(
+            {
+                "best_quality_arch": best_quality,
+                "fastest_arch": fastest,
+                "most_efficient_arch": most_efficient,
+            }
+        )
 
         # ── Cost-quality tradeoff analysis ────────────────────────
         print(f"\n{'=' * 70}")
         print("  COST-QUALITY TRADEOFF ANALYSIS")
         print(f"{'=' * 70}")
-        print(f"\n  Best quality:       {best_quality} "
-              f"(score={summary.loc[best_quality, 'quality']:.3f})")
-        print(f"  Fastest:            {fastest} "
-              f"(latency={summary.loc[fastest, 'latency_s']:.3f}s)")
-        print(f"  Most efficient:     {most_efficient} "
-              f"(efficiency={summary.loc[most_efficient, 'token_efficiency']:.3f})")
+        print(f"\n  Best quality:       {best_quality} (score={summary.loc[best_quality, 'quality']:.3f})")
+        print(f"  Fastest:            {fastest} (latency={summary.loc[fastest, 'latency_s']:.3f}s)")
+        print(
+            f"  Most efficient:     {most_efficient} (efficiency={summary.loc[most_efficient, 'token_efficiency']:.3f})"
+        )
 
         # Pareto frontier: architectures not dominated on both quality and latency
         print("\n  Pareto Frontier (quality vs latency):")
@@ -403,16 +428,22 @@ def main() -> None:
             for other in summary.index:
                 if other == arch:
                     continue
-                if (summary.loc[other, "quality"] >= summary.loc[arch, "quality"]
-                        and summary.loc[other, "latency_s"] <= summary.loc[arch, "latency_s"]
-                        and (summary.loc[other, "quality"] > summary.loc[arch, "quality"]
-                             or summary.loc[other, "latency_s"] < summary.loc[arch, "latency_s"])):
+                if (
+                    summary.loc[other, "quality"] >= summary.loc[arch, "quality"]
+                    and summary.loc[other, "latency_s"] <= summary.loc[arch, "latency_s"]
+                    and (
+                        summary.loc[other, "quality"] > summary.loc[arch, "quality"]
+                        or summary.loc[other, "latency_s"] < summary.loc[arch, "latency_s"]
+                    )
+                ):
                     dominated = True
                     break
             if not dominated:
                 pareto.append(arch)
-                print(f"    * {arch}: quality={summary.loc[arch, 'quality']:.3f}, "
-                      f"latency={summary.loc[arch, 'latency_s']:.3f}s")
+                print(
+                    f"    * {arch}: quality={summary.loc[arch, 'quality']:.3f}, "
+                    f"latency={summary.loc[arch, 'latency_s']:.3f}s"
+                )
 
         mlflow.set_tag("pareto_frontier", ", ".join(pareto))
 
@@ -425,6 +456,7 @@ def main() -> None:
 
     # Clean up temp file
     import os
+
     if os.path.exists(summary_path):
         os.remove(summary_path)
 

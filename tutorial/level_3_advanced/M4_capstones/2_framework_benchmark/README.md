@@ -1,4 +1,4 @@
-# L3-5.2 — Framework Benchmark Capstone
+# L3-M4.2 — Framework Benchmark Capstone
 
 **Level:** Expert
 **Duration:** 3 hours
@@ -9,19 +9,19 @@ This capstone builds a reusable benchmarking system that systematically compares
 
 ## Prerequisites
 
-- Completed: L3-1.3 (Architecture Comparison) -- this capstone extends and productionizes that lesson's approach
-- Completed: L3-1.5 (Evaluation Pipeline) -- reusable pipeline patterns
-- Completed: L2-5.1 (LangChain Agents), L2-5.2 (LangGraph Agents)
-- MLflow server running at http://127.0.0.1:5555
+- Completed: L2-M3.3 (Architecture Comparison) -- this capstone extends and productionizes that lesson's approach
+- Completed: L2-M3.5 (Evaluation Pipeline) -- reusable pipeline patterns
+- Completed: L2-M1.1 (LangChain Agents), L2-M1.2 (LangGraph Agents)
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
 
 ### From Comparison to Benchmark
 
-In L3-1.3 you compared three architectures in a single script. This capstone elevates that into a reusable `BenchmarkSuite` class that can be applied to any set of agents and test cases. The key difference is in the design:
+In L2-M3.3 you compared three architectures in a single script. This capstone elevates that into a reusable `BenchmarkSuite` class that can be applied to any set of agents and test cases. The key difference is in the design:
 
-- **L3-1.3**: Inline comparison logic, hardcoded architectures, single-use
+- **L2-M3.3**: Inline comparison logic, hardcoded architectures, single-use
 - **This capstone**: Pluggable agents, standardized metrics, reusable infrastructure, production artifact generation
 
 ### Benchmarking Methodology
@@ -85,17 +85,22 @@ def lookup(topic: str) -> str:
     """Look up factual information about a technology topic."""
     ...
 
+
 @tool
 def calculate(expression: str) -> str:
     """Evaluate a simple math expression."""
     ...
 
+
 test_cases = [
-    TestCase(question="What is 2 + 2?", expected_keyword="4",
-             category="simple", needs_tool=False),
-    TestCase(question="What is Python known for?", expected_keyword="readability",
-             category="tool_required", needs_tool=True),
-    ...
+    TestCase(question="What is 2 + 2?", expected_keyword="4", category="simple", needs_tool=False),
+    TestCase(
+        question="What is Python known for?",
+        expected_keyword="readability",
+        category="tool_required",
+        needs_tool=True,
+    ),
+    ...,
 ]
 ```
 
@@ -134,9 +139,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ======================================================================
-  L3-5.2 — Framework Benchmark Capstone
+  L3-M4.2 — Framework Benchmark Capstone
 ======================================================================
 
   Agents registered: 3

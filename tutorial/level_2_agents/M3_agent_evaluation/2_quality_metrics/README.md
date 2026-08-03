@@ -1,4 +1,4 @@
-# L3-1.2 — Agent Quality Metrics Design
+# L2-M3.2 — Agent Quality Metrics Design
 
 **Level:** Expert
 **Duration:** 2 hours
@@ -10,7 +10,7 @@ Design and implement comprehensive quality metrics for evaluating AI agents. Thi
 ## Prerequisites
 
 - Completed: L1-M4.2 (LLM Eval Basics), L1-M6.2 (Scorers & Judges), L2-M3.1 (Custom Metrics)
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -80,8 +80,12 @@ Six test cases cover single-tool, multi-tool, and no-tool scenarios. Each case s
 ```python
 results = mlflow.genai.evaluate(
     data=eval_data,
-    scorers=[task_completion_scorer, tool_selection_scorer,
-             reasoning_quality_scorer, response_quality_scorer],
+    scorers=[
+        task_completion_scorer,
+        tool_selection_scorer,
+        reasoning_quality_scorer,
+        response_quality_scorer,
+    ],
 )
 ```
 
@@ -105,7 +109,7 @@ The script prints three sections:
 2. **Config B report** — per-case scores and aggregate metrics for temperature=0.9
 3. **Statistical comparison** — side-by-side metric comparison with delta and winner
 
-You will also see two evaluation runs in the MLflow UI under the experiment `L3/M1_agent_evaluation/2_quality_metrics`, each with logged parameters and metrics.
+You will also see two evaluation runs in the MLflow UI under the experiment `L2/M3_agent_evaluation/2_quality_metrics`, each with logged parameters and metrics.
 
 ## Key Takeaways
 
@@ -117,4 +121,4 @@ You will also see two evaluation runs in the MLflow UI under the experiment `L3/
 
 ## Next Steps
 
-In L3-1.3 (Agent Architecture Comparison), you will extend this metrics framework to systematically compare different agent architectures (ReAct vs. Plan-and-Execute) using controlled evaluation methodology.
+In L2-M3.3 (Agent Architecture Comparison), you will extend this metrics framework to systematically compare different agent architectures (ReAct vs. Plan-and-Execute) using controlled evaluation methodology.

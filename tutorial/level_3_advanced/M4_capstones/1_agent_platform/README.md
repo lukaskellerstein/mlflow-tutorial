@@ -1,4 +1,4 @@
-# L3-5.1 — Capstone: Production AI Agent Platform
+# L3-M4.1 — Capstone: Production AI Agent Platform
 
 **Level:** Expert
 **Duration:** 4-6 hours
@@ -12,14 +12,14 @@ This lesson integrates: experiment tracking (L1-M1), model management (L1-M2), e
 ## Prerequisites
 
 - Completed: All Level 1 and Level 2 modules, plus L3-M1 (Agent Evaluation)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Architecture
 
 The platform consists of five integrated subsystems:
 
-```
+```text
 +-----------------------------------------------------------+
 |                   Agent Platform                          |
 +-----------------------------------------------------------+
@@ -55,7 +55,7 @@ The platform consists of five integrated subsystems:
 
 ### Data flow
 
-```
+```text
 Register agents --> Evaluate each --> Score results --> Check quality gates
                                                               |
                                                      Pass?  /   \ Fail?
@@ -106,12 +106,14 @@ Three agents are registered, each with different tools and system prompts:
 
 ```python
 registry = AgentRegistry()
-registry.register(AgentConfig(
-    name="qa_agent",
-    description="General Q&A agent",
-    tools=[search_knowledge],
-    system_prompt="You are a helpful Q&A assistant...",
-))
+registry.register(
+    AgentConfig(
+        name="qa_agent",
+        description="General Q&A agent",
+        tools=[search_knowledge],
+        system_prompt="You are a helpful Q&A assistant...",
+    )
+)
 ```
 
 Each call to `register()` creates a LangGraph ReAct agent using `create_react_agent` with `ChatOpenAI(model="google/gemma-4-26b-a4b")`.
@@ -130,7 +132,7 @@ The `evaluate_agent` function runs every test case, scores results, and checks q
 
 After evaluation, the platform prints a summary table showing which agents passed:
 
-```
+```text
 Agent                  Accuracy    Latency     Gate
 ----------------------------------------------------
 qa_agent                  75.0%       5.2s     PASS
@@ -167,9 +169,9 @@ uv run python main.py
 
 The script runs five phases with clear output for each:
 
-```
+```text
 ==============================================================
-  L3-5.1 — Production AI Agent Platform (Capstone)
+  L3-M4.1 — Production AI Agent Platform (Capstone)
 ==============================================================
   Phase 1: Agent Registration
     Registered: qa_agent v1.0.0
@@ -200,8 +202,8 @@ The script runs five phases with clear output for each:
     Deployed agent:     qa_agent
 ```
 
-In the MLflow UI at http://127.0.0.1:5555, you will see:
-- **Experiment**: `L3/M5_capstones/1_agent_platform`
+In the MLflow UI at <http://127.0.0.1:5555>, you will see:
+- **Experiment**: `L3/M4_capstones/1_agent_platform`
 - **platform_evaluation** run with nested child runs for each agent
 - **deployment_pipeline** run with deployment decision tags
 - **production_inference** run with inference latency metrics
@@ -217,4 +219,4 @@ In the MLflow UI at http://127.0.0.1:5555, you will see:
 
 ## Next Steps
 
-Continue to L3-5.2 (Agent Framework Benchmark) to build a standardized benchmark comparing agent frameworks — LangChain/LangGraph, Claude Agent SDK, and custom PyFunc agents — using the evaluation patterns from this capstone.
+Continue to L3-M4.2 (Agent Framework Benchmark) to build a standardized benchmark comparing agent frameworks — LangChain/LangGraph, Claude Agent SDK, and custom PyFunc agents — using the evaluation patterns from this capstone.

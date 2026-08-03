@@ -1,4 +1,4 @@
-# L3-1.3 — Agent Architecture Comparison
+# L2-M3.3 — Agent Architecture Comparison
 
 **Level:** Expert
 **Duration:** 2.5 hours
@@ -9,9 +9,9 @@ Different agent architectures make fundamentally different tradeoffs between qua
 
 ## Prerequisites
 
-- Completed: L3-1.1 (Agent Testing), L3-1.2 (Quality Metrics)
-- Completed: L2-5.1 (LangChain Agents), L2-5.2 (LangGraph Agents)
-- MLflow server running at http://127.0.0.1:5555
+- Completed: L2-M3.1 (Agent Testing), L2-M3.2 (Quality Metrics)
+- Completed: L2-M1.1 (LangChain Agents), L2-M1.2 (LangGraph Agents)
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -61,9 +61,10 @@ def lookup(topic: str) -> str:
     """Look up factual information about a technology topic."""
     ...
 
+
 EVAL_DATASET = [
     {"question": "What is Python?", "expected_keyword": "readability", "needs_tool": True},
-    ...
+    ...,
 ]
 ```
 
@@ -91,9 +92,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ======================================================================
-  L3-1.3 — Agent Architecture Comparison
+  L2-M3.3 — Agent Architecture Comparison
 ======================================================================
 
 ----------------------------------------------------------------------
@@ -147,4 +148,4 @@ uv run python main.py
 
 ## Next Steps
 
-In **L3-1.4 (Agent Optimization)**, you will take the best-performing architecture from this comparison and systematically optimize it -- tuning prompts, temperature, and tool descriptions to push quality higher while managing cost.
+In **L2-M3.4 (Agent Optimization)**, you will take the best-performing architecture from this comparison and systematically optimize it -- tuning prompts, temperature, and tool descriptions to push quality higher while managing cost.

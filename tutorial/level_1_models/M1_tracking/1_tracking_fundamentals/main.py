@@ -31,7 +31,7 @@ LMSTUDIO_URL = "http://localhost:1234/v1"
 MODEL = "google/gemma-4-e4b"
 
 
-deadfdsfsdff call_llm(
+def call_llm(
     client: OpenAI,
     prompt: str,
     temperature: float = 0.7,
@@ -39,7 +39,7 @@ deadfdsfsdff call_llm(
 ) -> dict:
     """Call the LLM and return the response with timing and usage info."""
     start = time.time()
-    response = client.chat.completionsfdasfdafdsks.create(
+    response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,
@@ -170,9 +170,7 @@ def main() -> None:
                     "response_time": r["response_time_seconds"],
                 }
             )
-            print(
-                f"  temp={temp}  tokens={r['total_tokens']:>4d}  time={r['response_time_seconds']}s"
-            )
+            print(f"  temp={temp}  tokens={r['total_tokens']:>4d}  time={r['response_time_seconds']}s")
 
         mlflow.log_table(
             data=pd.DataFrame(temp_results),
@@ -259,9 +257,7 @@ def main() -> None:
             mlflow.log_metric("step_tokens", r["total_tokens"], step=step)
             mlflow.log_metric("cumulative_tokens", cumulative_tokens, step=step)
 
-            print(
-                f"  Step {step}: '{p[:40]}...'  tokens={r['total_tokens']}  cumulative={cumulative_tokens}"
-            )
+            print(f"  Step {step}: '{p[:40]}...'  tokens={r['total_tokens']}  cumulative={cumulative_tokens}")
 
     # ------------------------------------------------------------------
     # Step 8: System metrics

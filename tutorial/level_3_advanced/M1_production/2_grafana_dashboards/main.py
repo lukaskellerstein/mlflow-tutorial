@@ -1,5 +1,5 @@
 """
-L3-3.2 — Grafana Dashboards for MLflow
+L3-M1.2 — Grafana Dashboards for MLflow
 
 Export LLM service metrics to Prometheus and generate a Grafana dashboard
 configuration for production monitoring.  The script:
@@ -147,8 +147,7 @@ class InstrumentedLLMService:
 def generate_grafana_dashboard() -> dict:
     """Return a Grafana dashboard JSON structure with four panels."""
 
-    def _panel(title: str, expr: str, panel_id: int, y: int,
-               panel_type: str = "timeseries") -> dict:
+    def _panel(title: str, expr: str, panel_id: int, y: int, panel_type: str = "timeseries") -> dict:
         return {
             "id": panel_id,
             "type": panel_type,
@@ -168,22 +167,26 @@ def generate_grafana_dashboard() -> dict:
         _panel(
             "LLM Request Rate",
             'rate(llm_request_total{status="success"}[1m])',
-            1, 0,
+            1,
+            0,
         ),
         _panel(
             "LLM Latency (p50 / p95 / p99)",
             "histogram_quantile(0.95, rate(llm_request_duration_seconds_bucket[5m]))",
-            2, 0,
+            2,
+            0,
         ),
         _panel(
             "LLM Error Rate",
             'rate(llm_request_total{status="error"}[1m])',
-            3, 8,
+            3,
+            8,
         ),
         _panel(
             "Token Usage Rate",
             "rate(llm_tokens_used_total[1m])",
-            4, 8,
+            4,
+            8,
         ),
     ]
 
@@ -233,9 +236,7 @@ def verify_metrics(port: int) -> dict[str, float]:
     for line in text.splitlines():
         if line.startswith("#"):
             continue
-        if line.startswith(
-            ("llm_request_total", "llm_tokens_used_total", "llm_errors_total")
-        ):
+        if line.startswith(("llm_request_total", "llm_tokens_used_total", "llm_errors_total")):
             parts = line.split()
             summary[parts[0]] = float(parts[1])
         elif line.startswith("llm_request_duration_seconds_count"):
@@ -251,7 +252,7 @@ def main() -> None:
     metrics_port = 8099
 
     print("=" * 60)
-    print("L3-3.2 — Grafana Dashboards for MLflow")
+    print("L3-M1.2 — Grafana Dashboards for MLflow")
     print("=" * 60)
 
     # -- Part 1: Start Prometheus metrics server ----------------------------
@@ -269,11 +270,13 @@ def main() -> None:
     results: list[dict[str, Any]] = []
 
     with mlflow.start_run(run_name="grafana_dashboard_demo") as run:
-        mlflow.log_params({
-            "model": service.model_name,
-            "num_queries": len(SAMPLE_QUERIES),
-            "metrics_port": metrics_port,
-        })
+        mlflow.log_params(
+            {
+                "model": service.model_name,
+                "num_queries": len(SAMPLE_QUERIES),
+                "metrics_port": metrics_port,
+            }
+        )
 
         for idx, query in enumerate(SAMPLE_QUERIES, 1):
             print(f"  [{idx:2d}/{len(SAMPLE_QUERIES)}] {query[:50]:50s} ", end="", flush=True)
@@ -285,33 +288,34 @@ def main() -> None:
         # Aggregate MLflow summary
         successes = sum(1 for r in results if r["status"] == "success")
         errors = len(results) - successes
-        avg_latency = (
-            sum(r["latency_s"] for r in results if r["status"] == "success")
-            / max(successes, 1)
-        )
+        avg_latency = sum(r["latency_s"] for r in results if r["status"] == "success") / max(successes, 1)
         total_prompt_tok = sum(r.get("prompt_tokens", 0) for r in results)
         total_compl_tok = sum(r.get("completion_tokens", 0) for r in results)
 
-        mlflow.log_metrics({
-            "total_requests": len(results),
-            "total_successes": successes,
-            "total_errors": errors,
-            "avg_latency_s": round(avg_latency, 3),
-            "total_prompt_tokens": total_prompt_tok,
-            "total_completion_tokens": total_compl_tok,
-        })
+        mlflow.log_metrics(
+            {
+                "total_requests": len(results),
+                "total_successes": successes,
+                "total_errors": errors,
+                "avg_latency_s": round(avg_latency, 3),
+                "total_prompt_tokens": total_prompt_tok,
+                "total_completion_tokens": total_compl_tok,
+            }
+        )
 
         # Save results table
-        df = pd.DataFrame([
-            {
-                "query": r["query"],
-                "status": r["status"],
-                "latency_s": r["latency_s"],
-                "prompt_tokens": r.get("prompt_tokens", 0),
-                "completion_tokens": r.get("completion_tokens", 0),
-            }
-            for r in results
-        ])
+        df = pd.DataFrame(
+            [
+                {
+                    "query": r["query"],
+                    "status": r["status"],
+                    "latency_s": r["latency_s"],
+                    "prompt_tokens": r.get("prompt_tokens", 0),
+                    "completion_tokens": r.get("completion_tokens", 0),
+                }
+                for r in results
+            ]
+        )
         csv_path = "/tmp/llm_traffic_results.csv"
         df.to_csv(csv_path, index=False)
         mlflow.log_artifact(csv_path, artifact_path="traffic")
@@ -331,7 +335,7 @@ def main() -> None:
         print("\n--- Part 5: Verifying Prometheus metrics ---")
         try:
             metrics = verify_metrics(metrics_port)
-            print(f"  Scraped {len(metrics)} metric series from :{ metrics_port}/metrics")
+            print(f"  Scraped {len(metrics)} metric series from :{metrics_port}/metrics")
             for name, value in sorted(metrics.items()):
                 print(f"    {name}: {value}")
         except Exception as exc:

@@ -1,4 +1,4 @@
-# L3-3.2 — Grafana Dashboards for MLflow
+# L3-M1.2 — Grafana Dashboards for MLflow
 
 **Level:** Expert
 **Duration:** 2 hours
@@ -12,10 +12,10 @@ You will learn how to define custom Prometheus metrics, instrument LLM calls, ge
 ## Prerequisites
 
 - Completed: L1-M1 (Tracking), L1-M4 (Evaluation), L3-M3.1 (Production Tracing)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
-- Prometheus running at http://localhost:9090 (via `podman compose up -d` from `infra/`)
-- Grafana running at http://localhost:3000 (admin/admin)
+- Prometheus running at <http://localhost:9090> (via `podman compose up -d` from `infra/`)
+- Grafana running at <http://localhost:3000> (admin/admin)
 
 ## Concepts
 
@@ -122,7 +122,7 @@ A JSON dashboard configuration is generated and logged as an MLflow artifact. It
 3. **LLM Error Rate** — `rate(llm_request_total{status="error"}[1m])`
 4. **Token Usage Rate** — `rate(llm_tokens_used_total[1m])`
 
-To import: open Grafana (http://localhost:3000), go to Dashboards > Import, and upload the JSON file from the MLflow artifact.
+To import: open Grafana (<http://localhost:3000>), go to Dashboards > Import, and upload the JSON file from the MLflow artifact.
 
 ## Running the Lesson
 
@@ -134,9 +134,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-3.2 — Grafana Dashboards for MLflow
+L3-M1.2 — Grafana Dashboards for MLflow
 ============================================================
 
 --- Part 1: Starting Prometheus metrics server ---
@@ -166,7 +166,7 @@ L3-3.2 — Grafana Dashboards for MLflow
   ...
 ```
 
-You can also visit http://localhost:8099/metrics in your browser to see raw Prometheus output, and import the generated dashboard JSON into Grafana.
+You can also visit <http://localhost:8099/metrics> in your browser to see raw Prometheus output, and import the generated dashboard JSON into Grafana.
 
 ## Key Takeaways
 
@@ -178,4 +178,4 @@ You can also visit http://localhost:8099/metrics in your browser to see raw Prom
 
 ## Next Steps
 
-In **L3-3.3 (Feedback Loops)**, you will close the production loop by collecting user feedback on agent responses, detecting quality drift, and feeding production data back into evaluation datasets.
+In **L3-M1.3 (Feedback Loops)**, you will close the production loop by collecting user feedback on agent responses, detecting quality drift, and feeding production data back into evaluation datasets.

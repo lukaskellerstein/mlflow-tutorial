@@ -1,5 +1,5 @@
 """
-L3-1.1 — Agent Testing Framework
+L2-M3.1 — Agent Testing Framework
 
 Build a production-quality agent testing framework that:
   1. Creates a LangGraph ReAct agent with calculator and text_analyzer tools
@@ -88,29 +88,63 @@ def build_agent():
 # 3. Test suite
 # ---------------------------------------------------------------------------
 TEST_SUITE: list[TestCase] = [
-    TestCase(name="simple_addition", input="What is 25 + 37?",
-             expected_output="62", expected_tools=["calculator"], difficulty="easy"),
-    TestCase(name="multiplication", input="Calculate 12 * 15.",
-             expected_output="180", expected_tools=["calculator"], difficulty="easy"),
-    TestCase(name="complex_expression", input="What is (100 - 37) * 2 + 14?",
-             expected_output="140", expected_tools=["calculator"], difficulty="medium"),
-    TestCase(name="text_word_count",
-             input='How many words are in the following text: '
-                   '"The quick brown fox jumps over the lazy dog"?',
-             expected_output="9", expected_tools=["text_analyzer"], difficulty="easy"),
-    TestCase(name="text_analysis_detail",
-             input='Analyze this text for me: "Hello world. How are you doing today?"',
-             expected_output="word count", expected_tools=["text_analyzer"],
-             difficulty="medium", tags={"category": "text"}),
-    TestCase(name="multi_tool",
-             input='First, calculate 50 * 4. Then analyze the text '
-                   '"MLflow is great for tracking experiments."',
-             expected_output="200", expected_tools=["calculator", "text_analyzer"],
-             difficulty="hard"),
-    TestCase(name="no_tool_needed", input="Say hello.",
-             expected_output="hello", expected_tools=[], difficulty="easy"),
-    TestCase(name="division", input="What is 144 divided by 12?",
-             expected_output="12", expected_tools=["calculator"], difficulty="easy"),
+    TestCase(
+        name="simple_addition",
+        input="What is 25 + 37?",
+        expected_output="62",
+        expected_tools=["calculator"],
+        difficulty="easy",
+    ),
+    TestCase(
+        name="multiplication",
+        input="Calculate 12 * 15.",
+        expected_output="180",
+        expected_tools=["calculator"],
+        difficulty="easy",
+    ),
+    TestCase(
+        name="complex_expression",
+        input="What is (100 - 37) * 2 + 14?",
+        expected_output="140",
+        expected_tools=["calculator"],
+        difficulty="medium",
+    ),
+    TestCase(
+        name="text_word_count",
+        input='How many words are in the following text: "The quick brown fox jumps over the lazy dog"?',
+        expected_output="9",
+        expected_tools=["text_analyzer"],
+        difficulty="easy",
+    ),
+    TestCase(
+        name="text_analysis_detail",
+        input='Analyze this text for me: "Hello world. How are you doing today?"',
+        expected_output="word count",
+        expected_tools=["text_analyzer"],
+        difficulty="medium",
+        tags={"category": "text"},
+    ),
+    TestCase(
+        name="multi_tool",
+        input='First, calculate 50 * 4. Then analyze the text "MLflow is great for tracking experiments."',
+        expected_output="200",
+        expected_tools=["calculator", "text_analyzer"],
+        difficulty="hard",
+    ),
+    TestCase(
+        name="no_tool_needed",
+        input="Say hello.",
+        expected_output="hello",
+        expected_tools=[],
+        difficulty="easy",
+    ),
+    TestCase(
+        name="division",
+        input="What is 144 divided by 12?",
+        expected_output="12",
+        expected_tools=["calculator"],
+        difficulty="easy",
+    ),
 ]
 
 
@@ -119,7 +153,7 @@ TEST_SUITE: list[TestCase] = [
 # ---------------------------------------------------------------------------
 def main() -> None:
     print("=" * 60)
-    print("L3-1.1 — Agent Testing Framework")
+    print("L2-M3.1 — Agent Testing Framework")
     print("=" * 60)
 
     # --- Part 1: Build the agent ---
@@ -137,11 +171,13 @@ def main() -> None:
     # --- Part 3: Run tests with nested MLflow runs ---
     print("\n--- Part 3: Running automated test suite ---")
     with mlflow.start_run(run_name="agent_test_suite") as parent_run:
-        mlflow.log_params({
-            "agent_model": "google/gemma-4-26b-a4b",
-            "num_tests": len(TEST_SUITE),
-            "tools": json.dumps([t.name for t in TOOLS]),
-        })
+        mlflow.log_params(
+            {
+                "agent_model": "google/gemma-4-26b-a4b",
+                "num_tests": len(TEST_SUITE),
+                "tools": json.dumps([t.name for t in TOOLS]),
+            }
+        )
         mlflow.set_tags({"test_type": "agent_test_suite", "framework": "langgraph"})
 
         runner = AgentTestRunner(agent, TEST_SUITE)
@@ -150,14 +186,14 @@ def main() -> None:
         # Aggregate metrics on the parent run
         total = len(results)
         passed = sum(1 for r in results if r.passed)
-        mlflow.log_metrics({
-            "pass_rate": passed / max(total, 1),
-            "total_passed": passed,
-            "total_failed": total - passed,
-            "avg_duration_s": round(
-                sum(r.duration_s for r in results) / max(total, 1), 2
-            ),
-        })
+        mlflow.log_metrics(
+            {
+                "pass_rate": passed / max(total, 1),
+                "total_passed": passed,
+                "total_failed": total - passed,
+                "avg_duration_s": round(sum(r.duration_s for r in results) / max(total, 1), 2),
+            }
+        )
 
         print_summary(results, TEST_SUITE)
 

@@ -10,7 +10,7 @@ Learn how to create structured evaluation datasets, log them with lineage tracki
 ## Prerequisites
 
 - Completed: L1-M4.3 (Scorers and Judges)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts
@@ -51,8 +51,10 @@ Build a pandas DataFrame with questions and expected answers. Wrap it as an MLfl
 
 ```python
 dataset = mlflow.data.from_pandas(
-    qa_data, source="tutorial_qa_pairs",
-    name="qa_evaluation_dataset", targets="ground_truth_answer",
+    qa_data,
+    source="tutorial_qa_pairs",
+    name="qa_evaluation_dataset",
+    targets="ground_truth_answer",
 )
 mlflow.log_input(dataset, context="evaluation")
 ```
@@ -73,11 +75,14 @@ def traced_qa(question, expected):
 Use `log_expectation()` for ground truth and `log_feedback()` for human judgments:
 
 ```python
-mlflow.log_expectation(trace_id=trace_id, name="expected_answer",
-                       value="Paris", source=human_source)
-mlflow.log_feedback(trace_id=trace_id, name="human_correctness",
-                    value="correct", source=human_source,
-                    rationale="Exact match.")
+mlflow.log_expectation(trace_id=trace_id, name="expected_answer", value="Paris", source=human_source)
+mlflow.log_feedback(
+    trace_id=trace_id,
+    name="human_correctness",
+    value="correct",
+    source=human_source,
+    rationale="Exact match.",
+)
 ```
 
 ### Step 4: Auto-Judge + Human Triage
@@ -107,7 +112,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Create, Log, and Run Inference on a Dataset
 ============================================================

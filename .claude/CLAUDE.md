@@ -19,7 +19,11 @@ Reference files: [`rules/01-project-config.md`](rules/01-project-config.md)
 [`rules/09-code-quality.md`](rules/09-code-quality.md),
 [`rules/10-tech-stack.md`](rules/10-tech-stack.md),
 [`rules/11-communication.md`](rules/11-communication.md),
-[`rules/12-security.md`](rules/12-security.md).
+[`rules/12-security.md`](rules/12-security.md),
+[`rules/machine-tools.md`](rules/machine-tools.md) (the `nvim-tools` and
+`lukas-ps` CLIs — pre-approved, read-only),
+[`rules/lsp.md`](rules/lsp.md) (the `LSP` tool — only in repos that opted in,
+and deferred, so it must be loaded before it can be called).
 
 Path-scoped rules load automatically when you touch a matching file:
 [`tutorial-structure.md`](rules/tutorial-structure.md) (lesson conventions),
@@ -96,11 +100,11 @@ podman compose up -d
 
 | Service | URL |
 |---------|-----|
-| MLflow UI | http://localhost:5555 |
-| Temporal UI | http://localhost:8080 |
-| Qdrant | http://localhost:6333/dashboard |
-| Grafana | http://localhost:3000 (admin/admin) |
-| Prometheus | http://localhost:9090 |
+| MLflow UI | <http://localhost:5555> |
+| Temporal UI | <http://localhost:8080> |
+| Qdrant | <http://localhost:6333/dashboard> |
+| Grafana | <http://localhost:3000> (admin/admin) |
+| Prometheus | <http://localhost:9090> |
 
 LMStudio runs natively (not in Podman) for Apple Silicon GPU access.
 
@@ -147,6 +151,9 @@ These actions are pre-approved. Run them yourself when the situation calls for i
 - `lms ls`, `lms ps` — what LMStudio has loaded.
 - `uv tree`, `uv lock --check`, `uv pip list` in any lesson directory.
 - `git status`, `git diff`, `git log` — any read-only git command.
+- This machine's own `nvim-tools` and `lukas-ps` are pre-approved too, and are
+  documented once in [`rules/machine-tools.md`](rules/machine-tools.md) — do not
+  restate them here.
 - Browsing the MLflow, Grafana, Temporal or Qdrant UIs with the Playwright MCP
   server. Close the browser when finished.
 

@@ -1,4 +1,4 @@
-# L3-3.4 — CI/CD Quality Gates for AI Applications
+# L3-M1.4 — CI/CD Quality Gates for AI Applications
 
 **Level:** Expert
 **Duration:** 1.5 hours
@@ -9,9 +9,9 @@ Deploy AI models with confidence by enforcing automated quality gates in your CI
 
 ## Prerequisites
 
-- Completed: L3-3.1 (Production Tracing), L3-3.3 (Feedback Loops)
-- Completed: L1-4.2 (LLM Eval Basics), L2-3.1 (Custom Metrics)
-- MLFlow server running at http://127.0.0.1:5555
+- Completed: L3-M1.1 (Production Tracing), L3-M1.3 (Feedback Loops)
+- Completed: L1-M4.1 (LLM Eval Basics), L1-M4.2 (Custom Metrics)
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -51,10 +51,10 @@ The `QualityGate` class holds configurable thresholds. Start with reasonable def
 ```python
 @dataclass
 class QualityGate:
-    min_accuracy: float = 0.7        # 70% of test cases must pass
-    max_latency_p95_ms: float = 5000 # P95 latency under 5 seconds
-    min_consistency: float = 0.6     # 60% consistency across retries
-    max_error_rate: float = 0.1      # Under 10% error rate
+    min_accuracy: float = 0.7  # 70% of test cases must pass
+    max_latency_p95_ms: float = 5000  # P95 latency under 5 seconds
+    min_consistency: float = 0.6  # 60% consistency across retries
+    max_error_rate: float = 0.1  # Under 10% error rate
 ```
 
 ### Step 2: Run the Evaluation Harness
@@ -93,9 +93,9 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
-L3-3.4 — CI/CD Quality Gates for AI Applications
+L3-M1.4 — CI/CD Quality Gates for AI Applications
 ============================================================
 
 --- Part 1: Quality Gate Definitions ---
@@ -143,4 +143,4 @@ Exact numbers will vary based on model performance and system latency.
 
 ## Next Steps
 
-Return to the MLflow UI and explore the `L3/M3_production/4_cicd` experiment. Compare the standard-gates run (likely approved) with the strict-gates run (likely blocked). In L3-4.1, you will extend MLflow with custom plugins to build reusable quality gate components.
+Return to the MLflow UI and explore the `L3/M1_production/4_cicd` experiment. Compare the standard-gates run (likely approved) with the strict-gates run (likely blocked). In L3-M3.2, you will extend MLflow with custom plugins to build reusable quality gate components.

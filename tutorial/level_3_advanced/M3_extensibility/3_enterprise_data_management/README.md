@@ -11,7 +11,7 @@ Production MLflow deployments serve multiple teams with different access needs, 
 
 - Completed: L1-M1 (Tracking), L1-M3 (Models and Registry)
 - Completed: L1-M4.4 (Datasets and Human-in-the-Loop)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 
 ## Concepts
 
@@ -32,18 +32,23 @@ Production MLflow deployments serve multiple teams with different access needs, 
 ## Step-by-Step
 
 ### Part 1: Multi-Team Organization
+
 Hierarchical experiment structure with team tags and search by team.
 
 ### Part 2: Model Governance
+
 Register a model, promote through stages with approval checks, handle rejections and retries.
 
 ### Part 3: Cost Tracking
+
 Simulate LLM calls across models, compute estimated costs, log aggregate metrics.
 
 ### Part 4: Dataset Versioning and Lineage
+
 Three dataset versions with hash digests, linked to evaluation runs via lineage tags.
 
 ### Part 5: Quality Checks and Drift Detection
+
 Automated quality validation on good vs bad datasets, plus category distribution drift detection.
 
 ## Running the Lesson
@@ -56,7 +61,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 Part 1: Multi-Team Experiment Organization
   Created: enterprise/data-science/churn-prediction ...
   Searching experiments by team...

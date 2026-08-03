@@ -1,4 +1,4 @@
-# L3-1.4 — Agent Optimization
+# L2-M3.4 — Agent Optimization
 
 **Level:** Expert
 **Duration:** 2 hours
@@ -9,8 +9,8 @@ Agent quality depends on more than just the LLM — system prompts, temperature 
 
 ## Prerequisites
 
-- Completed: L3-1.3 (Architecture Comparison)
-- MLflow server running at http://127.0.0.1:5555
+- Completed: L2-M3.3 (Architecture Comparison)
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -96,7 +96,7 @@ uv run python main.py
 
 The script prints per-case results for each variant, followed by a summary table:
 
-```
+```text
   Variant                Dimension          Correct  ToolSel  Quality  Latency
   --------------------------------------------------------------------------
   prompt_minimal         system_prompt        0.600    0.400    0.500   1.234s
@@ -112,7 +112,7 @@ The script prints per-case results for each variant, followed by a summary table
 ```
 
 In the MLflow UI:
-- Navigate to experiment `L3/M1_agent_evaluation/4_agent_optimization`
+- Navigate to experiment `L2/M3_agent_evaluation/4_agent_optimization`
 - The parent run `agent_optimization` contains all nested variant runs
 - Each nested run has parameters (`dimension`, `variant`, `temperature`) and metrics (`avg_correctness`, `avg_tool_selection`, `quality_score`)
 - The parent run has stepped metrics (`opt_quality`, `opt_correctness`) showing the optimization trajectory
@@ -127,4 +127,4 @@ In the MLflow UI:
 
 ## Next Steps
 
-In L3-1.5 (End-to-End Agent Evaluation Pipeline), you will combine all the evaluation techniques from this module into a complete automated pipeline with CI/CD integration, regression detection, and quality dashboards.
+In L2-M3.5 (End-to-End Agent Evaluation Pipeline), you will combine all the evaluation techniques from this module into a complete automated pipeline with CI/CD integration, regression detection, and quality dashboards.

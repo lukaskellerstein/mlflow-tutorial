@@ -7,6 +7,7 @@ globs: ["tutorial/**/*.py"]
 ## API Reference
 
 ### Experiment Tracking
+
 - `mlflow.set_experiment()` — always set before logging
 - `mlflow.start_run()` — context manager for runs
 - `mlflow.log_param()` / `mlflow.log_params()` — log configuration
@@ -22,6 +23,7 @@ globs: ["tutorial/**/*.py"]
 - `MlflowClient` — programmatic CRUD
 
 ### Models and Registry
+
 - `mlflow.<flavor>.log_model()` — save models (pyfunc, langchain, openai, transformers, etc.)
 - `mlflow.<flavor>.load_model()` — load for inference
 - `mlflow.models.infer_signature()` — infer input/output schema
@@ -32,6 +34,7 @@ globs: ["tutorial/**/*.py"]
 - `PythonModel.load_context()` — load dependencies
 
 ### Autologging
+
 - `mlflow.autolog()` — universal autolog
 - `mlflow.langchain.autolog()` — LangChain and LangGraph
 - `mlflow.openai.autolog()` — OpenAI (also covers LMStudio via OpenAI-compatible API)
@@ -39,6 +42,7 @@ globs: ["tutorial/**/*.py"]
 - `mlflow.transformers.autolog()` — Hugging Face
 
 ### Evaluation
+
 - `mlflow.evaluate()` — the main evaluation entry point
   - `model_type`: `"question-answering"`, `"text-summarization"`, `"text"`
   - `evaluators`: `"default"` or custom
@@ -54,12 +58,14 @@ globs: ["tutorial/**/*.py"]
 - `mlflow.genai.simulators` — conversation simulation
 
 ### Tracing
+
 - `@mlflow.trace` — decorator for function-level tracing
 - `mlflow.start_span()` — manual span creation (context manager)
 - Auto-tracing via `mlflow.langchain.autolog()`
 - OpenTelemetry export
 
 ### GenAI Features
+
 - `mlflow.genai.register_prompt()` — prompt registry
 - `mlflow.genai.scorers` — built-in and custom scorers
 - `mlflow.genai.judges` — LLM-as-judge
@@ -67,10 +73,12 @@ globs: ["tutorial/**/*.py"]
 - `mlflow.genai.optimize` — automated prompt tuning
 
 ### Data
+
 - `mlflow.data` — dataset logging
 - `mlflow.log_input()` — link datasets to runs
 
 ### Deployment
+
 - `mlflow models serve` — local REST API
 - `mlflow models predict` — batch prediction
 - AI Gateway route configuration
@@ -78,19 +86,25 @@ globs: ["tutorial/**/*.py"]
 ## Patterns to Follow
 
 ### Experiment Naming
+
 Use hierarchical names matching the level/module structure:
+
 ```python
 mlflow.set_experiment("L1/M1_tracking/1_tracking_fundamentals")
 ```
 
 ### Run Naming
+
 Give runs descriptive names:
+
 ```python
 with mlflow.start_run(run_name="temperature_0.7_gemma4"):
 ```
 
 ### Nested Runs for Comparisons
+
 Use nested runs when comparing configurations:
+
 ```python
 with mlflow.start_run(run_name="temperature_comparison"):
     for temp in [0.3, 0.7, 1.0]:
@@ -99,8 +113,9 @@ with mlflow.start_run(run_name="temperature_comparison"):
 ```
 
 ### Always Check the MLFlow Source Code
+
 When implementing MLFlow features, verify the API exists and its signature by consulting:
-- Source code: `~/Projects/github/mlflow/mlflow`
-- Documentation: `/Users/lkellers/Projects/github/mlflow/mlflow/docs/docs`
+- Source code: `~/Projects/Github/mlflow/mlflow`
+- Documentation: `~/Projects/Github/mlflow/mlflow/docs/docs`
 
 Do NOT guess at API names or parameters. Read the source if unsure.

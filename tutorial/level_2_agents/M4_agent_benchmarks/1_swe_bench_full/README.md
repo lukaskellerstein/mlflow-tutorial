@@ -11,7 +11,7 @@ This lesson builds the **real** SWE-Bench evaluation pipeline. Unlike the simpli
 
 - Completed: L2-M1 Agent Frameworks
 - Completed: L2-M3 Agent Evaluation
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` loaded
 - **Podman or Docker installed and running**
 - Internet connection (downloads dataset and clones repos)
@@ -24,7 +24,7 @@ The SWE-Bench leaderboard ranks coding agents by **resolution rate** — the per
 
 Evaluation follows this pipeline:
 
-```
+```text
 Clone repo at exact commit → Install dependencies → Apply test patch
     → Verify bug exists (tests fail) → Apply agent's patch
     → Run tests → Score: resolved / applied / failed
@@ -63,7 +63,7 @@ Containers provide isolated, reproducible environments for each evaluation.
 
 ### Architecture
 
-```
+```text
 main.py (orchestrator)
   ├── agent.py (DeepAgents agent with container sandbox)
   │     ├── ContainerSandbox(BaseSandbox) — wraps podman exec
@@ -122,11 +122,14 @@ The agent uses DeepAgents with a `ContainerSandbox` that wraps `podman exec`. De
 from deepagents import create_deep_agent
 from deepagents.backends.sandbox import BaseSandbox
 
+
 class ContainerSandbox(BaseSandbox):
     def execute(self, command, *, timeout=None):
         rc, stdout, stderr = exec_in_container(self._container_id, command)
         return ExecuteResponse(output=stdout + stderr, exit_code=rc, truncated=False)
+
     # + id, upload_files, download_files
+
 
 sandbox = ContainerSandbox(container_id)
 agent = create_deep_agent(model=llm, backend=sandbox, system_prompt=SYSTEM_PROMPT)
@@ -155,7 +158,7 @@ f2p_passed, f2p_failed, output = harness.run_tests(container_id, f2p_tests, repo
 Resolution rate is computed identically to the leaderboard:
 
 ```python
-resolved = (f2p_passed == len(f2p_tests) and f2p_failed == 0 and p2p_failed == 0)
+resolved = f2p_passed == len(f2p_tests) and f2p_failed == 0 and p2p_failed == 0
 resolution_rate = sum(r["resolved"] for r in results) / len(results)
 ```
 
@@ -177,7 +180,7 @@ SWE_BENCH_RUNTIME=docker uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 L2-M4.1 -- Full SWE-Bench Evaluation Pipeline
 ============================================================

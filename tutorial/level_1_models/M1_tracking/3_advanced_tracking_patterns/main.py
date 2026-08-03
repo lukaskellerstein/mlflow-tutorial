@@ -114,9 +114,7 @@ def part1_nested_runs(client: OpenAI) -> None:
                         }
                     )
 
-                    r = call_llm(
-                        client, TEST_QUESTION, temperature=temperature, system_prompt=system_prompt
-                    )
+                    r = call_llm(client, TEST_QUESTION, temperature=temperature, system_prompt=system_prompt)
 
                     mlflow.log_metrics(
                         {
@@ -163,13 +161,9 @@ def part1_nested_runs(client: OpenAI) -> None:
             }
         )
 
-        print(
-            f"  Most detailed: {best_by_length['run_name']}  (length={best_by_length['response_length']})"
-        )
+        print(f"  Most detailed: {best_by_length['run_name']}  (length={best_by_length['response_length']})")
         print(f"  Most concise:  {shortest['run_name']}  (length={shortest['response_length']})")
-        print(
-            f"  Fastest:       {fastest['run_name']}  (latency={fastest['latency_seconds']:.2f}s)"
-        )
+        print(f"  Fastest:       {fastest['run_name']}  (latency={fastest['latency_seconds']:.2f}s)")
         print(f"  Avg latency:   {avg_latency:.2f}s")
         print(f"  Parent run ID: {parent_run.info.run_id}")
 

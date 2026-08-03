@@ -1,4 +1,4 @@
-# L2-M4.2 — Tracing Temporal.io Workflows
+# L3-M2.2 — Tracing Temporal.io Workflows
 
 **Level:** Practitioner
 **Duration:** ~1 hour
@@ -10,7 +10,7 @@ This lesson integrates MLflow tracing with Temporal.io durable workflows. You wi
 ## Prerequisites
 
 - Completed: L2-M4.1 (LangGraph Tracing) -- familiarity with MLflow tracing concepts
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - Temporal server running at localhost:7233 (start with `podman compose up -d` from `infra/`)
 - LMStudio running with `google/gemma-4-e4b` model loaded
 
@@ -32,7 +32,7 @@ Temporal's workflow sandbox restricts imports for determinism, so the workflow c
 
 The overall workflow invocation is wrapped with `@mlflow.trace` on the caller side. Activity spans are created independently because Temporal activities run in separate thread contexts:
 
-```
+```text
 Caller side (main.py):
   @mlflow.trace("temporal_workflow_execution")   <-- workflow-level trace
     mlflow.start_span("temporal_dispatch")        <-- dispatch span
@@ -47,7 +47,7 @@ This means you will see separate traces in MLflow: one for the workflow dispatch
 
 ### File Structure
 
-```
+```text
 2_temporal_tracing/
   main.py           # Activities, MLflow tracing, runner, analysis
   workflow_def.py   # Workflow class + dataclasses (no MLflow imports)
@@ -111,7 +111,7 @@ podman compose up -d
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1-2: Connecting to Temporal and registering worker
 ============================================================
@@ -152,7 +152,7 @@ Part 4: Analyzing MLflow traces
     Total workflow time: 63707.6 ms
 ```
 
-In the MLflow UI (http://127.0.0.1:5555), navigate to the experiment to see all traces. In the Temporal UI (http://localhost:8080), search for the workflow ID to see the execution history with activity scheduling and completion events.
+In the MLflow UI (<http://127.0.0.1:5555>), navigate to the experiment to see all traces. In the Temporal UI (<http://localhost:8080>), search for the workflow ID to see the execution history with activity scheduling and completion events.
 
 ## Key Takeaways
 

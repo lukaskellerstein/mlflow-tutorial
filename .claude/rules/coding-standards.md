@@ -25,6 +25,7 @@ Always set the tracking URI explicitly in code at the top of `main.py`:
 
 ```python
 import mlflow
+
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 ```
 
@@ -96,6 +97,7 @@ embeddings = OpenAIEmbeddings(
 ```
 
 ### Which model to use where
+
 - **Level 1 lessons**: use `google/gemma-4-e4b` (fast, keeps lessons snappy)
 - **Level 2/3 agent and evaluation lessons**: use `google/gemma-4-26b-a4b` (better reasoning)
 - **LLM-as-judge / evaluation judges**: use `google/gemma-4-26b-a4b` (judge quality matters)

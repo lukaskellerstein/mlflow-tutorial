@@ -1,5 +1,5 @@
 """
-L2-9.1 -- LLM Fine-Tuning with HuggingFace + MLflow
+L1-M7.1 -- LLM Fine-Tuning with HuggingFace + MLflow
 
 Fine-tunes distilgpt2 on a small instruction dataset and tracks everything
 with MLflow: autolog for training metrics, model artifact logging, and
@@ -50,6 +50,7 @@ TRAIN_EXAMPLES = [
 
 def create_dataset(tokenizer) -> Dataset:
     """Tokenize the training examples for causal language modeling."""
+
     def tokenize(batch):
         tokens = tokenizer(batch["text"], truncation=True, max_length=MAX_LEN, padding="max_length")
         tokens["labels"] = tokens["input_ids"].copy()
@@ -64,8 +65,12 @@ def generate_text(model, tokenizer, prompt: str, max_new: int = 40) -> str:
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     with torch.no_grad():
         ids = model.generate(
-            **inputs, max_new_tokens=max_new, do_sample=True,
-            temperature=0.7, top_p=0.9, pad_token_id=tokenizer.eos_token_id,
+            **inputs,
+            max_new_tokens=max_new,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            pad_token_id=tokenizer.eos_token_id,
         )
     return tokenizer.decode(ids[0], skip_special_tokens=True)
 
@@ -124,10 +129,14 @@ def part3_log_model(trainer, tokenizer):
             task="text-generation",
             input_example=["Q: What is Python?"],
         )
-        mlflow.log_params({
-            "base_model": MODEL_NAME, "num_epochs": 3,
-            "learning_rate": 5e-5, "max_seq_length": MAX_LEN,
-        })
+        mlflow.log_params(
+            {
+                "base_model": MODEL_NAME,
+                "num_epochs": 3,
+                "learning_rate": 5e-5,
+                "max_seq_length": MAX_LEN,
+            }
+        )
         print(f"  Model URI: {info.model_uri}")
         print(f"  Run ID: {run.info.run_id}\n")
 
@@ -149,8 +158,8 @@ def part4_compare(base_model, finetuned_model, tokenizer):
         for prompt in prompts:
             base_out = generate_text(base_model, tokenizer, prompt)
             ft_out = generate_text(finetuned_model, tokenizer, prompt)
-            base_ans = base_out[len(prompt):].strip().replace("\n", " ")[:60]
-            ft_ans = ft_out[len(prompt):].strip().replace("\n", " ")[:60]
+            base_ans = base_out[len(prompt) :].strip().replace("\n", " ")[:60]
+            ft_ans = ft_out[len(prompt) :].strip().replace("\n", " ")[:60]
             print(f"  {prompt:<40} | {'base':<10} | {base_ans}")
             print(f"  {'':<40} | {'finetuned':<10} | {ft_ans}")
             print("  " + "-" * 95)
@@ -164,7 +173,7 @@ if __name__ == "__main__":
     mlflow.set_experiment("L1/M7_finetuning/1_huggingface")
 
     print("\n" + "=" * 60)
-    print("  L2-8.1: LLM Fine-Tuning with HuggingFace + MLflow")
+    print("  L1-M7.1: LLM Fine-Tuning with HuggingFace + MLflow")
     print("=" * 60 + "\n")
 
     # Part 1: Load model and data

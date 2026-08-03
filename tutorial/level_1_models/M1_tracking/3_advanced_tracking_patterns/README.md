@@ -10,7 +10,7 @@ This lesson covers three advanced tracking patterns: nested runs for organizing 
 ## Prerequisites
 
 - Completed: L1-M1.1 (Tracking Fundamentals), L1-M1.2 (Search, Query, and MlflowClient)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` loaded
 
 ## Concepts
@@ -36,9 +36,7 @@ with mlflow.start_run(run_name="LLM Config Sweep") as parent:
 MLflow automatically sets `mlflow.parentRunId` on child runs. Query children with:
 
 ```python
-mlflow.search_runs(
-    filter_string=f"tags.mlflow.parentRunId = '{parent_run_id}'"
-)
+mlflow.search_runs(filter_string=f"tags.mlflow.parentRunId = '{parent_run_id}'")
 ```
 
 ### Async Logging
@@ -55,7 +53,7 @@ The tracking server still receives every metric -- it just happens in the backgr
 
 Use `artifact_path` to create a clean folder structure inside each run:
 
-```
+```text
 run/artifacts/
     config/
         llm/              -- model configuration
@@ -126,7 +124,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Part 1: Nested Runs -- LLM Configuration Sweep
 ============================================================

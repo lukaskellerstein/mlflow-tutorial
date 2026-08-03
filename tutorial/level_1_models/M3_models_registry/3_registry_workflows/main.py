@@ -26,16 +26,14 @@ MODEL_CONFIGS = [
     {
         "name": "concise_assistant",
         "system_prompt": (
-            "You are a concise assistant. Answer questions in 1-2 "
-            "sentences maximum. Be direct and brief."
+            "You are a concise assistant. Answer questions in 1-2 sentences maximum. Be direct and brief."
         ),
         "temperature": 0.3,
     },
     {
         "name": "detailed_assistant",
         "system_prompt": (
-            "You are a thorough assistant. Provide detailed, "
-            "comprehensive answers with examples when helpful."
+            "You are a thorough assistant. Provide detailed, comprehensive answers with examples when helpful."
         ),
         "temperature": 0.7,
     },
@@ -59,14 +57,8 @@ class LLMAssistant(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
         from openai import OpenAI
 
-        client = OpenAI(
-            base_url="http://localhost:1234/v1", api_key="lm-studio"
-        )
-        questions = (
-            model_input["question"].tolist()
-            if isinstance(model_input, pd.DataFrame)
-            else [str(model_input)]
-        )
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        questions = model_input["question"].tolist() if isinstance(model_input, pd.DataFrame) else [str(model_input)]
         results = []
         for question in questions:
             resp = client.chat.completions.create(
@@ -122,12 +114,14 @@ def build_and_register(llm_client: OpenAI) -> list[dict]:
                 signature=signature,
                 input_example=sample_input,
             )
-            results.append({
-                "name": cfg["name"],
-                "run_id": run.info.run_id,
-                "system_prompt": cfg["system_prompt"],
-                "temperature": cfg["temperature"],
-            })
+            results.append(
+                {
+                    "name": cfg["name"],
+                    "run_id": run.info.run_id,
+                    "system_prompt": cfg["system_prompt"],
+                    "temperature": cfg["temperature"],
+                }
+            )
             print(f"  Logged: {cfg['name']} (run {run.info.run_id[:8]}...)")
 
     # Register both as versions of the same model
@@ -185,14 +179,15 @@ def evaluate_models(llm_client: OpenAI, results: list[dict]) -> list[dict]:
 
         # Log evaluation metrics back to the original run
         with mlflow.start_run(run_id=entry["run_id"]):
-            mlflow.log_metrics({
-                "eval_avg_response_length": avg_len,
-                "eval_avg_latency": avg_lat,
-                "eval_quality_score": quality,
-            })
+            mlflow.log_metrics(
+                {
+                    "eval_avg_response_length": avg_len,
+                    "eval_avg_latency": avg_lat,
+                    "eval_quality_score": quality,
+                }
+            )
 
-        print(f"    Summary: avg_length={avg_len:.0f}  "
-              f"avg_latency={avg_lat:.2f}s  quality={quality:.1f}")
+        print(f"    Summary: avg_length={avg_len:.0f}  avg_latency={avg_lat:.2f}s  quality={quality:.1f}")
     print()
     return results
 
@@ -211,8 +206,7 @@ def promote_best(client: MlflowClient, results: list[dict]) -> None:
 
     client.update_registered_model(
         MODEL_NAME,
-        description="LLM assistant with versioned configurations, "
-        "managed in L1-M3 Registry Workflows lesson.",
+        description="LLM assistant with versioned configurations, managed in L1-M3 Registry Workflows lesson.",
     )
 
     for entry in results:
@@ -223,14 +217,10 @@ def promote_best(client: MlflowClient, results: list[dict]) -> None:
         )
         client.update_model_version(MODEL_NAME, entry["version"], description=desc)
         client.set_model_version_tag(MODEL_NAME, entry["version"], "role", role)
-        client.set_model_version_tag(
-            MODEL_NAME, entry["version"], "temperature", str(entry["temperature"])
-        )
+        client.set_model_version_tag(MODEL_NAME, entry["version"], "temperature", str(entry["temperature"]))
 
-    print(f"  champion   -> v{champion['version']} "
-          f"({champion['name']}, quality={champion['quality_score']:.1f})")
-    print(f"  challenger -> v{challenger['version']} "
-          f"({challenger['name']}, quality={challenger['quality_score']:.1f})")
+    print(f"  champion   -> v{champion['version']} ({champion['name']}, quality={champion['quality_score']:.1f})")
+    print(f"  challenger -> v{challenger['version']} ({challenger['name']}, quality={challenger['quality_score']:.1f})")
     print()
 
 
@@ -244,10 +234,14 @@ def serve_champion() -> None:
     champion_model = mlflow.pyfunc.load_model(champion_uri)
     print(f"  Loaded: {champion_uri}")
 
-    test_df = pd.DataFrame({"question": [
-        "What is reinforcement learning?",
-        "Why is data preprocessing important?",
-    ]})
+    test_df = pd.DataFrame(
+        {
+            "question": [
+                "What is reinforcement learning?",
+                "Why is data preprocessing important?",
+            ]
+        }
+    )
     predictions = champion_model.predict(test_df)
 
     for i, (q, a) in enumerate(zip(test_df["question"], predictions)):
@@ -258,9 +252,7 @@ def serve_champion() -> None:
     # Also load challenger for comparison
     challenger_uri = f"models:/{MODEL_NAME}@challenger"
     challenger_model = mlflow.pyfunc.load_model(challenger_uri)
-    challenger_answer = challenger_model.predict(
-        pd.DataFrame({"question": ["What is reinforcement learning?"]})
-    )
+    challenger_answer = challenger_model.predict(pd.DataFrame({"question": ["What is reinforcement learning?"]}))
     print(f"  Challenger answer: {challenger_answer[0][:100].replace(chr(10), ' ')}...")
     print()
 
@@ -275,14 +267,16 @@ def comparison_summary(client: MlflowClient, results: list[dict]) -> None:
     for entry in results:
         mv = client.get_model_version(MODEL_NAME, entry["version"])
         aliases = mv.aliases if hasattr(mv, "aliases") else []
-        rows.append({
-            "Version": f"v{entry['version']}",
-            "Style": entry["name"],
-            "Avg Length": f"{entry['avg_response_length']:.0f}",
-            "Avg Latency": f"{entry['avg_latency']:.2f}s",
-            "Quality": f"{entry['quality_score']:.1f}",
-            "Alias": ", ".join(aliases) if aliases else "-",
-        })
+        rows.append(
+            {
+                "Version": f"v{entry['version']}",
+                "Style": entry["name"],
+                "Avg Length": f"{entry['avg_response_length']:.0f}",
+                "Avg Latency": f"{entry['avg_latency']:.2f}s",
+                "Quality": f"{entry['quality_score']:.1f}",
+                "Alias": ", ".join(aliases) if aliases else "-",
+            }
+        )
     print(pd.DataFrame(rows).to_string(index=False))
     print()
 

@@ -29,7 +29,10 @@ def part1_team_organization(client: MlflowClient) -> None:
     print("=" * 60)
 
     teams = {
-        "data-science": {"projects": ["churn-prediction", "recommendation"], "owner": "alice@co.com"},
+        "data-science": {
+            "projects": ["churn-prediction", "recommendation"],
+            "owner": "alice@co.com",
+        },
         "nlp-team": {"projects": ["chatbot-v2", "summarization"], "owner": "bob@co.com"},
         "ml-platform": {"projects": ["model-monitoring", "feature-store"], "owner": "carol@co.com"},
     }
@@ -86,9 +89,7 @@ class ModelGovernance:
         checks_retry = {"load_test": True, "security_scan": True, "stakeholder_approval": True}
         self._promote(name, result.version, "staging", "champion", checks_retry)
 
-    def _promote(
-        self, name: str, version: str, from_stage: str, to_stage: str, checks: dict[str, bool]
-    ) -> None:
+    def _promote(self, name: str, version: str, from_stage: str, to_stage: str, checks: dict[str, bool]) -> None:
         failed = [c for c, ok in checks.items() if not ok]
         if failed:
             print(f"  REJECTED {from_stage}->{to_stage}: failed {failed}")
@@ -116,9 +117,7 @@ def part2_governance(client: MlflowClient) -> str:
             def predict(self, context, model_input, params=None):
                 return ["prediction"] * len(model_input)
 
-        mlflow.pyfunc.log_model(
-            name="model", python_model=SimpleModel(), input_example={"text": "hello"}
-        )
+        mlflow.pyfunc.log_model(name="model", python_model=SimpleModel(), input_example={"text": "hello"})
         governance.register_and_promote(f"runs:/{run_id}/model", "enterprise-demo-model", "alice@co.com")
     print()
     return run_id
@@ -153,14 +152,19 @@ def part3_cost_tracking() -> None:
         for model, inp, out, op in calls:
             prices = pricing.get(model, {"input": 0, "output": 0})
             cost = inp * prices["input"] / 1e6 + out * prices["output"] / 1e6
-            records.append({"model": model, "operation": op, "input_tokens": inp,
-                            "output_tokens": out, "cost_usd": round(cost, 6)})
+            records.append(
+                {
+                    "model": model,
+                    "operation": op,
+                    "input_tokens": inp,
+                    "output_tokens": out,
+                    "cost_usd": round(cost, 6),
+                }
+            )
             print(f"  {op:<20s} | {model:<25s} | ${cost:.6f}")
 
         df = pd.DataFrame(records)
-        summary = df.groupby("model").agg(
-            calls=("model", "count"), total_cost=("cost_usd", "sum")
-        ).reset_index()
+        summary = df.groupby("model").agg(calls=("model", "count"), total_cost=("cost_usd", "sum")).reset_index()
         print(f"\n  Total estimated cost: ${df['cost_usd'].sum():.6f}")
         mlflow.log_metric("cost/total_usd", df["cost_usd"].sum())
         mlflow.log_table(summary, artifact_file="cost_report.json")
@@ -180,9 +184,12 @@ class DatasetManager:
     def add_version(self, df: pd.DataFrame, description: str) -> dict[str, Any]:
         digest = hashlib.sha256(df.to_csv(index=False).encode()).hexdigest()[:12]
         meta = {
-            "name": self.name, "version": len(self.versions) + 1,
-            "digest": digest, "description": description,
-            "num_rows": len(df), "columns": list(df.columns),
+            "name": self.name,
+            "version": len(self.versions) + 1,
+            "digest": digest,
+            "description": description,
+            "num_rows": len(df),
+            "columns": list(df.columns),
         }
         self.versions.append(meta)
         return meta
@@ -203,21 +210,35 @@ def part4_dataset_versioning() -> DatasetManager:
     mlflow.set_experiment(EXPERIMENT_NAME)
     manager = DatasetManager("agent_eval_dataset")
 
-    v1 = pd.DataFrame({
-        "question": ["What is the capital of France?", "Summarize photosynthesis.", "What is 25*4?"],
-        "expected_answer": ["Paris", "Plants convert sunlight to energy.", "100"],
-        "category": ["factual", "summarization", "math"],
-    })
+    v1 = pd.DataFrame(
+        {
+            "question": [
+                "What is the capital of France?",
+                "Summarize photosynthesis.",
+                "What is 25*4?",
+            ],
+            "expected_answer": ["Paris", "Plants convert sunlight to energy.", "100"],
+            "category": ["factual", "summarization", "math"],
+        }
+    )
     v1_meta = manager.add_version(v1, "Initial 3-question set")
     with mlflow.start_run(run_name="dataset_v1"):
         manager.log_to_mlflow(v1, v1_meta)
     print(f"  v1: {v1_meta['num_rows']} rows, digest={v1_meta['digest']}")
 
-    v2 = pd.concat([v1, pd.DataFrame({
-        "question": ["Is the sky blue?", "Translate 'hello' to Spanish."],
-        "expected_answer": ["Yes", "Hola"],
-        "category": ["yes_no", "translation"],
-    })], ignore_index=True)
+    v2 = pd.concat(
+        [
+            v1,
+            pd.DataFrame(
+                {
+                    "question": ["Is the sky blue?", "Translate 'hello' to Spanish."],
+                    "expected_answer": ["Yes", "Hola"],
+                    "category": ["yes_no", "translation"],
+                }
+            ),
+        ],
+        ignore_index=True,
+    )
     v2_meta = manager.add_version(v2, "Added edge cases")
     with mlflow.start_run(run_name="dataset_v2"):
         manager.log_to_mlflow(v2, v2_meta)
@@ -253,16 +274,20 @@ def part5_quality_and_drift() -> None:
 
     mlflow.set_experiment(EXPERIMENT_NAME)
 
-    good = pd.DataFrame({
-        "question": ["What is 2+2?", "Name a primary color?"],
-        "expected_answer": ["4", "Red"],
-        "category": ["math", "factual"],
-    })
-    bad = pd.DataFrame({
-        "question": ["What is 2+2?", "No question mark", "What is 2+2?"],
-        "expected_answer": ["4", "", "4"],
-        "category": ["math", "factual", "math"],
-    })
+    good = pd.DataFrame(
+        {
+            "question": ["What is 2+2?", "Name a primary color?"],
+            "expected_answer": ["4", "Red"],
+            "category": ["math", "factual"],
+        }
+    )
+    bad = pd.DataFrame(
+        {
+            "question": ["What is 2+2?", "No question mark", "What is 2+2?"],
+            "expected_answer": ["4", "", "4"],
+            "category": ["math", "factual", "math"],
+        }
+    )
 
     print("\n  Quality checks:")
     for label, df in [("good", good), ("bad", bad)]:
@@ -274,8 +299,7 @@ def part5_quality_and_drift() -> None:
         with mlflow.start_run(run_name=f"quality_{label}"):
             mlflow.set_tag("quality.all_passed", str(passed))
             mlflow.log_metrics({"missing_cells": missing, "duplicates": dupes, "empty_answers": empty_answers})
-        print(f"    {label}: {'PASS' if passed else 'FAIL'} "
-              f"(missing={missing}, dupes={dupes}, empty={empty_answers})")
+        print(f"    {label}: {'PASS' if passed else 'FAIL'} (missing={missing}, dupes={dupes}, empty={empty_answers})")
 
     baseline = pd.DataFrame({"category": ["science", "biology", "math", "science"]})
     current = pd.DataFrame({"category": ["science", "physics", "math", "ai", "biology"]})

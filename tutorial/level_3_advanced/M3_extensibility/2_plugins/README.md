@@ -1,4 +1,4 @@
-# L3-4.1 — MLflow Plugins and Extensibility
+# L3-M3.2 — MLflow Plugins and Extensibility
 
 **Level:** Expert
 **Duration:** 1.5 hours
@@ -10,7 +10,7 @@ MLflow's plugin system allows you to extend nearly every aspect of the platform 
 ## Prerequisites
 
 - Completed: L1-M1 (Tracking), L2-M1 (Advanced Tracking), L2-M3 (Deep Evaluation)
-- MLflow server running at http://127.0.0.1:5555
+- MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
 ## Concepts
@@ -118,7 +118,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 Part 1: MLflow Plugin Architecture Overview
   (lists all 13 extension point groups)
 
@@ -164,4 +164,4 @@ In the MLflow UI, check:
 
 ## Next Steps
 
-In **L3-4.2 (Enterprise Patterns)**, we apply these extensibility concepts to multi-tenant environments with governance workflows, audit logging, and cost tracking.
+In **L3-M3.3 (Enterprise Patterns)**, we apply these extensibility concepts to multi-tenant environments with governance workflows, audit logging, and cost tracking.

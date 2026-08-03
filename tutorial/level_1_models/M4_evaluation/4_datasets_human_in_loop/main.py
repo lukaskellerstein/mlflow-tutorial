@@ -89,8 +89,10 @@ def part1_create_and_log_dataset(client: OpenAI) -> tuple[str, list[dict]]:
 
         # Log the dataset with lineage
         dataset = from_pandas(
-            qa_data, source="tutorial_qa_pairs",
-            name="qa_evaluation_dataset", targets="ground_truth_answer",
+            qa_data,
+            source="tutorial_qa_pairs",
+            name="qa_evaluation_dataset",
+            targets="ground_truth_answer",
         )
         mlflow.log_input(dataset, context="evaluation")
         print(f"  Logged dataset -- name: {dataset.name}, digest: {dataset.digest}")
@@ -99,6 +101,7 @@ def part1_create_and_log_dataset(client: OpenAI) -> tuple[str, list[dict]]:
         # Run LLM inference on each question
         results = []
         for _, row in qa_data.iterrows():
+
             @mlflow.trace(name=f"qa_{row['question'][:30]}")
             def traced_qa(question: str, expected: str) -> dict:
                 answer = ask_llm(client, question)
@@ -126,11 +129,11 @@ def part1_create_and_log_dataset(client: OpenAI) -> tuple[str, list[dict]]:
 
 
 SIMULATED_REVIEWS = [
-    {"label": "correct",  "confidence": 0.95, "notes": "Accurate definition."},
-    {"label": "correct",  "confidence": 0.90, "notes": "Good explanation."},
-    {"label": "partial",  "confidence": 0.60, "notes": "Missing concrete example."},
-    {"label": "partial",  "confidence": 0.65, "notes": "Missing lifecycle detail."},
-    {"label": "correct",  "confidence": 0.85, "notes": "Captures the concept well."},
+    {"label": "correct", "confidence": 0.95, "notes": "Accurate definition."},
+    {"label": "correct", "confidence": 0.90, "notes": "Good explanation."},
+    {"label": "partial", "confidence": 0.60, "notes": "Missing concrete example."},
+    {"label": "partial", "confidence": 0.65, "notes": "Missing lifecycle detail."},
+    {"label": "correct", "confidence": 0.85, "notes": "Captures the concept well."},
 ]
 
 
@@ -141,7 +144,8 @@ def part2_human_assessments(results: list[dict]) -> None:
     print("=" * 60)
 
     human_source = AssessmentSource(
-        source_type=AssessmentSourceType.HUMAN, source_id="reviewer@example.com",
+        source_type=AssessmentSourceType.HUMAN,
+        source_id="reviewer@example.com",
     )
 
     with mlflow.start_run(run_name="human_assessments"):
@@ -151,16 +155,20 @@ def part2_human_assessments(results: list[dict]) -> None:
                 continue
 
             mlflow.log_expectation(
-                trace_id=trace_id, name="expected_answer",
-                value=result["expected"], source=human_source,
+                trace_id=trace_id,
+                name="expected_answer",
+                value=result["expected"],
+                source=human_source,
             )
             mlflow.log_feedback(
-                trace_id=trace_id, name="human_correctness",
-                value=review["label"], source=human_source,
+                trace_id=trace_id,
+                name="human_correctness",
+                value=review["label"],
+                source=human_source,
                 rationale=review["notes"],
                 metadata={"confidence": str(review["confidence"])},
             )
-            print(f"  Q{i+1}: label={review['label']}, confidence={review['confidence']}")
+            print(f"  Q{i + 1}: label={review['label']}, confidence={review['confidence']}")
 
         summary_df = pd.DataFrame(SIMULATED_REVIEWS)
         mlflow.log_table(summary_df, artifact_file="assessments.json")
@@ -185,17 +193,16 @@ def part3_combined_evaluation(client: OpenAI, results: list[dict]) -> None:
 
         for i, result in enumerate(results):
             trace_id = result.get("trace_id")
-            judge = auto_judge_score(client, result["question"], result["expected"],
-                                     result["answer"])
+            judge = auto_judge_score(client, result["question"], result["expected"], result["answer"])
             score = judge["score"]
 
             auto_feedback = None
             if trace_id:
                 auto_feedback = mlflow.log_feedback(
-                    trace_id=trace_id, name="auto_judge_score", value=score,
-                    source=AssessmentSource(
-                        source_type=AssessmentSourceType.LLM_JUDGE,
-                        source_id="google/gemma-4-e4b"),
+                    trace_id=trace_id,
+                    name="auto_judge_score",
+                    value=score,
+                    source=AssessmentSource(source_type=AssessmentSourceType.LLM_JUDGE, source_id="google/gemma-4-e4b"),
                     rationale=judge["reasoning"],
                 )
 
@@ -216,12 +223,13 @@ def part3_combined_evaluation(client: OpenAI, results: list[dict]) -> None:
                         rationale=f"Human override: {human_verdict}",
                         source=AssessmentSource(
                             source_type=AssessmentSourceType.HUMAN,
-                            source_id="senior_reviewer@example.com"),
+                            source_id="senior_reviewer@example.com",
+                        ),
                     )
                 verdict = f"HUMAN_OVERRIDE -> {human_verdict}"
 
-            print(f"  Q{i+1}: auto_score={score}, verdict={verdict}")
-            mlflow.log_metric(f"q{i+1}_auto_score", score)
+            print(f"  Q{i + 1}: auto_score={score}, verdict={verdict}")
+            mlflow.log_metric(f"q{i + 1}_auto_score", score)
 
         mlflow.log_metrics({k: float(v) for k, v in counts.items()})
         total = len(results)

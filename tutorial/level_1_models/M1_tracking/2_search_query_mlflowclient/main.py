@@ -216,9 +216,7 @@ def demo_dataframe_export(experiment_id: str) -> None:
         summary = (
             cast(
                 pd.DataFrame,
-                df.groupby("params.prompt_topic")["metrics.total_tokens"].agg(
-                    ["count", "mean", "max"]
-                ),
+                df.groupby("params.prompt_topic")["metrics.total_tokens"].agg(["count", "mean", "max"]),
             )
             .rename(columns={"count": "runs", "mean": "avg_tokens", "max": "max_tokens"})
             .sort_values("max_tokens", ascending=False)
@@ -287,10 +285,7 @@ def demo_mlflowclient(llm_client: OpenAI) -> None:
         ml_client.update_run(run_id, status="FINISHED")
         run_ids.append(run_id)
 
-        print(
-            f"  {config['name']}: latency={result['response_time_seconds']}s, "
-            f"tokens={result['total_tokens']}"
-        )
+        print(f"  {config['name']}: latency={result['response_time_seconds']}s, tokens={result['total_tokens']}")
 
     # -- Query operations --
     section("Step 9: MlflowClient -- query operations")

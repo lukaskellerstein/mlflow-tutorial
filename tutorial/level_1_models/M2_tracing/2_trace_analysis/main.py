@@ -1,5 +1,5 @@
 """
-L2-4.4 — Trace-based Debugging and Analysis
+L1-M2.2 — Trace-based Debugging and Analysis
 
 Demonstrates how to use mlflow.search_traces() to retrieve traces,
 analyze span durations to find latency bottlenecks, extract token
@@ -17,6 +17,7 @@ from pydantic import SecretStr
 
 # ── Part 1: Generate traces by running several LLM calls ──────────────
 
+
 def generate_traces(llm: ChatOpenAI) -> None:
     """Run 4 different LLM calls to produce varied traces for analysis."""
     print("=" * 60)
@@ -24,18 +25,36 @@ def generate_traces(llm: ChatOpenAI) -> None:
     print("=" * 60)
 
     calls = [
-        ("Simple Q&A", [
-            {"role": "system", "content": "You are a helpful assistant. Answer in one sentence."},
-            {"role": "user", "content": "What is the speed of light?"},
-        ]),
-        ("Translation", [
-            {"role": "system", "content": "You are a translator. Translate the text to French."},
-            {"role": "user", "content": "Hello, how are you today?"},
-        ]),
-        ("Summarization", [
-            {"role": "system", "content": "You are a concise technical writer."},
-            {"role": "user", "content": "Write a brief summary about containerization with Docker and Podman in 3-4 sentences."},
-        ]),
+        (
+            "Simple Q&A",
+            [
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant. Answer in one sentence.",
+                },
+                {"role": "user", "content": "What is the speed of light?"},
+            ],
+        ),
+        (
+            "Translation",
+            [
+                {
+                    "role": "system",
+                    "content": "You are a translator. Translate the text to French.",
+                },
+                {"role": "user", "content": "Hello, how are you today?"},
+            ],
+        ),
+        (
+            "Summarization",
+            [
+                {"role": "system", "content": "You are a concise technical writer."},
+                {
+                    "role": "user",
+                    "content": "Write a brief summary about containerization with Docker and Podman in 3-4 sentences.",
+                },
+            ],
+        ),
     ]
 
     # Execute single-step calls
@@ -50,10 +69,12 @@ def generate_traces(llm: ChatOpenAI) -> None:
 
     # Multi-step: use the summarization output to generate a title
     print("\n  Running: Multi-step (summarize + title)")
-    title_response = llm.invoke([
-        {"role": "system", "content": "You create short, catchy titles."},
-        {"role": "user", "content": f"Create a title for this text:\n\n{summarize_result}"},
-    ])
+    title_response = llm.invoke(
+        [
+            {"role": "system", "content": "You create short, catchy titles."},
+            {"role": "user", "content": f"Create a title for this text:\n\n{summarize_result}"},
+        ]
+    )
     print(f"  Result:  {title_response.content[:80]}...")
 
     # Give async logging a moment to flush
@@ -63,6 +84,7 @@ def generate_traces(llm: ChatOpenAI) -> None:
 
 
 # ── Part 2: Latency analysis — find the slowest spans ─────────────────
+
 
 def analyze_latency(traces: list) -> pd.DataFrame:
     """Extract span durations and identify the slowest operations."""
@@ -80,12 +102,14 @@ def analyze_latency(traces: list) -> pd.DataFrame:
             else:
                 duration_ms = 0.0
 
-            span_records.append({
-                "trace_id": trace.info.trace_id,
-                "span_name": span.name,
-                "span_type": span.span_type or "UNKNOWN",
-                "duration_ms": round(duration_ms, 2),
-            })
+            span_records.append(
+                {
+                    "trace_id": trace.info.trace_id,
+                    "span_name": span.name,
+                    "span_type": span.span_type or "UNKNOWN",
+                    "duration_ms": round(duration_ms, 2),
+                }
+            )
 
     span_df = pd.DataFrame(span_records)
 
@@ -115,6 +139,7 @@ def analyze_latency(traces: list) -> pd.DataFrame:
 
 # ── Part 3: Token usage analysis ──────────────────────────────────────
 
+
 def analyze_token_usage(traces: list) -> pd.DataFrame:
     """Extract token counts from trace metadata and span attributes."""
     print("=" * 60)
@@ -128,13 +153,15 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
         trace_id = trace.info.trace_id
 
         if trace_usage:
-            token_records.append({
-                "trace_id": trace_id,
-                "source": "trace_metadata",
-                "input_tokens": trace_usage.get("input_tokens", 0),
-                "output_tokens": trace_usage.get("output_tokens", 0),
-                "total_tokens": trace_usage.get("total_tokens", 0),
-            })
+            token_records.append(
+                {
+                    "trace_id": trace_id,
+                    "source": "trace_metadata",
+                    "input_tokens": trace_usage.get("input_tokens", 0),
+                    "output_tokens": trace_usage.get("output_tokens", 0),
+                    "total_tokens": trace_usage.get("total_tokens", 0),
+                }
+            )
         else:
             # Fall back to span-level token usage
             total_input = 0
@@ -146,13 +173,15 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
                     total_output += usage.get("output_tokens", 0)
 
             total = total_input + total_output
-            token_records.append({
-                "trace_id": trace_id,
-                "source": "span_attributes" if total > 0 else "unavailable",
-                "input_tokens": total_input,
-                "output_tokens": total_output,
-                "total_tokens": total,
-            })
+            token_records.append(
+                {
+                    "trace_id": trace_id,
+                    "source": "span_attributes" if total > 0 else "unavailable",
+                    "input_tokens": total_input,
+                    "output_tokens": total_output,
+                    "total_tokens": total,
+                }
+            )
 
     token_df = pd.DataFrame(token_records)
 
@@ -169,8 +198,7 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
         print("  " + "-" * 60)
         for _, row in token_df.iterrows():
             tid = row["trace_id"][:28] + ".."
-            print(f"  {tid:<30} {row['input_tokens']:>8} "
-                  f"{row['output_tokens']:>8} {row['total_tokens']:>8}")
+            print(f"  {tid:<30} {row['input_tokens']:>8} {row['output_tokens']:>8} {row['total_tokens']:>8}")
 
         total_all = token_df["total_tokens"].sum()
         print(f"\n  Total tokens across all traces: {total_all}")
@@ -188,9 +216,8 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
 
 # ── Part 4: Build and log a summary analysis report ───────────────────
 
-def build_analysis_report(
-    traces: list, span_df: pd.DataFrame, token_df: pd.DataFrame
-) -> pd.DataFrame:
+
+def build_analysis_report(traces: list, span_df: pd.DataFrame, token_df: pd.DataFrame) -> pd.DataFrame:
     """Create a per-trace summary and log it as an MLflow artifact."""
     print("=" * 60)
     print("Part 4: Analysis Report")
@@ -219,29 +246,29 @@ def build_analysis_report(
         token_row = token_df[token_df["trace_id"] == trace_id]
         total_tokens = int(cast(pd.Series, token_row["total_tokens"]).iloc[0]) if not token_row.empty else 0
 
-        report_rows.append({
-            "trace_id": trace_id,
-            "total_duration_ms": duration_ms or 0,
-            "num_spans": num_spans,
-            "slowest_span": slowest_span_name,
-            "slowest_span_ms": round(slowest_span_ms, 1),
-            "total_tokens": total_tokens,
-        })
+        report_rows.append(
+            {
+                "trace_id": trace_id,
+                "total_duration_ms": duration_ms or 0,
+                "num_spans": num_spans,
+                "slowest_span": slowest_span_name,
+                "slowest_span_ms": round(slowest_span_ms, 1),
+                "total_tokens": total_tokens,
+            }
+        )
 
     report_df = pd.DataFrame(report_rows)
 
     # Print the report
     print("\n  Trace Analysis Summary:")
     print("  " + "-" * 78)
-    print(f"  {'Trace ID':<22} {'Duration':>10} {'Spans':>6} "
-          f"{'Slowest Span':<20} {'Tokens':>7}")
+    print(f"  {'Trace ID':<22} {'Duration':>10} {'Spans':>6} {'Slowest Span':<20} {'Tokens':>7}")
     print("  " + "-" * 78)
     for _, row in report_df.iterrows():
         tid = row["trace_id"][:20] + ".."
         dur = f"{row['total_duration_ms']}ms"
         tokens = str(row["total_tokens"]) if row["total_tokens"] > 0 else "N/A"
-        print(f"  {tid:<22} {dur:>10} {row['num_spans']:>6} "
-              f"{row['slowest_span']:<20} {tokens:>7}")
+        print(f"  {tid:<22} {dur:>10} {row['num_spans']:>6} {row['slowest_span']:<20} {tokens:>7}")
 
     # Aggregate stats
     print(f"\n  Total traces analyzed:  {len(report_df)}")
@@ -264,17 +291,20 @@ def build_analysis_report(
             mlflow.log_artifact(span_path)
 
         # Log summary metrics
-        mlflow.log_metrics({
-            "total_traces": len(report_df),
-            "total_spans": int(report_df["num_spans"].sum()),
-            "avg_duration_ms": round(avg_dur, 1),
-            "max_duration_ms": float(max_dur or 0),
-        })
+        mlflow.log_metrics(
+            {
+                "total_traces": len(report_df),
+                "total_spans": int(report_df["num_spans"].sum()),
+                "avg_duration_ms": round(avg_dur, 1),
+                "max_duration_ms": float(max_dur or 0),
+            }
+        )
 
         print("\n  Logged report artifacts and metrics to MLflow run.")
 
     # Clean up local CSV files
     import os
+
     for f in ["trace_analysis_report.csv", "span_latency_detail.csv"]:
         if os.path.exists(f):
             os.remove(f)
@@ -284,6 +314,7 @@ def build_analysis_report(
 
 
 # ── Main ──────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     """Run the full trace analysis pipeline."""
@@ -300,18 +331,19 @@ def main() -> None:
 
     # Step 2 — Retrieve traces via search_traces
     print("Searching for traces in the experiment...")
-    experiment = mlflow.get_experiment_by_name(
-        "L1/M2_tracing/2_trace_analysis"
-    )
+    experiment = mlflow.get_experiment_by_name("L1/M2_tracing/2_trace_analysis")
     if experiment is None:
         print("  ERROR: Experiment not found. Did the chains run successfully?")
         return
 
-    traces = cast(list[Trace], mlflow.search_traces(
-        locations=[experiment.experiment_id],
-        return_type="list",
-        flush=True,
-    ))
+    traces = cast(
+        list[Trace],
+        mlflow.search_traces(
+            locations=[experiment.experiment_id],
+            return_type="list",
+            flush=True,
+        ),
+    )
     print(f"  Found {len(traces)} traces\n")
 
     if not traces:

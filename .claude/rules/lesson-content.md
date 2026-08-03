@@ -8,7 +8,7 @@ Every lesson's README.md follows this structure:
 
 ## Template
 
-```markdown
+````markdown
 # L<level>-<Module.Lesson> — <Lesson Title>
 
 **Level:** <Models | AI Agents | Advanced>
@@ -36,6 +36,7 @@ This section teaches the "why" — what problem does this solve?>
 ```
 
 ### Step 2: <Action>
+
 ...
 
 ## Running the Lesson
@@ -47,31 +48,38 @@ uv run python main.py
 ```
 
 ## Expected Output
+
 <Show what the user should see in the terminal and in MLFlow UI>
 
 ## Key Takeaways
+
 - <3-5 bullet points summarizing what was learned>
 
 ## Next Steps
+
 <Point to the next lesson and preview what it covers.
 For end-of-level lessons, point to the next level.>
-```
+
+````
 
 ## Writing Guidelines by Level
 
 ### Level 1 — Models
+
 - Each topic is covered end-to-end (basic through advanced) in one place.
 - Merged lessons may be longer — use clear Part 1/Part 2 sections.
 - Show working examples for every concept.
 - Explain tradeoffs when covering advanced patterns.
 
 ### Level 2 — AI Agents
+
 - Assumes L1 knowledge — no re-teaching tracking, tracing, or evaluation basics.
 - Focus on agent-specific patterns, frameworks, and evaluation.
 - Cross-reference L1 concepts: "In L1-M4.1 you learned evaluation. Now we'll apply it to agents."
 - Include agent trace analysis sections.
 
 ### Level 3 — Advanced
+
 - Production-quality code with proper error handling.
 - Include architecture diagrams where appropriate.
 - Discuss scalability and performance implications.

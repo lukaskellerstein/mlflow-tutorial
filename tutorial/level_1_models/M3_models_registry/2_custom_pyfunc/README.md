@@ -1,4 +1,4 @@
-# L2-M2.2 — Custom PyFunc Models
+# L1-M3.2 — Custom PyFunc Models
 
 **Level:** Practitioner
 **Duration:** ~1 hour
@@ -10,7 +10,7 @@ This lesson demonstrates how to wrap a complete RAG (Retrieval-Augmented Generat
 ## Prerequisites
 
 - Completed: L1-M3.1 (Models and Flavors — PyFunc basics)
-- MLFlow server running at http://127.0.0.1:5555
+- MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` and `text-embedding-nomic-embed-text-v1.5` models loaded
 
 ## Concepts
@@ -135,7 +135,7 @@ uv run python main.py
 
 ## Expected Output
 
-```
+```text
 ============================================================
 Step 1: Preparing RAG model artifacts
 ============================================================
@@ -173,7 +173,7 @@ Step 4: Testing with custom params
 ============================================================
 Done!
 Open MLflow UI at http://127.0.0.1:5555
-Look for experiment: L2/M2_advanced_models/2_custom_pyfunc
+Look for experiment: L1/M3_models_registry/2_custom_pyfunc
 ============================================================
 ```
 

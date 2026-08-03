@@ -36,9 +36,7 @@ class LLMModel(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
         from openai import OpenAI
 
-        client = OpenAI(
-            base_url="http://localhost:1234/v1", api_key="lm-studio"
-        )
+        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
         temperature = (params or {}).get("temperature", 0.7)
         max_tokens = (params or {}).get("max_tokens", 1024)
         questions = model_input["question"].tolist()
@@ -186,12 +184,16 @@ def part5_param_signature() -> None:
 
     input_schema = Schema([ColSpec(DataType.string, "question")])
     output_schema = Schema([ColSpec(DataType.string, "answer")])
-    param_schema = ParamSchema([
-        ParamSpec("temperature", DataType.double, default=0.7),
-        ParamSpec("max_tokens", DataType.long, default=256),
-    ])
+    param_schema = ParamSchema(
+        [
+            ParamSpec("temperature", DataType.double, default=0.7),
+            ParamSpec("max_tokens", DataType.long, default=256),
+        ]
+    )
     signature = ModelSignature(
-        inputs=input_schema, outputs=output_schema, params=param_schema,
+        inputs=input_schema,
+        outputs=output_schema,
+        params=param_schema,
     )
 
     print(f"  Signature with params:\n{signature}\n")
