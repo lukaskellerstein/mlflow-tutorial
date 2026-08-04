@@ -1,0 +1,30 @@
+[project]
+name = "mlflow-tutorial-L2-M1-1-langchain-langgraph"
+version = "0.1.0"
+description = "LangChain + LangGraph Agents with MLflow"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2",
+    "mlflow>=3.0",
+    "langchain>=1.3",
+    "langchain-openai>=1.4",
+    "langchain-core>=1.5",
+    "langgraph>=1.2",
+    "typing-extensions>=4.0",
+]
+
+[tool.basedpyright]
+typeCheckingMode = "standard"
+# mlflow lazy-loads its flavor submodules (mlflow.langchain, mlflow.genai,
+# mlflow.openai, ...). They exist at runtime but are not statically re-exported,
+# so the type checker reports them as private imports. Suppress that only.
+reportPrivateImportUsage = "none"
+# mlflow.ActiveRun.__exit__ returns `exc_type is None` (declared `bool`), so the
+# checker must assume `with mlflow.start_run()` may swallow an exception and skip
+# its body -- flagging every variable assigned inside as possibly unbound. It
+# never actually suppresses (it returns False whenever an exception is live).
+reportPossiblyUnboundVariable = "none"
+# MLflow base hooks (PythonModel.predict, RunContextProvider.in_context/tags)
+# have no return annotation and empty bodies, so the checker infers `None` and
+# rejects every override that actually returns a value.
+reportIncompatibleMethodOverride = "none"

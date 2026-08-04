@@ -1,0 +1,199 @@
+# =============================================================================
+# LiteLLM proxy config — the OpenAI-compatible gateway the agent lessons call.
+#
+# Lessons use the ALIASES below (gemma-large, gemma-small, nomic-embed,
+# text-embedding-3-small, frontier). Swapping provider or model is a change in
+# THIS file, never in a lesson's main.py.
+#
+# Provider wiring (keys come from infra/.env, forwarded by compose.yml):
+#   - OpenRouter : gemma-4-26b-a4b-it / -31b-it, free + paid  (OPENROUTER_API_KEY)
+#                  text-embedding-3-small, paid
+#   - OpenAI     : gpt-5.4-mini                               (OPENAI_API_KEY)
+#   - Local      : LMStudio gemma-4-e4b + nomic-embed         (LM_STUDIO_API_BASE)
+#
+# COSTS: LiteLLM only prices models present in its built-in cost map, and none
+# of the gemma-4 routes are in it — every call would log spend=$0 until the rate
+# is stated. Each entry therefore carries explicit `input_cost_per_token` /
+# `output_cost_per_token` (USD **per token**, so $0.14/1M = 0.00000014). Prices
+# come from the providers' own catalogs — re-check them when they move:
+#   OpenRouter  https://openrouter.ai/api/v1/models
+# gpt-5.4-mini is the exception: it IS in the cost map, so it is left unpinned
+# and tracks upstream updates.
+#
+# Docs: https://docs.litellm.ai/docs/proxy/configs
+# =============================================================================
+
+model_list:
+  # ---- OpenRouter — the default for Level 2/3 agent lessons ----------------
+  # `gemma-large` starts on the FREE tier and falls back to paid (see
+  # litellm_settings.fallbacks). The free tiers really are $0, priced
+  # explicitly so a run that silently fell back to paid shows up as a
+  # non-zero line in the spend log rather than as an indistinguishable zero.
+  #
+  # THE PROVIDER PIN BELOW IS LOAD-BEARING FOR EVERY AGENT LESSON. Read before
+  # removing it.
+  #
+  # OpenRouter load-balances the free tier across two upstream providers,
+  # Darkbloom and Google AI Studio. Both ADVERTISE `tools` and `tool_choice` in
+  # their supported_parameters, so `require_parameters: true` alone does not
+  # separate them. Measured behaviour differs anyway: with a small toolset
+  # Darkbloom returns proper structured tool_calls, but under an agent-scale
+  # request (~10 tool schemas plus a large system prompt, i.e. DeepAgents) it
+  # returns the model's RAW format as message text —
+  #     <|tool_call>call:write_todos{content:...}
+  # — with tool_calls absent. Nothing errors. The agent sees an assistant message
+  # with no tool calls, executes nothing, and stops after two steps with an
+  # exit code of 0. That is the worst possible failure mode for a tutorial.
+  #
+  # So the free aliases are pinned to google-ai-studio (Google's own endpoint,
+  # verified to emit structured tool_calls for the same request) with
+  # allow_fallbacks disabled. Disabled deliberately: if that endpoint is
+  # unavailable the call must FAIL, so litellm_settings.fallbacks can route to
+  # the paid model. Allowing OpenRouter's own fallback would silently land back
+  # on Darkbloom and reintroduce the leak.
+  #
+  # `require_parameters: true` stays as a second filter, and is kept on the paid
+  # aliases too — several paid providers (SiliconFlow, Parasail) do not support
+  # tools at all.
+  - model_name: gemma-large            # tutorial alias: agents, judges, benchmarks
+    litellm_params:
+      model: openrouter/google/gemma-4-26b-a4b-it:free
+      api_key: os.environ/OPENROUTER_API_KEY
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      extra_body:
+        provider:
+          require_parameters: true
+          order: ["google-ai-studio"]
+          allow_fallbacks: false
+  - model_name: gemma-26b-free
+    litellm_params:
+      model: openrouter/google/gemma-4-26b-a4b-it:free
+      api_key: os.environ/OPENROUTER_API_KEY
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      extra_body:
+        provider:
+          require_parameters: true
+  - model_name: gemma-31b-free
+    litellm_params:
+      model: openrouter/google/gemma-4-31b-it:free
+      api_key: os.environ/OPENROUTER_API_KEY
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      extra_body:
+        provider:
+          require_parameters: true
+
+  # paid OpenRouter — the fallback targets named below
+  - model_name: gemma-26b              # $0.12 / $0.35 per 1M tokens
+    litellm_params:
+      model: openrouter/google/gemma-4-26b-a4b-it
+      api_key: os.environ/OPENROUTER_API_KEY
+      input_cost_per_token: 0.00000012
+      output_cost_per_token: 0.00000035
+      extra_body:
+        provider:
+          require_parameters: true
+  - model_name: gemma-31b              # $0.14 / $0.40 per 1M tokens
+    litellm_params:
+      model: openrouter/google/gemma-4-31b-it
+      api_key: os.environ/OPENROUTER_API_KEY
+      input_cost_per_token: 0.00000014
+      output_cost_per_token: 0.0000004
+      extra_body:
+        provider:
+          require_parameters: true
+
+  # ---- OpenAI --------------------------------------------------------------
+  - model_name: gpt-mini
+    litellm_params:
+      model: openai/gpt-5.4-mini
+      api_key: os.environ/OPENAI_API_KEY
+  - model_name: frontier               # tutorial alias: hosted frontier baseline
+    litellm_params:
+      model: openai/gpt-5.4-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  # ---- Local (LMStudio) — free, fast, no network --------------------------
+  # Only reachable when LMStudio is running natively on the host with the
+  # model loaded. Self-hosted, so priced at 0 EXPLICITLY: a lesson's spend
+  # report then reads "$0.00 because it ran locally" rather than "$0.00
+  # because nobody set a price".
+  - model_name: gemma-small            # tutorial alias: fast Level 1 lessons
+    litellm_params:
+      model: lm_studio/google/gemma-4-e4b
+      api_base: os.environ/LM_STUDIO_API_BASE
+      api_key: "sk-lmstudio"           # LMStudio ignores it; must be non-empty
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+  - model_name: nomic-embed            # embeddings for the RAG lessons
+    litellm_params:
+      model: lm_studio/text-embedding-nomic-embed-text-v1.5
+      api_base: os.environ/LM_STUDIO_API_BASE
+      api_key: "sk-lmstudio"
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+
+  # ---- OpenRouter — embeddings that do not need LMStudio -------------------
+  # The alias is deliberately the LITERAL upstream name. MLflow's default judge
+  # aligner (MemAlign, mlflow/genai/judges/optimizers/memalign/) builds a
+  # similarity index over past labels and requests "text-embedding-3-small" by
+  # name, with no way to configure it from make_judge(). Naming the alias
+  # anything else means judge.align() 400s with "Invalid model name passed in
+  # model=text-embedding-3-small" — so this entry is what makes the default
+  # alignment path work against the gateway at all.
+  #
+  # Routed as `openai/<model>` with an explicit api_base rather than
+  # `openrouter/<model>`: LiteLLM's openrouter provider handles chat
+  # completions, and /embeddings goes through the OpenAI-compatible path.
+  #
+  # NOT free — $0.02 per 1M tokens (https://openrouter.ai/openai/text-embedding-3-small).
+  # Embeddings have no completion half, hence output cost 0.
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: openai/text-embedding-3-small
+      api_base: https://openrouter.ai/api/v1
+      api_key: os.environ/OPENROUTER_API_KEY
+      input_cost_per_token: 0.00000002
+      output_cost_per_token: 0
+
+litellm_settings:
+  # Forward token usage and traces to MLflow. The proxy writes them into its own
+  # experiment (MLFLOW_EXPERIMENT_NAME in compose.yml), separate from whatever
+  # experiment the lesson itself logs to — so a lesson using autolog gets its own
+  # trace AND a gateway-side record with real token counts and spend.
+  success_callback: ["mlflow"]
+  drop_params: true
+  # Keep full prompts/responses flowing to the callback above. It defaults to
+  # False already; pinned because flipping it silently empties every gateway
+  # trace in MLflow, which is a confusing thing to debug from the UI side.
+  turn_off_message_logging: false
+  redact_messages_in_exceptions: false
+  # Free OpenRouter tiers rate-limit and occasionally 404 → fall back to the paid
+  # model, then to OpenAI. This is what makes "free, or paid if free errors" a
+  # config concern instead of retry logic in every lesson.
+  fallbacks:
+    - {"gemma-large": ["gemma-26b", "gemma-31b", "gpt-mini"]}
+    - {"gemma-26b-free": ["gemma-26b"]}
+    - {"gemma-31b-free": ["gemma-31b"]}
+    - {"frontier": ["gemma-26b"]}
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  # Persist the actual prompt + completion of every call into LiteLLM_SpendLogs
+  # (Postgres), on top of the token/spend row the proxy always writes. This is
+  # what fills the request/response viewer in the admin UI's Logs tab and what
+  # `GET /spend/logs` returns.
+  #
+  # WHERE EACH HALF LANDS — check before writing queries against it:
+  #   response  -> the `response` column, full completion object.
+  #   prompt    -> the `proxy_server_request` column (.messages), NOT the
+  #                `messages` column. `messages` looks like the obvious place and
+  #                stays "{}": it is only filled for realtime calls, so chat
+  #                completions never populate it.
+  #
+  # Requires DATABASE_URL (see compose.yml) — without a DB this setting is inert.
+  # Local-dev choice: it stores prompts in plaintext and the table grows with
+  # traffic. Nothing here is production.
+  store_prompts_in_spend_logs: true

@@ -109,7 +109,7 @@ test_cases = [
 Each approach is built via a factory function that returns a callable:
 
 - **Simple Chain**: Single LLM call with a system prompt. Fast but cannot use tools.
-- **ReAct Agent**: Uses `langgraph.prebuilt.create_react_agent` with both tools. Can reason and iterate.
+- **ReAct Agent**: Uses `langchain.agents.create_agent` with both tools. Can reason and iterate.
 - **Custom StateGraph**: Builds a `StateGraph` with classify, route (conditional edge), process, and respond nodes.
 
 ### Step 3: Build the BenchmarkSuite
@@ -161,7 +161,7 @@ uv run python main.py
 
 ----------------------------------------------------------------------
   Benchmarking: react_agent
-  ReAct loop with tool access (langgraph prebuilt)
+  ReAct loop with tool access (langchain create_agent)
 ----------------------------------------------------------------------
   [PASS] Q1 (simple): What is 2 + 2?
          Correctness=1  ToolUse=1.0  Latency=1.50s

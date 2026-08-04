@@ -71,7 +71,7 @@ Register agents --> Evaluate each --> Score results --> Check quality gates
 
 ### Agent Registry
 
-The `AgentRegistry` class manages multiple agents with different capabilities. Each agent is a LangGraph ReAct agent (`create_react_agent`) configured with specific tools and a system prompt. The registry tracks agent status through the lifecycle: registered, approved, rejected, or deployed.
+The `AgentRegistry` class manages multiple agents with different capabilities. Each agent is a LangChain ReAct agent (`create_agent`) configured with specific tools and a system prompt. The registry tracks agent status through the lifecycle: registered, approved, rejected, or deployed.
 
 ### Automated Evaluation
 
@@ -116,7 +116,7 @@ registry.register(
 )
 ```
 
-Each call to `register()` creates a LangGraph ReAct agent using `create_react_agent` with `ChatOpenAI(model="google/gemma-4-26b-a4b")`.
+Each call to `register()` creates a LangChain ReAct agent using `create_agent` with `ChatOpenAI(model="google/gemma-4-26b-a4b")`.
 
 ### Step 2: Automated Evaluation
 

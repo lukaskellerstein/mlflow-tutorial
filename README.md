@@ -175,10 +175,9 @@ tutorial/
     M6_deployment_gateway/         #   Serving, batch prediction, AI gateway
     M7_finetuning/                 #   HuggingFace Transformers
   level_2_agents/                  # AI Agents -- frameworks, eval, benchmarks
-    M1_agent_frameworks/           #   LangChain, LangGraph, multi-agent
-    M2_custom_integrations/        #   Claude Agent SDK, DeepAgents
-    M3_agent_evaluation/           #   Testing, metrics, comparison, optimization
-    M4_agent_benchmarks/           #   SWE-Bench, GAIA, custom benchmarks
+    M1_agent_frameworks/           #   LangChain/LangGraph, DeepAgents, Claude Agent SDK
+    M2_agent_evaluation/           #   Testing, metrics, comparison, optimization
+    M3_agent_benchmarks/           #   SWE-Bench, GAIA, custom benchmarks
   level_3_advanced/                # Advanced -- production, infrastructure
     M1_production/                 #   Tracing, Grafana, feedback, CI/CD
     M2_advanced_tracing/           #   OpenTelemetry, Temporal

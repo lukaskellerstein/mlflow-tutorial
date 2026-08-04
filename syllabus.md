@@ -431,94 +431,36 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 *Goal: Complete mastery of AI agent building, observability, evaluation, and benchmarking with MLflow. Covers agent frameworks, custom integrations, agent-specific evaluation, and standardized benchmarks.*
 *Prerequisite: Level 1 completed*
 *LLM model: `google/gemma-4-26b-a4b`*
-*Estimated time: ~19 hours (13 lessons)*
+*Estimated time: ~18 hours (12 lessons)*
 
 ---
 
 ### L2-M1: Agent Frameworks
 
-#### L2-M1.1 -- LangChain Agent Tracking
+#### L2-M1.1 -- LangChain + LangGraph Agents
 
 **Duration:** 90 min
 **Topics:**
 - Creating agents with LangChain v1+ (`create_agent` from `langchain.agents`)
 - Tools with the `@tool` decorator (`langchain_core.tools`)
-- Auto-logging agents with `mlflow.langchain.autolog()`
-- Tracking tool calls and reasoning steps
+- Building the same agent by hand with LangGraph (`StateGraph`, nodes, edges, `ToolNode`)
+- `create_agent` returns a compiled `StateGraph` -- one `mlflow.langchain.autolog()` call instruments both
 - ReAct agent pattern and how it maps to MLflow traces
+- Tracking tool calls, reasoning steps, and state transitions between nodes
+- Conditional edge tracing (`add_conditional_edges`) and parallel node execution
 - Agent middleware: `HumanInTheLoopMiddleware`, `TodoListMiddleware`
+- Multi-agent patterns on LangGraph: collaboration, supervision, swarm
+- Agent handoffs (`Command(goto=..., graph=Command.PARENT)`) and inter-agent trace analysis
 - Comparing agent configurations (model, temperature, tools)
-- Tool usage metrics and decision visualization
-- Reference: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain/10_agent`
+- Reference: `~/Projects/Github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain/10_agent` and `.../2_langgraph/5_agent`
 
 **Deliverables:**
-- ReAct agent (`create_agent`) with custom tools, fully traced in MLflow
-- Agent configuration comparison with tool usage metrics
+- The same ReAct agent built twice -- `create_agent` and a hand-rolled `StateGraph` -- with both traces compared side by side
+- Tool usage and state transition metrics, execution graph visualization
 
 ---
 
-#### L2-M1.2 -- LangGraph Agent Observability
-
-**Duration:** 90 min
-**Topics:**
-- Building agents with LangGraph (`StateGraph`, nodes, edges, `ToolNode`)
-- `create_agent` returns a compiled `StateGraph` -- understanding the relationship
-- Auto-tracing state transitions with `mlflow.langchain.autolog()`
-- Tracing state transitions between nodes
-- Conditional edge tracing (`add_conditional_edges`)
-- Parallel node execution tracing
-- State visibility and debugging
-- Visualizing agent execution graphs
-- Debugging agent behavior with traces
-- Reference: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph/5_agent`
-
-**Deliverables:**
-- LangGraph agent with conditional logic, state transition traces, execution graph visualization, and performance analysis
-
----
-
-#### L2-M1.3 -- Multi-Agent Systems
-
-**Duration:** 90 min
-**Topics:**
-- Multi-agent patterns: collaboration, supervision, swarm
-- Building multi-agent graphs with agent handoffs (`Command(goto=..., graph=Command.PARENT)`)
-- Tracing inter-agent communication and state sharing
-- `create_agent` for individual agents composed as subgraphs
-- Swarm pattern: transfer tools for agent-to-agent handoff
-- Aggregating metrics across agents
-- Debugging collaboration failures
-- Per-agent performance metrics and handoff analysis
-- Reference: `/Users/lkellers/Projects/github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/2_langgraph/6_agents`
-
-**Deliverables:**
-- Multi-agent system (researcher + summarizer + coder) with full tracing
-- Per-agent performance metrics and handoff analysis
-
----
-
-### L2-M2: Custom Agent Integrations
-
-#### L2-M2.1 -- Claude Agent SDK + MLflow
-
-**Duration:** 90 min
-**Topics:**
-- Claude Agent SDK architecture and lifecycle
-- Building custom MLflow tracing for Claude agents
-- Wrapping agent execution with `@mlflow.trace` and manual spans
-- Logging agent decisions, tool calls, and outputs
-- Custom autolog implementation for Claude Agent SDK
-- Evaluation of Claude-based agents with MLflow
-- Reference code: `/Users/lkellers/Projects/github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
-- Source: `/Users/lkellers/Projects/github/anthropics/claude-agent-sdk-python`
-
-**Deliverables:**
-- Claude Agent SDK agent with full MLflow tracing and custom autolog wrapper
-- Evaluation results comparing Claude agent configurations
-
----
-
-#### L2-M2.2 -- DeepAgents + MLflow
+#### L2-M1.2 -- DeepAgents + MLflow
 
 **Duration:** 90 min
 **Topics:**
@@ -528,56 +470,103 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 - Backends: `StateBackend`, `FilesystemBackend`, `CompositeBackend`
 - Tracing multi-agent orchestration flows with MLflow
 - Evaluating multi-agent collaboration quality
-- Comparing DeepAgents vs. LangGraph multi-agent patterns
-- Reference: `/Users/lkellers/Projects/github/langchain-ai/deepagents`
+- Comparing DeepAgents sub-agent delegation vs. LangGraph shared-state multi-agent patterns
+- Reference: `~/Projects/Github/langchain-ai/deepagents`
 
 **Deliverables:**
 - DeepAgents system with MLflow tracing
-- Comparison with LangGraph multi-agent approach
+- Comparison with the LangGraph multi-agent approach from L2-M1.1
 
 ---
 
-### L2-M3: Agent Evaluation
-
-#### L2-M3.1 -- Agent Testing Framework
+#### L2-M1.3 -- Claude Agent SDK + MLflow
 
 **Duration:** 90 min
 **Topics:**
-- `mlflow.genai.agent_tester` -- automated agent test generation
-- `mlflow.genai.simulators` -- conversation simulation for testing
-- Simulating user interactions with varying complexity
-- Success criteria definition and validation
-- Generating edge cases and adversarial inputs
-- Regression testing for agents
+- Claude Agent SDK architecture and lifecycle
+- Building custom MLflow tracing for a framework with no native autolog
+- Wrapping agent execution with `@mlflow.trace` and manual spans
+- Logging agent decisions, tool calls, and outputs
+- Custom autolog implementation for Claude Agent SDK
+- External tools over an MCP server (STDIO transport)
+- Reference code: `~/Projects/Github/lukaskellerstein/vibe-coding-course/5_Claude_Agent_SDK/python`
+- Source: `~/Projects/Github/anthropics/claude-agent-sdk-python`
 
 **Deliverables:**
-- Automated test suite for a LangGraph agent
-- Simulated conversations with failure analysis
-- Regression test baseline
+- Claude Agent SDK agent with full MLflow tracing and custom autolog wrapper
+- Cost and duration metrics captured from a framework MLflow does not instrument
 
 ---
 
-#### L2-M3.2 -- Agent Quality Metrics
+### L2-M2: Agent Evaluation
+
+*The spine of this module is data -> instruments -> dimensions -> compare ->
+improve -> ship. Each lesson produces an artifact the next one consumes: M2.1's
+dataset, M2.2's registered judges, M2.3's metric suite.*
+
+#### L2-M2.1 -- Agent Test Generation and Simulation
+
+**Duration:** 90 min
+**Topics:**
+- Hand-written test suites as the baseline, and where they stop scaling
+- `mlflow.genai.test_agent()` -- self-description, test generation, simulation, issue discovery
+- `guidance` and `num_test_cases` for steering what gets tested
+- `ConversationSimulator` -- multi-turn simulation with `goal`, `persona`, `simulation_guidelines`
+- `max_turns` and why single-shot test lists miss multi-turn failures
+- `mlflow.genai.simulators.generate_test_cases()` -- distilling goal and persona from existing traces
+- Promoting discovered issues into a versioned `mlflow.genai.create_dataset()`
+- Regression baselines that survive across lessons
+
+**Deliverables:**
+- Auto-discovered issue list for a LangGraph agent, with failure analysis
+- Versioned evaluation dataset reused by every later lesson in the module
+
+---
+
+#### L2-M2.2 -- Judges for Agents: Inline, Registered, Aligned
+
+**Duration:** 90 min
+**Topics:**
+- Three ways to express the same rubric, and what each one costs you:
+  - **Inline** -- `@scorer` + hand-built prompt + direct LLM call. Full control, no governance, dies with the script
+  - **Registered** -- `make_judge(name, instructions, model=, base_url=)` then `judge.register(name=)`. Named, versioned, reusable, and the only form that can run online
+  - **Built-in** -- `Correctness`, `Guidelines`, `RelevanceToQuery`, `Safety`, `ToolCallCorrectness`, `ToolCallEfficiency`
+- Judge discovery and versioning: `list_scorers()`, `get_scorer(name, version=)`, `delete_scorer()`
+- `ScorerKind` and the registration rule that follows from it: `@scorer` functions are `DECORATOR` kind and **cannot** be registered against a non-Databricks tracking URI (they deserialize via `exec()`); `make_judge` produces `INSTRUCTIONS` kind and registers fine against a local server
+- Judge alignment: `judge.align(traces, optimizer)` -- correcting a judge against human labels instead of hand-tuning its prompt
+- Alignment optimizers (DSPy / SIMBA / GEPA) and when alignment beats prompt editing
+- Choosing a judge model through the LiteLLM gateway; judge cost as a first-class concern
+
+**Deliverables:**
+- One rubric implemented three ways (inline, registered, aligned), scored on the M2.1 dataset
+- Disagreement table showing where the inline and aligned judges diverge
+- A registered, versioned judge that M2.4 and M2.6 reuse by name
+
+---
+
+#### L2-M2.3 -- Agent Quality Metrics and Session Scorers
 
 **Duration:** 90 min
 **Topics:**
 - Designing metrics for agent-specific behaviors:
   - Task completion rate (binary + partial credit)
-  - Tool selection accuracy (precision/recall of tool choices)
+  - Tool selection accuracy (precision/recall/F1 of tool choices)
   - Reasoning quality (coherence, relevance, completeness)
   - Plan quality (for plan-and-execute agents)
-  - Collaboration quality (for multi-agent systems)
-- Custom scorer implementation for each metric
-- Aggregation strategies across test cases
-- Statistical significance testing for agent comparisons
+- Composite scorers: combining sub-dimensions with explicit, tunable weights
+- **Session-level scorers** -- the multi-turn dimension single-turn metrics cannot reach:
+  `ConversationCompleteness`, `UserFrustration`, `ConversationalToolCallEfficiency`,
+  `ConversationalRoleAdherence`, `KnowledgeRetention`
+- `is_session_level_scorer` and why session scoring takes a different execution path
+- Aggregation strategies across test cases; statistical significance for agent comparisons
 
 **Deliverables:**
-- Custom metric suite covering all agent quality dimensions
-- Statistical comparison of two agent architectures
+- Metric suite covering both single-turn and session dimensions
+- Scores computed over M2.1's simulated conversations, not just single-shot cases
 
 ---
 
-#### L2-M3.3 -- Agent Architecture Comparison
+#### L2-M2.4 -- Agent Architecture Comparison
 
 **Duration:** 90 min
 **Topics:**
@@ -585,57 +574,66 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
   - Single-agent (`create_agent`) vs. custom `StateGraph` agents
   - Single-agent vs. multi-agent (swarm, supervision, collaboration)
   - LangChain/LangGraph agents vs. DeepAgents (`create_deep_agent`)
-- Controlled evaluation methodology
+- Controlled evaluation methodology -- one dataset, one scorer set, one judge version
+- Scoring through `mlflow.genai.evaluate()` with M2.2's registered judges, so results stay
+  comparable outside the script that produced them
 - Ablation studies: which component matters most?
-- Cost-quality tradeoff analysis
+- Cost-quality tradeoff analysis and the Pareto frontier
 - Prompt sensitivity analysis
 
 **Deliverables:**
-- Comparison study with 3+ agent architectures on a shared benchmark
+- Comparison study with 3+ agent architectures on a shared dataset
 - Cost-quality Pareto frontier visualization
 
 ---
 
-#### L2-M3.4 -- Agent Optimization
+#### L2-M2.5 -- Agent Optimization
 
 **Duration:** 90 min
 **Topics:**
-- `mlflow.genai.optimize` for agent instruction tuning
-- Systematic prompt optimization for agent system prompts
-- Tool description optimization
-- Few-shot example selection for agents
+- The manual baseline: a hand-built grid over system prompts, tool descriptions and temperature
+- `mlflow.genai.optimize_prompts()` -- automated instruction tuning against a scorer
+- Tool description optimization and few-shot example selection
 - Hyperparameter tuning: temperature, max_tokens, top_p
 - Iterative optimization loop with evaluation feedback
+- The honest comparison: did automated optimization beat the hand-tuned grid, and at what token cost?
 
 **Deliverables:**
-- Optimized agent with tracked improvement trajectory across iterations
+- Optimized agent with a tracked improvement trajectory across iterations
+- Manual grid vs. `optimize_prompts` compared on quality and spend
 
 ---
 
-#### L2-M3.5 -- Agent Evaluation Pipeline
+#### L2-M2.6 -- Evaluation Pipeline: Offline Gates and Online Scoring
 
 **Duration:** 90 min
 **Topics:**
-- Designing a complete evaluation pipeline:
-  1. Dataset creation and management
-  2. Automated test generation
-  3. Multi-dimensional scoring (functional, quality, performance, cost)
-  4. Human review for borderline cases
-  5. Regression detection and alerting
-- Pipeline automation with CI/CD integration
-- Versioning evaluation datasets alongside model versions
-- Evaluation-driven development workflow
+- **Offline evaluation** -- curated dataset, known expectations, full coverage, you pull the trigger.
+  Answers *"is this version good enough to ship?"*
+  1. Dataset creation and versioning
+  2. Multi-dimensional scoring (functional, quality, performance, cost)
+  3. Quality gates and thresholds
+  4. Regression detection against a stored baseline
+  5. CI/CD integration (GitHub Actions or similar)
+- **Online evaluation** -- production traces, no ground truth, sampled coverage, the server pulls the
+  trigger. Answers *"is what shipped still good?"*
+  - `scorer.register()` then `scorer.start(sampling_config=ScorerSamplingConfig(sample_rate=, filter_string=))`
+  - Assessments attaching to live traces; the server scheduler picking up active scorers
+  - `scorer.update()`, `scorer.stop()`, and reading `ScorerStatus`
+  - Why sampling exists: judge cost scales with traffic, not with dataset size
+- The four axes that separate them: input, ground truth, coverage, trigger
+- Where the seam to Level 3 falls: M2.6 produces the assessments, L3-M1 consumes them in dashboards and alerts
 
 **Deliverables:**
-- Complete automated evaluation pipeline for agents
-- CI/CD integration (GitHub Actions or similar)
-- Dashboard with quality trends over time
+- One agent evaluated both ways -- gated offline in CI, then monitored online on a sampled stream
+- The same registered judge object used in both halves
+- Quality trend over time, assembled from online assessments
 
 ---
 
-### L2-M4: Agent Benchmarks
+### L2-M3: Agent Benchmarks
 
-#### L2-M4.1 -- SWE-Bench Evaluation
+#### L2-M3.1 -- SWE-Bench Evaluation
 
 **Duration:** 90 min
 **Topics:**
@@ -654,7 +652,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-#### L2-M4.2 -- GAIA Benchmark
+#### L2-M3.2 -- GAIA Benchmark
 
 **Duration:** 90 min
 **Topics:**
@@ -672,7 +670,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-#### L2-M4.3 -- Custom Domain-Specific Benchmark
+#### L2-M3.3 -- Custom Domain-Specific Benchmark
 
 **Duration:** 90 min
 **Topics:**
@@ -695,10 +693,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
 | M1: Agent Frameworks | 3 lessons | ~4.5 hours |
-| M2: Custom Agent Integrations | 2 lessons | ~3 hours |
-| M3: Agent Evaluation | 5 lessons | ~7.5 hours |
-| M4: Agent Benchmarks | 3 lessons | ~4.5 hours |
-| **Total** | **13 lessons** | **~19.5 hours** |
+| M2: Agent Evaluation | 6 lessons | ~9 hours |
+| M3: Agent Benchmarks | 3 lessons | ~4.5 hours |
+| **Total** | **12 lessons** | **~18 hours** |
 
 ---
 ---
@@ -976,21 +973,19 @@ tutorial/
 │       └── 1_huggingface/
 ├── level_2_agents/
 │   ├── M1_agent_frameworks/
-│   │   ├── 1_langchain_agents/
-│   │   ├── 2_langgraph_agents/
-│   │   └── 3_multiagent_systems/
-│   ├── M2_custom_integrations/
-│   │   ├── 1_claude_agent_sdk/
-│   │   └── 2_deepagents/
-│   ├── M3_agent_evaluation/
+│   │   ├── 1_langchain_langgraph/
+│   │   ├── 2_deepagents/
+│   │   └── 3_claude_agent_sdk/
+│   ├── M2_agent_evaluation/
 │   │   ├── 1_agent_testing/
-│   │   ├── 2_quality_metrics/
-│   │   ├── 3_architecture_comparison/
-│   │   ├── 4_agent_optimization/
-│   │   └── 5_evaluation_pipeline/
-│   └── M4_agent_benchmarks/
+│   │   ├── 2_judges/
+│   │   ├── 3_quality_metrics/
+│   │   ├── 4_architecture_comparison/
+│   │   ├── 5_agent_optimization/
+│   │   └── 6_evaluation_pipeline/
+│   └── M3_agent_benchmarks/
 │       ├── 1_swe_bench/
-│       ├── 2_gaia_benchmark/
+│       ├── 2_gaia/
 │       └── 3_custom_benchmark/
 ├── level_3_advanced/
 │   ├── M1_production_operations/
@@ -1024,14 +1019,14 @@ tutorial/
 | LLM Evaluation | Fundamentals, GenAI framework, RAG eval | Agent testing, quality metrics | CI/CD gates |
 | Human Evaluation | Labeling, assessments, ground truth | -- | Feedback loops |
 | Prompt Engineering | Registry, A/B testing, optimization | Agent prompt optimization | -- |
-| GenAI Scorers/Judges | Built-in + custom scorers, LLM judges | Agent-specific metrics | -- |
+| GenAI Scorers/Judges | Built-in + custom scorers, LLM judges | Agent metrics, inline vs. registered judges, alignment, session scorers | -- |
 | Data/Datasets | Logging, lineage, schema | Benchmarks (SWE-Bench, GAIA, custom) | Enterprise data management |
 | AI Gateway | Multi-provider routing, fallbacks | -- | -- |
 | Model Serving | CLI, Docker, multi-version | -- | -- |
 | Batch Prediction | Pipelines | -- | -- |
 | Fine-Tuning | HuggingFace Transformers | -- | -- |
 | Agent Tracking | -- | LangChain, LangGraph, multi-agent, Claude SDK, DeepAgents | -- |
-| Agent Evaluation | -- | Testing, metrics, optimization, pipeline, benchmarks | -- |
+| Agent Evaluation | -- | Simulation, judges, metrics, comparison, optimization, offline gates + online scoring | Consumes online assessments |
 | Agent Benchmarks | -- | SWE-Bench, GAIA, custom domain | Framework comparison |
 | CI/CD | -- | Evaluation pipeline | Quality gates, canary |
 | Grafana Monitoring | -- | -- | Dashboards, alerts |

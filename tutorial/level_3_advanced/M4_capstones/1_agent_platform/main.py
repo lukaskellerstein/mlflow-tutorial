@@ -17,9 +17,9 @@ from dataclasses import dataclass
 
 import mlflow
 import pandas as pd
+from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
 from pydantic import SecretStr
 
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
@@ -101,10 +101,10 @@ class AgentRegistry:
             api_key=SecretStr("lm-studio"),
             temperature=0.0,
         )
-        agent = create_react_agent(
+        agent = create_agent(
             model=llm,
             tools=config.tools,
-            prompt=config.system_prompt,
+            system_prompt=config.system_prompt,
         )
         self._agents[config.name] = {
             "agent": agent,

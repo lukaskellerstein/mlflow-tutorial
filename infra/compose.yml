@@ -30,11 +30,80 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5555:5000"
+    environment:
+      # MLflow 3.x validates the Host header and rejects anything it does not
+      # recognise with 403 "Invalid Host header - possible DNS rebinding attack
+      # detected". Requests from the host (localhost:5555 / 127.0.0.1:5555) pass
+      # by default, but IN-STACK callers addressing the container by its compose
+      # service name do not — which silently breaks the LiteLLM gateway's MLflow
+      # callback, since it posts to http://mlflow:5000. Only /health and
+      # /version are exempt, so the container looks perfectly healthy while
+      # every trace it tries to log is refused.
+      MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow:5000,localhost:5000,localhost:5555,127.0.0.1:5000,127.0.0.1:5555"
     volumes:
       - mlflow_artifacts:/mlartifacts
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # LiteLLM Gateway (OpenAI-compatible LLM proxy)
+  # ──────────────────────────────────────────────
+  # One endpoint for every provider. Lessons call the aliases in
+  # litellm/config.yaml (gemma-large, gemma-small, frontier, ...) so switching
+  # provider or model is a config change here, not a code change in 40 lessons.
+  litellm:
+    build:
+      context: ./litellm
+      dockerfile: Dockerfile
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    extra_hosts:
+      # Lets the container reach LMStudio running natively on the host. Podman
+      # adds host.containers.internal automatically; both are listed so the same
+      # config.yaml works under Docker too.
+      - "host.docker.internal:host-gateway"
+      - "host.containers.internal:host-gateway"
+    environment:
+      # Defaulted, unlike the pins above: an infra/.env written before the
+      # gateway existed must keep working without being edited.
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-litellm-master}
+      # Virtual keys, spend logs and the admin UI all need Postgres. Without
+      # this the proxy boots in no-DB mode and those endpoints fail with
+      # {"error":"No connected db."} — completions still work. The litellm
+      # database comes from postgres/init-databases.sh; LiteLLM applies its own
+      # prisma migrations on startup.
+      DATABASE_URL: postgresql://litellm:litellm@postgres:5432/litellm_db
+      # store_prompts_in_spend_logs (config.yaml) truncates each stored string at
+      # 2048 chars by default, which clips agent transcripts mid-run. Raised so a
+      # whole exchange stays inspectable.
+      MAX_STRING_LENGTH_PROMPT_IN_DB: "100000"
+      # LMStudio runs natively on the host, not in this stack.
+      LM_STUDIO_API_BASE: ${LM_STUDIO_API_BASE:-http://host.containers.internal:1234/v1}
+      # Gateway-side traces and token/spend accounting land in their own MLflow
+      # experiment, separate from the experiment each lesson logs to.
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_EXPERIMENT_NAME: litellm-gateway
+      # Hosted providers. Empty is fine — a provider is only needed by the
+      # aliases that route to it.
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:4000/health/liveliness').status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
     networks:
       - tutorial-network
 

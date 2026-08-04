@@ -115,7 +115,7 @@ The main function demonstrates: enable autolog, run calls (verify logging), disa
 ## Running the Lesson
 
 ```bash
-cd tutorial/level_3/M2_custom_integrations/4_custom_autolog
+cd tutorial/level_3_advanced/M3_extensibility/1_custom_autolog
 uv sync
 uv run python main.py
 ```

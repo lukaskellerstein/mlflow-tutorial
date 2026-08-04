@@ -7,7 +7,7 @@ metrics, then generates a benchmark report with recommendations.
 
 Approaches:
   A. Simple LLM Chain — prompt -> LLM -> answer (no tools)
-  B. ReAct Agent      — langgraph.prebuilt.create_react_agent with tools
+  B. ReAct Agent      — langchain.agents.create_agent with tools
   C. Custom StateGraph — classify -> route -> process -> respond
 
 All approaches use ChatOpenAI(model="google/gemma-4-26b-a4b") and the same tool set.
@@ -21,11 +21,11 @@ from typing import Annotated, Any, cast
 
 import mlflow
 import pandas as pd
+from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.prebuilt import create_react_agent
 from pydantic import SecretStr
 from typing_extensions import TypedDict
 
@@ -118,10 +118,10 @@ def build_simple_chain() -> Callable[[str], dict]:
 
 def build_react_agent() -> Callable[[str], dict]:
     """Approach B: ReAct agent with tool access."""
-    agent = create_react_agent(
+    agent = create_agent(
         model=LLM,
         tools=TOOLS,
-        prompt="You are a helpful assistant. Use the provided tools when the "
+        system_prompt="You are a helpful assistant. Use the provided tools when the "
         "question is about a technology topic or requires calculation. "
         "Answer concisely.",
     )
@@ -639,7 +639,7 @@ def main() -> None:
     suite.add_agent(
         name="react_agent",
         run_fn=build_react_agent(),
-        description="ReAct loop with tool access (langgraph prebuilt)",
+        description="ReAct loop with tool access (langchain create_agent)",
     )
     suite.add_agent(
         name="custom_stategraph",
