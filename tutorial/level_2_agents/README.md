@@ -6,17 +6,12 @@ not re-taught here.
 
 | Module | What it covers | Lessons |
 |:--|:--|--:|
-| M1 — Agent Frameworks | LangChain/LangGraph, DeepAgents, Claude Agent SDK, and tracing each of them | 3 |
-| M2 — Agent Evaluation | Three groups: instruments, offline (including benchmarks), online | 9 |
-| M3 — Agent Optimization | Instructions, agent configuration, and optimizing against benchmarks safely | 3 |
+| [M1 — Agent Frameworks](M1_agent_frameworks/) | LangChain/LangGraph, DeepAgents, Claude Agent SDK, and tracing each of them | 3 |
+| [M2 — Agent Evaluation](M2_agent_evaluation/) | Three groups: instruments, offline (including benchmarks), online | 9 |
+| [M3 — Agent Optimization](M3_agent_optimization/) | Instructions, agent configuration, and optimizing against benchmarks safely | 3 |
 
 The full lesson breakdown lives in [`syllabus.md`](../../syllabus.md) at the
 project root, which is the source of truth for structure and ordering.
-
-> **Directory layout is mid-migration.** The syllabus above describes the target
-> structure. On disk the lessons are still in their previous flat layout
-> (`M2_agent_evaluation/1_agent_testing/` … `M3_agent_benchmarks/`) until the
-> move is carried out. The concepts below are unaffected.
 
 ## Evaluation and benchmarking — the distinction this level is built on
 

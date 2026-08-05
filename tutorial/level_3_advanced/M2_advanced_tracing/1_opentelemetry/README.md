@@ -9,7 +9,7 @@ MLflow's tracing system is built directly on the OpenTelemetry (OTel) SDK. This 
 
 ## Prerequisites
 
-- Completed: L1-M5.1 (Auto Tracing), L1-M5.2 (Manual Tracing)
+- Completed: L1-M5.1 (Auto Tracing), L1-M7.1 (Manual Tracing)
 - MLflow server running at <http://127.0.0.1:5555>
 - Basic understanding of distributed tracing concepts (spans, traces, context propagation)
 

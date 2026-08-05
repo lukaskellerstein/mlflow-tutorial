@@ -191,4 +191,4 @@ In the MLflow UI you will see:
 
 ## Next Steps
 
-Continue to L2-M2.3 (Registry Workflows) to learn how to manage model lifecycle stages, aliases, and promotion workflows in the MLflow Model Registry.
+Continue to L2-M2.1.3 (Registry Workflows) to learn how to manage model lifecycle stages, aliases, and promotion workflows in the MLflow Model Registry.

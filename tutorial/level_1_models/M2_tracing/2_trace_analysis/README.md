@@ -9,7 +9,7 @@ Traces capture the full execution flow of your LLM applications, but their real 
 
 ## Prerequisites
 
-- Completed: L1-M5.1 (Auto Tracing), L1-M5.2 (Manual Tracing)
+- Completed: L1-M5.1 (Auto Tracing), L1-M7.1 (Manual Tracing)
 - MLflow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-e4b` model loaded
 

@@ -124,4 +124,4 @@ In the MLflow UI, navigate to **Models** to see the registered model, versions, 
 
 ## Next Steps
 
-Continue to **L1-M4.1 (Evaluation Fundamentals)** to learn how to assess LLM output quality with `mlflow.genai.evaluate()`, built-in scorers, and LLM-as-judge evaluation.
+Continue to **L1-M4.1.1 (Evaluation Fundamentals)** to learn how to assess LLM output quality with `mlflow.genai.evaluate()`, built-in scorers, and LLM-as-judge evaluation.

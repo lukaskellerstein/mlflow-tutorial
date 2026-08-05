@@ -10,7 +10,7 @@ Production MLflow deployments serve multiple teams with different access needs, 
 ## Prerequisites
 
 - Completed: L1-M1 (Tracking), L1-M3 (Models and Registry)
-- Completed: L1-M4.4 (Datasets and Human-in-the-Loop)
+- Completed: L1-M4.2.3 (Datasets and Human-in-the-Loop)
 - MLflow server running at <http://127.0.0.1:5555>
 
 ## Concepts

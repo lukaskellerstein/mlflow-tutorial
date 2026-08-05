@@ -1,0 +1,9 @@
+[project]
+name = "mlflow-tutorial-L1-M4-3-1-online-scoring"
+version = "0.1.0"
+description = "Online Scoring for LLM Applications"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow[genai]>=3.0",
+    "openai>=1.0",
+]

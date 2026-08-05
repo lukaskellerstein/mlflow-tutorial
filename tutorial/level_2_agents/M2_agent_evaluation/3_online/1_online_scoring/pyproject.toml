@@ -1,0 +1,12 @@
+[project]
+name = "mlflow-tutorial-L2-M2-3-1-online-scoring"
+version = "0.1.0"
+description = "Online Scoring on Production Traces"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2",
+    "mlflow[genai]>=3.0",
+    "langchain>=1.0",
+    "langchain-openai>=1.0",
+    "langchain-core>=1.0",
+]

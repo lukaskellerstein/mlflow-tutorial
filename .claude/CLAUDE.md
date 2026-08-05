@@ -53,16 +53,23 @@ Agent SDK.
 The three levels:
 
 - **Level 1 — Models**: Everything about models/LLMs end-to-end. Tracking,
-  tracing, evaluation, deployment, prompt engineering, AI gateway, fine-tuning.
+  tracing, evaluation (offline and online), prompt registry, deployment, AI
+  gateway, optimization.
 - **Level 2 — AI Agents**: Agent frameworks (LangChain, LangGraph, Claude SDK,
-  DeepAgents), agent evaluation/benchmarking, custom integrations.
+  DeepAgents), agent evaluation (instruments / offline including benchmarks /
+  online), agent optimization.
 - **Level 3 — Advanced**: Production patterns, infrastructure (OpenTelemetry,
   Temporal, Grafana), extensibility, capstones.
 
 Four things worth knowing before touching anything:
 
-- **43 lesson leaves**, each independently runnable with its own `pyproject.toml`,
-  `.venv` and `uv.lock`. There is **no uv workspace** — that is deliberate.
+- **41 lesson leaves today** (45 once the syllabus is fully built out), each
+  independently runnable with its own `pyproject.toml`, `.venv` and `uv.lock`.
+  There is **no uv workspace** — that is deliberate.
+- **Two modules carry a group tier.** `L1-M4_evaluation` and
+  `L2-M2_agent_evaluation` split into `1_fundamentals`/`1_instruments`,
+  `2_offline` and `3_online`, so their lessons are one level deeper than
+  everywhere else. A lesson's experiment name always equals its path.
 - **The syllabus is the source of truth.** Module structure, lesson topics,
   deliverables and time estimates live in **`syllabus.md`** at the project root.
   Always consult it before creating or modifying any lesson.

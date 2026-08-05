@@ -11,9 +11,9 @@ description: Project configuration — architecture, paths, dev environment
   **no** uv workspace tying the leaves together — that is deliberate.
 - **Structure**:
   - `tutorial/level_1_models/` — tracking, tracing, registry, evaluation,
-    prompts, deployment/gateway, finetuning (M1–M7)
-  - `tutorial/level_2_agents/` — agent frameworks, custom integrations, agent
-    evaluation, benchmarks (M1–M4)
+    prompt registry, deployment/gateway, optimization (M1–M7)
+  - `tutorial/level_2_agents/` — agent frameworks, agent evaluation
+    (instruments / offline / online), agent optimization (M1–M3)
   - `tutorial/level_3_advanced/` — production, advanced tracing, extensibility,
     capstones (M1–M4)
   - `infra/` — `compose.yml` and per-service config for the whole stack
@@ -36,9 +36,13 @@ keeps its own environment — no workspaces, by design.
 
 | Level | Modules | Lessons |
 |:--|:--|--:|
-| `level_1_models` | M1 tracking, M2 tracing, M3 models/registry, M4 evaluation, M5 prompt engineering, M6 deployment/gateway, M7 finetuning | 21 |
-| `level_2_agents` | M1 agent frameworks, M2 custom integrations, M3 agent evaluation, M4 agent benchmarks | 14 |
-| `level_3_advanced` | M1 production, M2 advanced tracing, M3 extensibility, M4 capstones | 8 |
+| `level_1_models` | M1 tracking, M2 tracing, M3 models/registry, M4 evaluation (`1_fundamentals`, `2_offline`, `3_online`), M5 prompt registry, M6 deployment/gateway, M7 optimization | 18 |
+| `level_2_agents` | M1 agent frameworks, M2 agent evaluation (`1_instruments`, `2_offline`, `3_online`), M3 agent optimization | 12 |
+| `level_3_advanced` | M1 production, M2 advanced tracing, M3 extensibility, M4 capstones | 11 |
+
+Two modules — `L1-M4_evaluation` and `L2-M2_agent_evaluation` — carry an extra
+**group** tier between module and lesson (`2_offline/1_genai_custom_metrics/`).
+Everywhere else a lesson sits directly under its module.
 
 Every leaf carries its own `pyproject.toml`, `.venv` and `uv.lock`. The repo-root
 `pyrightconfig.json` holds one `executionEnvironments` entry per leaf — **re-run

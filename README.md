@@ -170,14 +170,20 @@ tutorial/
     M1_tracking/                   #   Fundamentals, search/query, advanced patterns
     M2_tracing/                    #   Auto/manual tracing, trace analysis
     M3_models_registry/            #   Flavors, custom PyFunc, registry workflows
-    M4_evaluation/                 #   Fundamentals, GenAI metrics, RAG, datasets
-    M5_prompt_engineering/         #   Registry/management, optimization
+    M4_evaluation/                 #   Fundamentals, then offline and online
+      1_fundamentals/              #     What evaluation is, and how to run one
+      2_offline/                   #     GenAI metrics, RAG, datasets
+      3_online/                    #     Scoring sampled live traffic
+    M5_prompt_registry/            #   Prompt registry, versioning, A/B testing
     M6_deployment_gateway/         #   Serving, batch prediction, AI gateway
-    M7_finetuning/                 #   HuggingFace Transformers
-  level_2_agents/                  # AI Agents -- frameworks, eval, benchmarks
+    M7_optimization/               #   Prompt optimization, fine-tuning
+  level_2_agents/                  # AI Agents -- frameworks, eval, optimization
     M1_agent_frameworks/           #   LangChain/LangGraph, DeepAgents, Claude Agent SDK
-    M2_agent_evaluation/           #   Testing, metrics, comparison, optimization
-    M3_agent_benchmarks/           #   SWE-Bench, GAIA, custom benchmarks
+    M2_agent_evaluation/           #   Three groups, by what the evaluation is
+      1_instruments/               #     Dataset, judges, metrics -- feed both modes
+      2_offline/                   #     Comparison, gates, and benchmarks
+      3_online/                    #     Registered judge on sampled live traces
+    M3_agent_optimization/         #   Instructions, configuration, benchmarks
   level_3_advanced/                # Advanced -- production, infrastructure
     M1_production/                 #   Tracing, Grafana, feedback, CI/CD
     M2_advanced_tracing/           #   OpenTelemetry, Temporal
@@ -216,7 +222,7 @@ Contributions are welcome! Each lesson is self-contained, making it straightforw
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/improve-lesson`)
 3. Ensure the lesson runs: `uv sync && uv run python main.py`
-4. Commit your changes (`git commit -m 'Improve L1-M4.2 evaluation lesson'`)
+4. Commit your changes (`git commit -m 'Improve L1-M4.2.1 evaluation lesson'`)
 5. Push to the branch (`git push origin feature/improve-lesson`)
 6. Open a Pull Request
 

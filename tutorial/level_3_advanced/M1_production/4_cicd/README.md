@@ -10,7 +10,7 @@ Deploy AI models with confidence by enforcing automated quality gates in your CI
 ## Prerequisites
 
 - Completed: L3-M1.1 (Production Tracing), L3-M1.3 (Feedback Loops)
-- Completed: L1-M4.1 (LLM Eval Basics), L1-M4.2 (Custom Metrics)
+- Completed: L1-M4.1.1 (LLM Eval Basics), L1-M4.2.1 (Custom Metrics)
 - MLFlow server running at <http://127.0.0.1:5555>
 - LMStudio running with `google/gemma-4-26b-a4b` model loaded
 
