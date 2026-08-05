@@ -4,8 +4,8 @@
 
 This tutorial is structured in three domain-based levels:
 
-- **Level 1 — Models**: Everything about models and LLMs in MLflow. Tracking, tracing, evaluation, deployment, prompt engineering, AI gateway, and fine-tuning. Each topic is covered end-to-end so that a user finishing Level 1 has full command of MLflow for single-model workflows. Uses `google/gemma-4-e4b` (fast, lightweight) for all lessons.
-- **Level 2 — AI Agents**: Everything about AI agents. Assumes Level 1 knowledge. Covers agent frameworks (LangChain, LangGraph, multi-agent), custom integrations (Claude Agent SDK, DeepAgents), agent evaluation, and standardized benchmarks. Uses `google/gemma-4-26b-a4b` (stronger reasoning) for all lessons.
+- **Level 1 — Models**: Everything about models and LLMs in MLflow. Tracking, tracing, evaluation (offline and online), prompt registry, deployment, AI gateway, and optimization. Each topic is covered end-to-end so that a user finishing Level 1 has full command of MLflow for single-model workflows. Uses `google/gemma-4-e4b` (fast, lightweight) for all lessons.
+- **Level 2 — AI Agents**: Everything about AI agents. Assumes Level 1 knowledge. Covers agent frameworks (LangChain, LangGraph, multi-agent), custom integrations (Claude Agent SDK, DeepAgents), agent evaluation (instruments, offline including standardized benchmarks, online), and agent optimization. Uses `google/gemma-4-26b-a4b` (stronger reasoning) for all lessons.
 - **Level 3 — Advanced**: Production patterns, infrastructure, extensibility, and capstone projects. Ties together everything from Levels 1 and 2 into production-grade systems.
 
 Each level builds on the previous. A user can stop after Level 1 and have complete mastery of MLflow for model/LLM workflows, continue through Level 2 for agent expertise, or go through Level 3 for production readiness.
@@ -58,9 +58,9 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ## LEVEL 1 -- MODELS
 
-*Goal: Complete mastery of MLflow for single-model and LLM workflows. Tracking, tracing, evaluation, deployment, prompts, gateway, and fine-tuning -- each topic covered end-to-end.*
+*Goal: Complete mastery of MLflow for single-model and LLM workflows. Tracking, tracing, evaluation (offline and online), prompt registry, deployment, gateway, and optimization -- each topic covered end-to-end.*
 *LLM model: `google/gemma-4-e4b`*
-*Estimated time: ~16 hours (18 lessons)*
+*Estimated time: ~17.25 hours (19 lessons)*
 
 ---
 
@@ -223,7 +223,21 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ### L1-M4: Evaluation
 
-#### L1-M4.1 -- Evaluation Fundamentals
+*Fundamentals first, then the split that organises everything after it.
+**M4.2 Offline** works from a curated dataset with known expectations, scores
+every case, and runs when you say so -- it answers "is this version good enough
+to ship?" **M4.3 Online** scores sampled production traces that have no expected
+answers, on a schedule the server owns -- it answers "is what shipped still
+good?" Neither replaces the other.*
+
+*The same split reappears at L2-M2 for agents. Benchmarking, which belongs under
+offline, is deliberately not covered at this level: benchmarking a model you did
+not train is mostly reading a published number, so it earns its place only once
+you are evaluating an agent you built (L2-M2.2).*
+
+#### L1-M4.1: Fundamentals
+
+##### L1-M4.1.1 -- Evaluation Fundamentals
 
 **Duration:** 60 min
 **Topics:**
@@ -245,7 +259,11 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-#### L1-M4.2 -- GenAI Framework and Custom Metrics
+#### L1-M4.2: Offline
+
+*Curated dataset, known expectations, full coverage, you pull the trigger.*
+
+##### L1-M4.2.1 -- GenAI Framework and Custom Metrics
 
 **Duration:** 60 min
 **Topics:**
@@ -265,7 +283,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-#### L1-M4.3 -- RAG System Evaluation
+##### L1-M4.2.2 -- RAG System Evaluation
 
 **Duration:** 60 min
 **Topics:**
@@ -282,7 +300,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-#### L1-M4.4 -- Datasets and Human-in-the-Loop
+##### L1-M4.2.3 -- Datasets and Human-in-the-Loop
 
 **Duration:** 60 min
 **Topics:**
@@ -302,7 +320,32 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M5: Prompt Engineering
+#### L1-M4.3: Online
+
+*Production traces, no ground truth, sampled coverage, the server pulls the
+trigger.*
+
+##### L1-M4.3.1 -- Online Scoring for LLM Applications
+
+**Duration:** 60 min
+**Topics:**
+- Why offline evaluation is not enough: real users ask things your dataset never imagined
+- `make_judge(...)` then `judge.register()` -- registration is what makes online scoring possible
+- `scorer.start(sampling_config=ScorerSamplingConfig(sample_rate=, filter_string=))`
+- Nothing here is agent-specific: `scorer.start()` samples **traces**, so any traced
+  LLM call qualifies -- a single `chat.completions.create()` is enough
+- `scorer.update()`, `scorer.stop()`, and reading `ScorerStatus`
+- Why sampling exists: judge cost scales with traffic, not with dataset size
+- Reading assessments back off live traces and plotting a quality trend
+- The four axes that separate online from offline: input, ground truth, coverage, trigger
+
+**Deliverables:**
+- A traced LLM app with a registered judge scoring a sampled share of its live traffic
+- Quality trend assembled from online assessments, next to the offline score for the same app
+
+---
+
+### L1-M5: Prompt Registry and Management
 
 #### L1-M5.1 -- Prompt Registry and Management
 
@@ -320,21 +363,6 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 **Deliverables:**
 - Prompt A/B test comparing 3 prompt variants with tracked metrics, using the prompt registry
-
----
-
-#### L1-M5.2 -- Prompt Optimization
-
-**Duration:** 60 min
-**Topics:**
-- Systematic prompt improvement workflow
-- In-context learning optimization
-- Few-shot example selection
-- Tracking optimization history
-- `mlflow.genai.optimize` for automated prompt tuning
-
-**Deliverables:**
-- Optimized prompt with tracked improvement trajectory
 
 ---
 
@@ -392,9 +420,30 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ---
 
-### L1-M7: Fine-Tuning
+### L1-M7: Optimization
 
-#### L1-M7.1 -- HuggingFace Transformers + MLflow
+*Evaluation measures; optimization changes the model and re-measures. It comes
+last because it cannot exist without M4 -- every technique here is steered by a
+scorer defined there. Two ways to change a model's behaviour: change its context
+(M7.1) or change its weights (M7.2). The agent counterpart is L2-M3.*
+
+#### L1-M7.1 -- Prompt Optimization
+
+**Duration:** 60 min
+**Topics:**
+- Systematic prompt improvement workflow
+- In-context learning optimization
+- Few-shot example selection
+- Tracking optimization history
+- `mlflow.genai.optimize_prompts()` for automated prompt tuning, steered by an M4 scorer
+- Why the prompt must be registered (M5) before it can be optimized
+
+**Deliverables:**
+- Optimized prompt with tracked improvement trajectory
+
+---
+
+#### L1-M7.2 -- Fine-Tuning: HuggingFace Transformers + MLflow
 
 **Duration:** 60 min
 **Topics:**
@@ -417,21 +466,21 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 | M1: Tracking | 3 lessons | ~2.5 hours |
 | M2: Tracing | 2 lessons | ~1.5 hours |
 | M3: Models and Registry | 3 lessons | ~2.75 hours |
-| M4: Evaluation | 4 lessons | ~4 hours |
-| M5: Prompt Engineering | 2 lessons | ~1.75 hours |
+| M4: Evaluation (1 fundamentals, 3 offline, 1 online) | 5 lessons | ~5 hours |
+| M5: Prompt Registry and Management | 1 lesson | ~0.75 hours |
 | M6: Deployment and Gateway | 3 lessons | ~2.75 hours |
-| M7: Fine-Tuning | 1 lesson | ~1 hour |
-| **Total** | **18 lessons** | **~16 hours** |
+| M7: Optimization | 2 lessons | ~2 hours |
+| **Total** | **19 lessons** | **~17.25 hours** |
 
 ---
 ---
 
 ## LEVEL 2 -- AI AGENTS
 
-*Goal: Complete mastery of AI agent building, observability, evaluation, and benchmarking with MLflow. Covers agent frameworks, custom integrations, agent-specific evaluation, and standardized benchmarks.*
+*Goal: Complete mastery of AI agent building, observability, evaluation and optimization with MLflow. Covers agent frameworks, custom integrations, agent-specific evaluation (offline, online, and standardized benchmarks), and optimization.*
 *Prerequisite: Level 1 completed*
 *LLM model: `google/gemma-4-26b-a4b`*
-*Estimated time: ~18 hours (12 lessons)*
+*Estimated time: ~22.5 hours (15 lessons)*
 
 ---
 
@@ -500,11 +549,24 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ### L2-M2: Agent Evaluation
 
-*The spine of this module is data -> instruments -> dimensions -> compare ->
-improve -> ship. Each lesson produces an artifact the next one consumes: M2.1's
-dataset, M2.2's registered judges, M2.3's metric suite.*
+*Three groups, in the order you use them. **M2.1 Instruments** builds the
+materials: a dataset, a set of judges, a metric suite. **M2.2 Offline** answers
+"is this version good enough to ship?" -- against curated data you own, and
+against public benchmarks you do not. **M2.3 Online** answers "is what shipped
+still good?" -- against sampled production traces.*
 
-#### L2-M2.1 -- Agent Test Generation and Simulation
+*Benchmarking lives under Offline deliberately: a benchmark is an offline
+evaluation whose dataset and metric are frozen and externally owned, so the
+number means something to someone outside your team. Nothing else separates it.*
+
+*Every lesson is a standalone leaf. Where two lessons need the same judge or
+dataset, each carries its own copy -- no lesson imports from another.*
+
+---
+
+#### L2-M2.1: Instruments
+
+##### L2-M2.1.1 -- Agent Test Generation and Simulation
 
 **Duration:** 90 min
 **Topics:**
@@ -523,7 +585,7 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 
 ---
 
-#### L2-M2.2 -- Judges for Agents: Inline, Registered, Aligned
+##### L2-M2.1.2 -- Judges for Agents: Inline, Registered, Aligned
 
 **Duration:** 90 min
 **Topics:**
@@ -538,13 +600,13 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 - Choosing a judge model through the LiteLLM gateway; judge cost as a first-class concern
 
 **Deliverables:**
-- One rubric implemented three ways (inline, registered, aligned), scored on the M2.1 dataset
+- One rubric implemented three ways (inline, registered, aligned), scored on the M2.1.1 dataset
 - Disagreement table showing where the inline and aligned judges diverge
-- A registered, versioned judge that M2.4 and M2.6 reuse by name
+- A registered, versioned judge -- the pattern later lessons re-implement for themselves, since every lesson is a standalone leaf
 
 ---
 
-#### L2-M2.3 -- Agent Quality Metrics and Session Scorers
+##### L2-M2.1.3 -- Agent Quality Metrics and Session Scorers
 
 **Duration:** 90 min
 **Topics:**
@@ -562,11 +624,17 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 
 **Deliverables:**
 - Metric suite covering both single-turn and session dimensions
-- Scores computed over M2.1's simulated conversations, not just single-shot cases
+- Scores computed over M2.1.1's simulated conversations, not just single-shot cases
 
 ---
 
-#### L2-M2.4 -- Agent Architecture Comparison
+#### L2-M2.2: Offline
+
+*Curated input, known ground truth, full coverage, and you pull the trigger.
+Answers "is this version good enough to ship?" The first two lessons measure
+against your own bar; the last three measure against everyone else's.*
+
+##### L2-M2.2.1 -- Agent Architecture Comparison
 
 **Duration:** 90 min
 **Topics:**
@@ -575,8 +643,8 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
   - Single-agent vs. multi-agent (swarm, supervision, collaboration)
   - LangChain/LangGraph agents vs. DeepAgents (`create_deep_agent`)
 - Controlled evaluation methodology -- one dataset, one scorer set, one judge version
-- Scoring through `mlflow.genai.evaluate()` with M2.2's registered judges, so results stay
-  comparable outside the script that produced them
+- Scoring through `mlflow.genai.evaluate()` with a registered judge at a pinned version, so
+  results stay comparable outside the script that produced them
 - Ablation studies: which component matters most?
 - Cost-quality tradeoff analysis and the Pareto frontier
 - Prompt sensitivity analysis
@@ -587,53 +655,25 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 
 ---
 
-#### L2-M2.5 -- Agent Optimization
+##### L2-M2.2.2 -- Offline Gates and Regression Detection
 
 **Duration:** 90 min
 **Topics:**
-- The manual baseline: a hand-built grid over system prompts, tool descriptions and temperature
-- `mlflow.genai.optimize_prompts()` -- automated instruction tuning against a scorer
-- Tool description optimization and few-shot example selection
-- Hyperparameter tuning: temperature, max_tokens, top_p
-- Iterative optimization loop with evaluation feedback
-- The honest comparison: did automated optimization beat the hand-tuned grid, and at what token cost?
+- The offline pipeline end to end: dataset -> agent -> score -> gates -> report
+- Dataset creation and versioning
+- Multi-dimensional scoring (functional, quality, performance, cost)
+- Quality gates and thresholds -- the build fails when a gate fails
+- Regression detection against a stored baseline
+- CI/CD integration (GitHub Actions or similar)
+- The four axes that will separate this from M2.3: input, ground truth, coverage, trigger
 
 **Deliverables:**
-- Optimized agent with a tracked improvement trajectory across iterations
-- Manual grid vs. `optimize_prompts` compared on quality and spend
+- Reproducible offline pipeline with quality gates wired into CI
+- Regression report comparing a candidate agent against a stored baseline
 
 ---
 
-#### L2-M2.6 -- Evaluation Pipeline: Offline Gates and Online Scoring
-
-**Duration:** 90 min
-**Topics:**
-- **Offline evaluation** -- curated dataset, known expectations, full coverage, you pull the trigger.
-  Answers *"is this version good enough to ship?"*
-  1. Dataset creation and versioning
-  2. Multi-dimensional scoring (functional, quality, performance, cost)
-  3. Quality gates and thresholds
-  4. Regression detection against a stored baseline
-  5. CI/CD integration (GitHub Actions or similar)
-- **Online evaluation** -- production traces, no ground truth, sampled coverage, the server pulls the
-  trigger. Answers *"is what shipped still good?"*
-  - `scorer.register()` then `scorer.start(sampling_config=ScorerSamplingConfig(sample_rate=, filter_string=))`
-  - Assessments attaching to live traces; the server scheduler picking up active scorers
-  - `scorer.update()`, `scorer.stop()`, and reading `ScorerStatus`
-  - Why sampling exists: judge cost scales with traffic, not with dataset size
-- The four axes that separate them: input, ground truth, coverage, trigger
-- Where the seam to Level 3 falls: M2.6 produces the assessments, L3-M1 consumes them in dashboards and alerts
-
-**Deliverables:**
-- One agent evaluated both ways -- gated offline in CI, then monitored online on a sampled stream
-- The same registered judge object used in both halves
-- Quality trend over time, assembled from online assessments
-
----
-
-### L2-M3: Agent Benchmarks
-
-#### L2-M3.1 -- SWE-Bench Evaluation
+##### L2-M2.2.3 -- SWE-Bench Evaluation
 
 **Duration:** 90 min
 **Topics:**
@@ -643,6 +683,9 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 - Integrating SWE-Bench evaluation with MLflow tracking
 - Logging per-instance results, pass rates, and error analysis
 - Comparing agent configurations on SWE-Bench
+- **No held-out split**: SWE-Bench Verified ships gold patches and the
+  `FAIL_TO_PASS` / `PASS_TO_PASS` lists publicly in `split="test"`, so there is no
+  clean half to optimize against. Why that makes published numbers hard to trust
 - Reference: <https://huggingface.co/datasets/SWE-bench/SWE-bench_Verified>
 
 **Deliverables:**
@@ -652,12 +695,15 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 
 ---
 
-#### L2-M3.2 -- GAIA Benchmark
+##### L2-M2.2.4 -- GAIA Benchmark
 
 **Duration:** 90 min
 **Topics:**
 - GAIA: General AI Assistants benchmark
 - Setting up the GAIA dataset and evaluation harness
+- `split="validation"` (answers public) vs. `split="test"` (answers withheld,
+  scored by leaderboard submission) -- the contrast with SWE-Bench, and why a
+  benchmark with a held-out half is the only kind you can safely optimize against
 - Building an agent that handles GAIA tasks (web search, file manipulation, reasoning)
 - Multi-step reasoning evaluation with MLflow tracking
 - Comparing agent architectures on GAIA
@@ -670,13 +716,16 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 
 ---
 
-#### L2-M3.3 -- Custom Domain-Specific Benchmark
+##### L2-M2.2.5 -- Custom Domain-Specific Benchmark
 
 **Duration:** 90 min
 **Topics:**
 - Designing domain-specific evaluation benchmarks
 - Dataset curation and quality assurance
 - Metric design for domain-specific tasks
+- **Designing in a held-out split from the start** -- a dev half you tune against
+  and a test half you only ever report on, so the benchmark survives being
+  optimized against (the lesson M2.2.3 and M2.2.4 teach the hard way)
 - Baseline establishment and difficulty calibration
 - Benchmark versioning and reproducibility
 - Publishing and sharing benchmarks
@@ -688,14 +737,111 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 
 ---
 
+#### L2-M2.3: Online
+
+*Production traces, no ground truth, sampled coverage, and the server pulls the
+trigger. Answers "is what shipped still good?" Benchmarking has no counterpart
+here -- live traffic has no frozen dataset and no expected answers.*
+
+##### L2-M2.3.1 -- Online Scoring on Production Traces
+
+**Duration:** 90 min
+**Topics:**
+- `scorer.register()` then `scorer.start(sampling_config=ScorerSamplingConfig(sample_rate=, filter_string=))`
+- Why only a registered judge can run online: `@scorer` functions are `DECORATOR`
+  kind and cannot be registered against a non-Databricks tracking URI
+- Assessments attaching to live traces; the server scheduler picking up active scorers
+- `scorer.update()`, `scorer.stop()`, and reading `ScorerStatus`
+- Why sampling exists: judge cost scales with traffic, not with dataset size
+- Choosing `filter_string` to score the traffic that matters instead of all of it
+- Reading quality trends back out of accumulated assessments
+- Where the seam to Level 3 falls: this lesson produces the assessments, L3-M1
+  consumes them in dashboards and alerts
+
+**Deliverables:**
+- A registered judge scoring a sampled live trace stream on a schedule
+- Quality trend over time, assembled from online assessments
+- The same agent seen both ways: gated offline in M2.2.2, monitored online here
+
+---
+
+### L2-M3: Agent Optimization
+
+*Evaluation measures; optimization changes the system and re-measures. It comes
+after evaluation because it cannot exist without it --
+`optimize_prompts(..., scorers=[...])` takes a scorer as an input.*
+
+*Only the first lesson has a real MLflow optimizer. For everything else MLflow's
+role is to **track the search, not run it**: nested runs, one child per
+configuration, scored by the same judge. That pattern is the transferable part,
+and it works for any knob invented later.*
+
+#### L2-M3.1 -- Prompt and Instruction Optimization
+
+**Duration:** 90 min
+**Topics:**
+- The manual baseline: a hand-built grid over system prompts, tool descriptions and temperature
+- `mlflow.genai.optimize_prompts()` -- automated instruction tuning against a scorer
+- `predict_fn`, `prompt_uris`, `train_data`, `optimizer`, `scorers` -- what each argument controls
+- Why the target prompt must live in the prompt registry and be applied with `PromptVersion.format`
+- Tool description optimization and few-shot example selection
+- Hyperparameter tuning: temperature, max_tokens, top_p
+- The honest comparison: did automated optimization beat the hand-tuned grid, and at what token cost?
+
+**Deliverables:**
+- Optimized agent with a tracked improvement trajectory across iterations
+- Manual grid vs. `optimize_prompts` compared on quality and spend
+
+---
+
+#### L2-M3.2 -- Agent Configuration Optimization
+
+**Duration:** 90 min
+**Topics:**
+- The knobs MLflow has no optimizer for, and the one pattern that covers all of them:
+  a tracked search over configurations, scored by a registered judge
+- **Model selection** -- the highest-leverage knob in practice, swept through the gateway
+- **Tool and MCP server budget** -- which servers and tools to expose at all;
+  why fewer tools frequently beats more
+- **Skills and subagents** -- delegation topology as a search space
+- Nested runs as the search log: one parent per sweep, one child per configuration
+- Reading a Pareto frontier over quality, latency and cost rather than a single winner
+- Knowing when to stop: variance across repeats vs. the size of the improvement
+
+**Deliverables:**
+- A configuration sweep over models, tool budgets and delegation topology, fully tracked
+- Pareto frontier identifying which configurations are worth their cost
+
+---
+
+#### L2-M3.3 -- Optimizing Against Benchmarks Without Destroying Them
+
+**Duration:** 90 min
+**Topics:**
+- The trap: a benchmark you optimize against stops being a measurement and
+  becomes training data
+- Dev/test discipline -- optimize on the split you will never report
+- GAIA as the clean case (`validation` public, `test` withheld) vs. SWE-Bench
+  Verified as the contaminated one (everything public in `test`)
+- Building your own held-out split when the benchmark does not provide one
+- Detecting overfitting: the gap between dev score and held-out score
+- Why leaderboard numbers routinely fail to reproduce in deployment
+- Tracking which split every run was scored on, so the distinction survives review
+
+**Deliverables:**
+- An agent optimized on a dev split and reported on a held-out split
+- The dev/held-out gap tracked across optimization iterations as an overfitting signal
+
+---
+
 #### Level 2 Summary
 
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
 | M1: Agent Frameworks | 3 lessons | ~4.5 hours |
-| M2: Agent Evaluation | 6 lessons | ~9 hours |
-| M3: Agent Benchmarks | 3 lessons | ~4.5 hours |
-| **Total** | **12 lessons** | **~18 hours** |
+| M2: Agent Evaluation (3 instruments, 5 offline, 1 online) | 9 lessons | ~13.5 hours |
+| M3: Agent Optimization | 3 lessons | ~4.5 hours |
+| **Total** | **15 lessons** | **~22.5 hours** |
 
 ---
 ---
@@ -933,10 +1079,10 @@ dataset, M2.2's registered judges, M2.3's metric suite.*
 
 | Level | Focus | Lessons | Time |
 |-------|-------|---------|------|
-| **Level 1 -- Models** | Models/LLMs end-to-end | 18 lessons | ~16 hours |
-| **Level 2 -- AI Agents** | Agent frameworks, evaluation, benchmarks | 13 lessons | ~19.5 hours |
+| **Level 1 -- Models** | Models/LLMs end-to-end | 19 lessons | ~17.25 hours |
+| **Level 2 -- AI Agents** | Agent frameworks, evaluation, optimization | 15 lessons | ~22.5 hours |
 | **Level 3 -- Advanced** | Production, extensibility, capstones | 11 lessons | ~19 hours |
-| **Total** | | **42 lessons** | **~54.5 hours** |
+| **Total** | | **45 lessons** | **~58.75 hours** |
 
 ---
 
@@ -958,35 +1104,45 @@ tutorial/
 │   │   ├── 2_custom_pyfunc/
 │   │   └── 3_registry_workflows/
 │   ├── M4_evaluation/
-│   │   ├── 1_eval_fundamentals/
-│   │   ├── 2_genai_custom_metrics/
-│   │   ├── 3_rag_evaluation/
-│   │   └── 4_datasets_human_loop/
-│   ├── M5_prompt_engineering/
-│   │   ├── 1_prompt_registry/
-│   │   └── 2_prompt_optimization/
+│   │   ├── 1_fundamentals/
+│   │   │   └── 1_evaluation_fundamentals/
+│   │   ├── 2_offline/
+│   │   │   ├── 1_genai_custom_metrics/
+│   │   │   ├── 2_rag_evaluation/
+│   │   │   └── 3_datasets_human_in_loop/
+│   │   └── 3_online/
+│   │       └── 1_online_scoring/
+│   ├── M5_prompt_registry/
+│   │   └── 1_prompt_registry_management/
 │   ├── M6_deployment_gateway/
 │   │   ├── 1_model_serving/
 │   │   ├── 2_batch_prediction/
 │   │   └── 3_ai_gateway/
-│   └── M7_finetuning/
-│       └── 1_huggingface/
+│   └── M7_optimization/
+│       ├── 1_prompt_optimization/
+│       └── 2_finetuning_huggingface/
 ├── level_2_agents/
 │   ├── M1_agent_frameworks/
 │   │   ├── 1_langchain_langgraph/
 │   │   ├── 2_deepagents/
 │   │   └── 3_claude_agent_sdk/
 │   ├── M2_agent_evaluation/
-│   │   ├── 1_agent_testing/
-│   │   ├── 2_judges/
-│   │   ├── 3_quality_metrics/
-│   │   ├── 4_architecture_comparison/
-│   │   ├── 5_agent_optimization/
-│   │   └── 6_evaluation_pipeline/
-│   └── M3_agent_benchmarks/
-│       ├── 1_swe_bench/
-│       ├── 2_gaia/
-│       └── 3_custom_benchmark/
+│   │   ├── 1_instruments/
+│   │   │   ├── 1_agent_testing/
+│   │   │   ├── 2_judges/
+│   │   │   └── 3_quality_metrics/
+│   │   ├── 2_offline/
+│   │   │   ├── 1_architecture_comparison/
+│   │   │   ├── 2_offline_gates/
+│   │   │   ├── 3_swe_bench/
+│   │   │   ├── 4_gaia/
+│   │   │   └── 5_custom_benchmark/
+│   │   └── 3_online/
+│   │       └── 1_online_scoring/
+│   └── M3_agent_optimization/
+│       ├── 1_prompt_instruction_optimization/
+│       ├── 2_configuration_optimization/
+│       └── 3_benchmark_optimization/
 ├── level_3_advanced/
 │   ├── M1_production_operations/
 │   │   ├── 1_production_tracing/
@@ -1016,18 +1172,19 @@ tutorial/
 | Model Registry | Full lifecycle, aliases, comparison | -- | Enterprise |
 | Tracing (Auto) | OpenAI, LangChain, universal autolog | LangGraph, multi-agent | Production scale, custom autolog |
 | Tracing (Manual) | Decorator, start_span, analysis | Custom framework tracing | OTel, Temporal |
-| LLM Evaluation | Fundamentals, GenAI framework, RAG eval | Agent testing, quality metrics | CI/CD gates |
+| Evaluation -- offline | Fundamentals, GenAI framework, RAG eval, datasets | Comparison, offline gates, benchmarks | CI/CD gates |
+| Evaluation -- online | Registered judge on sampled live traces | Same, on agent traces | Consumes the assessments |
 | Human Evaluation | Labeling, assessments, ground truth | -- | Feedback loops |
-| Prompt Engineering | Registry, A/B testing, optimization | Agent prompt optimization | -- |
+| Prompt Engineering | Registry, versioning, A/B testing | -- | -- |
 | GenAI Scorers/Judges | Built-in + custom scorers, LLM judges | Agent metrics, inline vs. registered judges, alignment, session scorers | -- |
 | Data/Datasets | Logging, lineage, schema | Benchmarks (SWE-Bench, GAIA, custom) | Enterprise data management |
 | AI Gateway | Multi-provider routing, fallbacks | -- | -- |
 | Model Serving | CLI, Docker, multi-version | -- | -- |
 | Batch Prediction | Pipelines | -- | -- |
-| Fine-Tuning | HuggingFace Transformers | -- | -- |
+| Optimization | Prompt optimization, fine-tuning | Instructions, tool/MCP budget, skills, subagents, model choice | -- |
+| Benchmarking (offline eval, frozen external data) | -- | SWE-Bench, GAIA, custom domain; held-out splits | Framework comparison |
 | Agent Tracking | -- | LangChain, LangGraph, multi-agent, Claude SDK, DeepAgents | -- |
-| Agent Evaluation | -- | Simulation, judges, metrics, comparison, optimization, offline gates + online scoring | Consumes online assessments |
-| Agent Benchmarks | -- | SWE-Bench, GAIA, custom domain | Framework comparison |
+| Agent Evaluation | -- | Instruments (simulation, judges, metrics), offline, online | Consumes online assessments |
 | CI/CD | -- | Evaluation pipeline | Quality gates, canary |
 | Grafana Monitoring | -- | -- | Dashboards, alerts |
 | Plugins/Extensibility | -- | -- | Custom flavors, autolog, plugins |

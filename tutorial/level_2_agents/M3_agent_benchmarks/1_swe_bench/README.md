@@ -5,7 +5,7 @@
 
 ## Overview
 
-This lesson builds the **real** SWE-Bench evaluation pipeline. Unlike the simplified version in `1_swe_bench/` (which only checks if the agent produces diff-like output), this lesson runs a Claude Agent SDK agent **inside** a Docker/Podman container where the repository is checked out. The agent edits actual files with its built-in tools, then the harness runs the repository's test suite and computes a resolution score — the same metric used on the SWE-Bench leaderboard.
+This lesson builds the **real** SWE-Bench evaluation pipeline. Rather than checking whether the agent merely produces diff-like output, it runs a Claude Agent SDK agent **inside** a Docker/Podman container where the repository is checked out. The agent edits actual files with its built-in tools, then the harness runs the repository's test suite and computes a resolution score — the same metric used on the SWE-Bench leaderboard.
 
 ## Prerequisites
 
