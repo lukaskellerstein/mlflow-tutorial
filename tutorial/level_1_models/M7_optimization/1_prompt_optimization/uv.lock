@@ -1791,7 +1791,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlflow-tutorial-l1-m5-2-prompt-optimization"
+name = "mlflow-tutorial-l1-m7-1-prompt-optimization"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

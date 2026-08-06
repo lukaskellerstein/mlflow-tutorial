@@ -18,11 +18,17 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 MLFLOW_TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L1/M1_tracking/2_search_query_mlflowclient"
 
-LMSTUDIO_URL = "http://localhost:1234/v1"
-MODEL = "google/gemma-4-e4b"
+MODEL = "gemma-chat"
 
 COLS = ["run_id", "params.prompt_topic", "params.temperature", "metrics.total_tokens"]
 
@@ -358,7 +364,7 @@ def demo_mlflowclient(llm_client: OpenAI) -> None:
 
 def main() -> None:
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    client = OpenAI(base_url=LMSTUDIO_URL, api_key="lm-studio")
+    client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
     # Part A: Fluent search API
     experiment_id = create_sample_runs(client)

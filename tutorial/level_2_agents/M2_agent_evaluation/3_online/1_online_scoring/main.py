@@ -20,7 +20,6 @@ credentialed endpoint -- it cannot borrow the API key from your shell.
 Builds on L2-M2.1.2 (Judges) and L2-M2.2.2 (Offline Gates).
 """
 
-import os
 import time
 from typing import Any
 
@@ -30,11 +29,17 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
-# The LiteLLM gateway from infra/ serves the AGENT. The judge cannot use it --
-# see ensure_gateway_endpoint() below for why it needs MLflow's own gateway.
+# The LiteLLM gateway from infra/ serves the AGENT directly. The judge reaches
+# the same proxy, but only through an MLflow gateway endpoint -- see
+# ensure_gateway_endpoint() below for why it cannot use these constants.
 LITELLM_URL = "http://localhost:4000/v1"
 LITELLM_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-agent"
+# The agent and the thing grading it are named separately on purpose: both
+# resolve to the same model today, but a judge and an agent are different
+# jobs and will not always want the same one. Splitting them here means that
+# change is a config edit, not a re-read of this lesson.
+JUDGE_ALIAS = "gemma-judge"
 
 EXPERIMENT = "L2/M2_agent_evaluation/3_online/1_online_scoring"
 
@@ -47,12 +52,15 @@ EXPERIMENT_ID = mlflow.set_experiment(EXPERIMENT).experiment_id
 mlflow.langchain.autolog(log_traces=True)
 
 # MLflow AI Gateway objects the judge runs on.
-GATEWAY_SECRET_NAME = "openrouter-tutorial"
-GATEWAY_MODEL_NAME = "or-gemma-large"
+#
+# This endpoint points back at the SAME LiteLLM proxy the agent uses, but by its
+# CONTAINER name: the MLflow server dials it over the compose network, where
+# "localhost" would be the MLflow container itself.
+MLFLOW_SIDE_GATEWAY_URL = "http://litellm:4000/v1"
+GATEWAY_SECRET_NAME = "litellm-tutorial"
+GATEWAY_MODEL_NAME = "litellm-gemma-large"
 GATEWAY_ENDPOINT_NAME = "tutorial-gemma-endpoint"
-# The gateway calls OpenRouter directly, so this is the upstream model id, not
-# the LiteLLM alias the agent uses.
-UPSTREAM_MODEL = "google/gemma-4-26b-a4b-it:free"
+UPSTREAM_MODEL = JUDGE_ALIAS
 
 ONLINE_JUDGE_NAME = "production_answer_quality"
 
@@ -104,22 +112,21 @@ def build_agent():
 def ensure_gateway_endpoint() -> str:
     """Build (or reuse) secret -> model definition -> endpoint. Returns its name.
 
-    Why not point this at the LiteLLM proxy like the agent does? Because it does
-    not work: create_gateway_secret(auth_config={"base_url": ...}) accepts the
-    value and silently ignores it -- the request still goes to the provider's own
-    API, and the first symptom is an authentication error about a key you never
-    sent. provider="openrouter" is supported natively, so the server talks to
-    OpenRouter directly and no base URL is needed.
+    This points at the same LiteLLM proxy the agent uses, so the judge and the
+    thing it judges run on one model. Two details make that work, and both are
+    easy to get wrong:
+
+    1. The key is `api_base`, inside `auth_config`. `base_url` is NOT a synonym --
+       it is accepted and silently ignored, as is an `api_base` placed in
+       `secret_value` instead. Either mistake sends the request to the provider's
+       own API, and the first symptom is an authentication error about a key you
+       never sent, which points nowhere near the actual cause.
+    2. `provider="openai"`, because LiteLLM speaks the OpenAI protocol. The
+       provider name selects the request format, not the destination -- the
+       destination is `api_base`.
     """
     from mlflow.entities import GatewayEndpointModelConfig, GatewayModelLinkageType
     from mlflow.tracking._tracking_service.utils import _get_store
-
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        raise SystemExit(
-            "OPENROUTER_API_KEY is not set. The gateway secret is created from the\n"
-            "environment -- never hardcode it. `source infra/.env` and re-run."
-        )
 
     store = _get_store()
 
@@ -131,15 +138,16 @@ def ensure_gateway_endpoint() -> str:
     secrets = {s.secret_name: s for s in store.list_secret_infos()}
     secret = secrets.get(GATEWAY_SECRET_NAME) or store.create_gateway_secret(
         secret_name=GATEWAY_SECRET_NAME,
-        secret_value={"api_key": api_key},
-        provider="openrouter",
+        secret_value={"api_key": LITELLM_KEY},
+        provider="openai",
+        auth_config={"api_base": MLFLOW_SIDE_GATEWAY_URL},
     )
 
     defs = {d.name: d for d in store.list_gateway_model_definitions()}
     model_def = defs.get(GATEWAY_MODEL_NAME) or store.create_gateway_model_definition(
         name=GATEWAY_MODEL_NAME,
         secret_id=secret.secret_id,
-        provider="openrouter",
+        provider="openai",
         model_name=UPSTREAM_MODEL,
     )
 
@@ -156,7 +164,7 @@ def ensure_gateway_endpoint() -> str:
             )
         ],
     )
-    print(f"  created gateway endpoint '{GATEWAY_ENDPOINT_NAME}' -> openrouter/{UPSTREAM_MODEL}")
+    print(f"  created gateway endpoint '{GATEWAY_ENDPOINT_NAME}' -> {MLFLOW_SIDE_GATEWAY_URL} ({UPSTREAM_MODEL})")
     return GATEWAY_ENDPOINT_NAME
 
 

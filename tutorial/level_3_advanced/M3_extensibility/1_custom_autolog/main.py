@@ -20,6 +20,13 @@ import pandas as pd
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 
 # ---------------------------------------------------------------------------
 # 1. SimpleChat framework — a thin wrapper around ChatOpenAI
@@ -31,13 +38,13 @@ class SimpleChat:
     integration. Our custom autolog will instrument it transparently.
     """
 
-    def __init__(self, model: str = "google/gemma-4-26b-a4b", temperature: float = 0.7):
+    def __init__(self, model: str = "gemma-chat", temperature: float = 0.7):
         self.model = model
         self.temperature = temperature
         self._llm = ChatOpenAI(
             model=model,
-            base_url="http://localhost:1234/v1",
-            api_key=SecretStr("lm-studio"),
+            base_url=GATEWAY_URL,
+            api_key=SecretStr(GATEWAY_KEY),
             temperature=temperature,
         )
         self._call_count = 0
@@ -336,7 +343,7 @@ def main() -> None:
 
     # ── Part 2: Build and test SimpleChat ─────────────────────────
     print("--- Part 2: SimpleChat Framework (unpatched) ---")
-    bot = SimpleChat(model="google/gemma-4-26b-a4b", temperature=0.5)
+    bot = SimpleChat(model="gemma-chat", temperature=0.5)
     print(f"  Created SimpleChat(model={bot.model}, temperature={bot.temperature})")
 
     response = bot.chat("What is 2 + 2? Reply with just the number.")

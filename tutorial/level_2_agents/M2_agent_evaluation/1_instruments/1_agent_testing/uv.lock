@@ -2079,7 +2079,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlflow-tutorial-l2-m2-1-agent-testing"
+name = "mlflow-tutorial-l2-m2-1-1-agent-testing"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

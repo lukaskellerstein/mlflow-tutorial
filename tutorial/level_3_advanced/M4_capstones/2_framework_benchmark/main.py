@@ -10,7 +10,7 @@ Approaches:
   B. ReAct Agent      — langchain.agents.create_agent with tools
   C. Custom StateGraph — classify -> route -> process -> respond
 
-All approaches use ChatOpenAI(model="google/gemma-4-26b-a4b") and the same tool set.
+All approaches use ChatOpenAI(model="gemma-agent") and the same tool set.
 """
 
 import os
@@ -34,10 +34,17 @@ mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L3/M4_capstones/2_framework_benchmark")
 
 # ── Shared LLM and tools ──────────────────────────────────
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 LLM = ChatOpenAI(
-    model="google/gemma-4-26b-a4b",
-    base_url="http://localhost:1234/v1",
-    api_key=SecretStr("lm-studio"),
+    model="gemma-agent",
+    base_url=GATEWAY_URL,
+    api_key=SecretStr(GATEWAY_KEY),
     temperature=0.0,
 )
 
@@ -314,7 +321,7 @@ class BenchmarkSuite:
                     "benchmark_type": "framework_comparison",
                     "num_agents": str(len(self.agents)),
                     "num_test_cases": str(len(self.test_cases)),
-                    "model": "google/gemma-4-26b-a4b",
+                    "model": "gemma-agent",
                 }
             )
 
@@ -328,7 +335,7 @@ class BenchmarkSuite:
                     mlflow.log_params(
                         {
                             "agent": agent_entry.name,
-                            "model": "google/gemma-4-26b-a4b",
+                            "model": "gemma-agent",
                             "num_cases": len(self.test_cases),
                         }
                     )

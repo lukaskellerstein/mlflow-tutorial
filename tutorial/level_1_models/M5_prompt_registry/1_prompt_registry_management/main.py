@@ -17,6 +17,13 @@ from openai import OpenAI
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L1/M5_prompt_registry/1_prompt_registry_management")
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 PROMPT_NAME = "L1_M5_qa_prompt"
 
 VARIANTS: list[dict] = [
@@ -113,7 +120,7 @@ def part2_ab_test(versions: list[int]) -> pd.DataFrame:
     print("Part 2: A/B Test Prompt Variants")
     print("=" * 60)
 
-    client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+    client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
     rows: list[dict] = []
 
     for version, variant in zip(versions, VARIANTS):
@@ -127,14 +134,14 @@ def part2_ab_test(versions: list[int]) -> pd.DataFrame:
             mlflow.log_param("variant", label)
             mlflow.log_param("prompt_version", version)
             mlflow.log_param("prompt_name", PROMPT_NAME)
-            mlflow.log_param("model", "google/gemma-4-e4b")
+            mlflow.log_param("model", "gemma-chat")
 
             total_words = 0
 
             for i, question in enumerate(TEST_QUESTIONS, 1):
                 formatted = str(prompt_version.format(question=question))
                 response = client.chat.completions.create(
-                    model="google/gemma-4-e4b",
+                    model="gemma-chat",
                     messages=[{"role": "user", "content": formatted}],
                     temperature=0.7,
                     max_tokens=1024,

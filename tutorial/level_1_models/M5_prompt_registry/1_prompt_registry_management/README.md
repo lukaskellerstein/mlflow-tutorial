@@ -11,7 +11,8 @@ The MLflow Prompt Registry provides centralized, versioned storage for prompt te
 
 - Completed: L1-M4 (Evaluations)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -81,7 +82,7 @@ Each variant answers the same questions in its own MLflow run:
 ```python
 formatted = prompt_version.format(question=question)
 response = client.chat.completions.create(
-    model="google/gemma-4-e4b",
+    model="gemma-chat",
     messages=[{"role": "user", "content": formatted}],
 )
 ```

@@ -32,16 +32,23 @@ from workflow_def import (
 )
 
 # -- Configuration --
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT = "L3/M2_advanced_tracing/2_temporal_tracing"
 TASK_QUEUE = "mlflow-tutorial-text-analysis"
-MODEL = "google/gemma-4-26b-a4b"
+MODEL = "gemma-chat"
 TEMPORAL_ADDRESS = "localhost:7233"
 
 mlflow.set_tracking_uri(TRACKING_URI)
 mlflow.set_experiment(EXPERIMENT)
 
-llm_client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+llm_client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
 
 # ── Part 1: Temporal activities with MLflow tracing ───────

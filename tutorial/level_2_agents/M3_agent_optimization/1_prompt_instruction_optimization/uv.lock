@@ -2079,7 +2079,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlflow-tutorial-l2-m2-5-agent-optimization"
+name = "mlflow-tutorial-l2-m3-1-prompt-instruction-optimization"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

@@ -11,7 +11,8 @@ MLflow provides two complementary approaches to tracing GenAI applications: auto
 
 - Completed: L1-M1 (Tracking)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` model loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -19,7 +20,7 @@ MLflow provides two complementary approaches to tracing GenAI applications: auto
 
 GenAI autologging captures traces -- the full input/output flow of every LLM call, tool invocation, and agent step. Enable it with a single line:
 
-- `mlflow.openai.autolog()` -- traces OpenAI SDK calls (also works with OpenAI-compatible servers like LMStudio)
+- `mlflow.openai.autolog()` -- traces OpenAI SDK calls (also works with OpenAI-compatible servers like the LiteLLM gateway)
 - `mlflow.langchain.autolog()` -- traces LangChain agents and LangGraph graphs
 - `mlflow.autolog()` -- enables all 16+ GenAI integrations at once
 
@@ -46,9 +47,9 @@ Trace direct OpenAI SDK calls with a single line:
 ```python
 mlflow.openai.autolog()
 
-client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+client = OpenAI(base_url="http://localhost:4000/v1", api_key="sk-litellm-master")
 response = client.chat.completions.create(
-    model="google/gemma-4-e4b",
+    model="gemma-chat",
     messages=[{"role": "user", "content": "What is MLflow?"}],
     max_tokens=1024,
 )

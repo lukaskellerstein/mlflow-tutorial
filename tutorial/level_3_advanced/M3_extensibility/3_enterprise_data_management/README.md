@@ -73,7 +73,7 @@ Part 2: Model Governance Workflow
   PROMOTED staging -> champion
 
 Part 3: LLM Cost Tracking
-  classification    | google/gemma-4-e4b    | $0.000090
+  classification    | gemma-chat            | $0.000090
   ...
   Total estimated cost: $0.012150
 

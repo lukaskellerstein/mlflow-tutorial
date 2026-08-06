@@ -13,7 +13,8 @@ You will learn how to define custom Prometheus metrics, instrument LLM calls, ge
 
 - Completed: L1-M1 (Tracking), L1-M4 (Evaluation), L3-M3.1 (Production Tracing)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-26b-a4b` model loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 - Prometheus running at <http://localhost:9090> (via `podman compose up -d` from `infra/`)
 - Grafana running at <http://localhost:3000> (admin/admin)
 
@@ -156,7 +157,7 @@ L3-M1.2 — Grafana Dashboards for MLflow
 
 --- Part 5: Verifying Prometheus metrics ---
   Scraped N metric series from :8099/metrics
-    llm_request_total{model="google/gemma-4-26b-a4b",status="success"}: 10.0
+    llm_request_total{model="gemma-chat",status="success"}: 10.0
     llm_tokens_used_total{...}: ...
 
 ============================================================

@@ -11,7 +11,8 @@ Everything in M4.1 and M4.2 was offline evaluation: a curated dataset, expected 
 
 - Completed: L1-M4.1.1 (Evaluation Fundamentals) and L1-M4.2.1 (GenAI Custom Metrics)
 - MLflow server running at <http://127.0.0.1:5555>
-- **LMStudio running with `google/gemma-4-e4b` loaded** — `lms server start && lms load google/gemma-4-e4b`
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 - **`OPENROUTER_API_KEY` exported in your shell** — the gateway secret is built from the environment, never from a file in this repo
 
 ## Concepts
@@ -37,7 +38,7 @@ An inline `@scorer` function is `DECORATOR` kind: it deserialises via `exec()`, 
 
 ### Why the judge needs a gateway model, even though the app does not
 
-Your app talks to LMStudio with a base URL and a key from your own process. The judge cannot: scoring runs **inside the MLflow server**, which has neither. So the judge needs a gateway endpoint the server owns — a secret, a model definition and an endpoint, built once and reused.
+Your app talks to the LiteLLM gateway with a base URL and a key from your own process. The judge cannot: scoring runs **inside the MLflow server**, which has neither. So the judge needs a gateway endpoint the server owns — a secret, a model definition and an endpoint, built once and reused. It points back at the same LiteLLM proxy, but by its container name (`http://litellm:4000/v1`), because the server dials it over the compose network.
 
 ## Step-by-Step
 

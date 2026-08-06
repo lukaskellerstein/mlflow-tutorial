@@ -1,15 +1,32 @@
 # =============================================================================
 # LiteLLM proxy config — the OpenAI-compatible gateway the agent lessons call.
 #
-# Lessons use the ALIASES below (gemma-large, gemma-small, nomic-embed,
-# text-embedding-3-small, frontier). Swapping provider or model is a change in
-# THIS file, never in a lesson's main.py.
+# Lessons use the ALIASES below (gemma-chat, gemma-judge, gemma-agent,
+# nomic-embed, text-embedding-3-small, frontier). Swapping provider or model is
+# a change in THIS file, never in a lesson's main.py.
 #
 # Provider wiring (keys come from infra/.env, forwarded by compose.yml):
 #   - OpenRouter : gemma-4-26b-a4b-it / -31b-it, free + paid  (OPENROUTER_API_KEY)
 #                  text-embedding-3-small, paid
 #   - OpenAI     : gpt-5.4-mini                               (OPENAI_API_KEY)
-#   - Local      : LMStudio gemma-4-e4b + nomic-embed         (LM_STUDIO_API_BASE)
+#   - Local      : LMStudio gemma-4-26b-a4b + nomic-embed     (LM_STUDIO_API_BASE)
+#                  (also gemma-4-31b, for the explicit gemma-31b-local alias)
+#
+# THE DEFAULT MODEL IS `google/gemma-4-26b-a4b`, everywhere — one model, four
+# aliases. `gemma-chat`, `gemma-agent` and `gemma-tight` run it LOCALLY and fall
+# back to the SAME model on OpenRouter. `gemma-judge` is the exception: it runs
+# the HOSTED copy, because LMStudio's Q4 quantisation of it produces corrupt
+# judgements. See the judge entry in model_list for the measurements.
+#
+# The decisive reason is availability, not speed: it is one of only two models
+# present on BOTH LMStudio and OpenRouter, which is what stops a fallback from
+# silently changing which model answered. The other, gemma-4-31b, is a dense 31B
+# and was several times slower in every measurement — that gap is far too large
+# to be noise, so it is not the default. `gemma-4-e4b` is not used at all: no
+# OpenRouter twin. (An earlier version of this comment quoted 3.8s / 5.4s / 23.2s
+# here. Those were taken with three models resident and with the per-request
+# variance described further down, so only the 31B's disadvantage survives as a
+# sound conclusion.)
 #
 # COSTS: LiteLLM only prices models present in its built-in cost map, and none
 # of the gemma-4 routes are in it — every call would log spend=$0 until the rate
@@ -20,12 +37,147 @@
 # gpt-5.4-mini is the exception: it IS in the cost map, so it is left unpinned
 # and tracks upstream updates.
 #
+# -----------------------------------------------------------------------------
+# ORDER AND CONTEXT LENGTH — the two knobs every lesson inherits
+# -----------------------------------------------------------------------------
+# A lesson names an ALIAS and nothing else. Which model actually serves it, in
+# what order, and how big a prompt it will accept are decided here.
+#
+# ORDER. Two ordered chains, and they fire on different things:
+#   litellm_settings.fallbacks               -> on ERROR   (provider down, 429, 5xx)
+#   litellm_settings.context_window_fallbacks -> on OVERFLOW (prompt too big)
+# Both are ordered lists: first entry tried first, left to right.
+#
+# CONTEXT. `model_info.max_input_tokens` on each deployment, enforced by
+# router_settings.enable_pre_call_checks (OFF by default in LiteLLM — it is
+# turned on at the bottom of this file). With it on, the router counts the
+# prompt's tokens ONCE, drops every deployment whose declared window is too
+# small, and only if none survive raises ContextWindowExceededError — which is
+# what context_window_fallbacks then catches.
+#
+# THE DECLARATION IS NOT OPTIONAL. The pre-call check filters only deployments
+# that actually declare a limit, and LiteLLM's built-in context map knows none
+# of the gemma-4 routes (verified: litellm.get_model_info raises for every
+# openrouter/google/gemma-4-* and every lm_studio/*). Undeclared means
+# unprotected — exactly the same gap as the COSTS note above, for the same
+# reason. Only gpt-5.4-mini is in the map (272000 in / 128000 out) and is
+# therefore deliberately left undeclared.
+#
+# WHY max_input_tokens IS BELOW THE MODEL'S CONTEXT. The window is shared by
+# prompt AND completion, but this check counts INPUT only. Every number below is
+# therefore `context − output reserve`. Sizing it to the full window would admit
+# a prompt that leaves no room to answer, and these models spend most of their
+# completion budget on reasoning tokens: measured on the local 31B, a one-line
+# reply cost 72 completion tokens, 62 of them reasoning. Over-admitting does not
+# error — it returns HTTP 200 with `content: ""`.
+#
+# LOCAL MODELS MUST BE LOADED TO MATCH. A declared window larger than the one
+# LMStudio actually loaded sends requests to a model that cannot hold them. The
+# numbers below assume:
+#   lms unload --all   # keep exactly one model resident
+#   lms load google/gemma-4-26b-a4b --context-length 262144 --parallel 1 --gpu max
+# `lms ps --json` reports the live `contextLength` — that is the source of
+# truth, not the UI.
+#
+# `--parallel 1` IS DELIBERATE, and it is the opposite of what a micro-benchmark
+# suggests. Four CONCURRENT requests do finish 2.68x faster at `--parallel 4`.
+# But the lessons are sequential loops, and splitting the GPU across four slots
+# makes each individual call slower. Timed on the same lesson, end to end:
+#
+#   L1-M1.1 tracking_fundamentals   parallel 1: 199s   parallel 4: 275s
+#   L1-M4.1 evaluation_fundamentals parallel 1: 121s   parallel 4: 118s
+#
+# So the lesson that is purely sequential pays 38% for slots it never uses, and
+# the evaluation lesson — the one supposed to benefit — shows no difference at
+# all, because MLflow is not actually issuing those judge calls concurrently
+# here. Prefer 1 until a lesson is shown to parallelise.
+#
+# >> A WARNING ABOUT BENCHMARKING THIS MACHINE. Per-request timings are far
+# >> noisier than they look: eight identical requests, one model resident, no
+# >> other load, ranged 1.99s to 3.80s with a warm-to-steady drift. Any claim
+# >> resting on a "min of 3" is measuring the warm-up, not the change. The
+# >> lesson-level numbers above are trustworthy because a whole lesson averages
+# >> over that noise; single-request comparisons on this hardware are not.
+#
+# Two levers that turned out NOT to matter, so nobody re-tests them: LMStudio's
+# `--speculative-draft-mtp` made no measurable difference, and reasoning tokens
+# cannot be reduced — `reasoning_effort`, `thinking: {type: disabled}` and
+# `chat_template_kwargs: {enable_thinking: false}` all returned an identical
+# 77 reasoning tokens, whether sent through the gateway or straight to LMStudio.
+# Roughly 90% of a short reply's completion budget is reasoning, and that is
+# simply the cost of this model.
+#
+# On `--context-length`: 262144 is far more than anything here needs — across 777
+# logged calls the median request was 358 tokens and only three ever exceeded
+# 16k. It is left at max because LMStudio would not accept a SMALLER value for a
+# model it had already loaded large (`-c 32768` came back as 262144 even from a
+# fully unloaded state, while a different model honoured `-c 16384`), and because
+# the memory is not the constraint here. Do not read 262144 as a requirement.
+#
+# KEEP ONE MODEL RESIDENT. Loading a second alongside it measurably slows the
+# first (a 26b request went from ~2s to ~4.2s with the 31B also loaded), and
+# `lms unload --all` before a run is the cheapest speedup available. Treat the
+# exact ratio as indicative given the noise above, but the direction is clear.
+#
+# >> THE JIT TRAP — the one that will bite. LMStudio auto-loads a model when a
+# >> request names one that is not resident, and a JIT load does NOT inherit the
+# >> flags above. Measured on this machine, unloading and then re-requesting:
+# >>
+# >>   google/gemma-4-31b   hand-loaded 262144 / parallel 1  -> JIT gave   8192 / parallel 4
+# >>   google/gemma-4-e4b   never hand-loaded                -> JIT gave 131072 / parallel 4
+# >>
+# >> Note those disagree, so JIT is not simply applying one default: e4b came
+# >> back at its full window while the 31B came back at 8192. The likely reason
+# >> is `modelLoadingGuardrails` (mode "high" in ~/.lmstudio/settings.json)
+# >> refusing the KV cache a 20 GB model needs at 262144 — but that is inference
+# >> from two data points, not a documented rule, so do not rely on it. In
+# >> particular, do NOT assume the 15 GB default model sits safely on the small
+# >> side of that guardrail; it has not been measured.
+# >>
+# >> What IS reliable: a JIT-loaded model gets a 1h TTL, a hand-loaded one gets
+# >> none. So any model here can silently come back smaller an hour after its
+# >> last request, at which point the 253952 declared below is a lie — an 80k
+# >> prompt would pass the pre-call check, route local, and meet a model that
+# >> cannot hold it.
+# >>
+# >> Treat `lms ps --json` as the source of truth and re-issue the hand-load
+# >> above after any idle period. Verify before a long-context lesson, not after.
+#
+# -----------------------------------------------------------------------------
+# THE max_tokens DEFAULT — why every gemma entry carries one
+# -----------------------------------------------------------------------------
+# Each chat deployment sets `max_tokens: 4096` in litellm_params. It is a
+# DEFAULT, not a cap: LiteLLM merges `{**litellm_params, ..., **request_kwargs}`
+# (router.py, `input_kwargs`), so request params are applied last and a lesson
+# that passes its own max_tokens still wins. It only bites when nobody asked.
+#
+# It exists because raising the loaded context to 262144 quietly armed a much
+# worse failure than it fixed. 19 of the 20 ChatOpenAI lessons never set
+# max_tokens, and an uncapped generation runs until the CONTEXT is full — so the
+# ceiling moved from LMStudio's old 8192 default to a quarter of a million
+# tokens. Observed before this default was added: a single lesson request left
+# the model GENERATING for 25+ minutes, and because `--parallel 1` gives LMStudio
+# one slot, every other request on the machine queued behind it. The symptom is
+# a whole test run hanging on an unrelated lesson, which is a miserable thing to
+# diagnose from the other end.
+#
+# 4096 IS MEASURED, NOT GUESSED. Across 795 logged completions: median 205, p90
+# 1023, p99 4095. So it clears 99% of real output untouched while still capping a
+# runaway — exactly one call in that sample ever exceeded it, and that one was
+# the 94k-token loop this default exists to stop. Lowering it to 2048 would start
+# truncating legitimate judge rationales (11 calls sit above 2048).
+#
+# So: a bigger context needs a token budget to go with it. Raise this number if
+# a lesson genuinely needs longer output, or set max_tokens in that lesson.
+#
 # Docs: https://docs.litellm.ai/docs/proxy/configs
+#       https://docs.litellm.ai/docs/routing#fallbacks
 # =============================================================================
 
 model_list:
-  # ---- OpenRouter — the default for Level 2/3 agent lessons ----------------
-  # `gemma-large` starts on the FREE tier and falls back to paid (see
+  # ---- OpenRouter — the cloud half of the chain ----------------------------
+  # `gemma-cloud` is where the local aliases land when the local model cannot serve
+  # a request. It starts on the FREE tier and falls back to paid (see
   # litellm_settings.fallbacks). The free tiers really are $0, priced
   # explicitly so a run that silently fell back to paid shows up as a
   # non-zero line in the spend log rather than as an indistinguishable zero.
@@ -55,35 +207,47 @@ model_list:
   # `require_parameters: true` stays as a second filter, and is kept on the paid
   # aliases too — several paid providers (SiliconFlow, Parasail) do not support
   # tools at all.
-  - model_name: gemma-large            # tutorial alias: agents, judges, benchmarks
+  - model_name: gemma-cloud            # first cloud hop for the local aliases
     litellm_params:
       model: openrouter/google/gemma-4-26b-a4b-it:free
       api_key: os.environ/OPENROUTER_API_KEY
       input_cost_per_token: 0
       output_cost_per_token: 0
+      max_tokens: 4096                 # DEFAULT ONLY — a request that sets max_tokens wins
       extra_body:
         provider:
           require_parameters: true
           order: ["google-ai-studio"]
           allow_fallbacks: false
+    model_info:                        # 262144 ctx − 32768 free-tier output cap
+      max_input_tokens: 229376
+      max_output_tokens: 32768
   - model_name: gemma-26b-free
     litellm_params:
       model: openrouter/google/gemma-4-26b-a4b-it:free
       api_key: os.environ/OPENROUTER_API_KEY
       input_cost_per_token: 0
       output_cost_per_token: 0
+      max_tokens: 4096                 # DEFAULT ONLY — a request that sets max_tokens wins
       extra_body:
         provider:
           require_parameters: true
+    model_info:
+      max_input_tokens: 229376
+      max_output_tokens: 32768
   - model_name: gemma-31b-free
     litellm_params:
       model: openrouter/google/gemma-4-31b-it:free
       api_key: os.environ/OPENROUTER_API_KEY
       input_cost_per_token: 0
       output_cost_per_token: 0
+      max_tokens: 4096                 # DEFAULT ONLY — a request that sets max_tokens wins
       extra_body:
         provider:
           require_parameters: true
+    model_info:
+      max_input_tokens: 229376
+      max_output_tokens: 32768
 
   # paid OpenRouter — the fallback targets named below
   - model_name: gemma-26b              # $0.12 / $0.35 per 1M tokens
@@ -92,18 +256,26 @@ model_list:
       api_key: os.environ/OPENROUTER_API_KEY
       input_cost_per_token: 0.00000012
       output_cost_per_token: 0.00000035
+      max_tokens: 4096                 # DEFAULT ONLY — a request that sets max_tokens wins
       extra_body:
         provider:
           require_parameters: true
+    model_info:                        # 262144 ctx − 16384 paid-tier output cap
+      max_input_tokens: 245760
+      max_output_tokens: 16384
   - model_name: gemma-31b              # $0.14 / $0.40 per 1M tokens
     litellm_params:
       model: openrouter/google/gemma-4-31b-it
       api_key: os.environ/OPENROUTER_API_KEY
       input_cost_per_token: 0.00000014
       output_cost_per_token: 0.0000004
+      max_tokens: 4096                 # DEFAULT ONLY — a request that sets max_tokens wins
       extra_body:
         provider:
           require_parameters: true
+    model_info:                        # 262144 ctx; output is not separately capped
+      max_input_tokens: 245760
+      max_output_tokens: 16384
 
   # ---- OpenAI --------------------------------------------------------------
   - model_name: gpt-mini
@@ -120,13 +292,166 @@ model_list:
   # model loaded. Self-hosted, so priced at 0 EXPLICITLY: a lesson's spend
   # report then reads "$0.00 because it ran locally" rather than "$0.00
   # because nobody set a price".
-  - model_name: gemma-small            # tutorial alias: fast Level 1 lessons
+  # THE DEFAULT MODEL FOR THE WHOLE TUTORIAL IS gemma-4-26b-a4b, and both
+  # tutorial aliases resolve to it, LOCAL FIRST. OpenRouter is reached only
+  # through the fallback chains at the bottom of this file, so the default path
+  # is free and offline without a single lesson changing a string.
+  #
+  # WHY THIS MODEL AND NOT THE OTHER TWO. It has to exist on BOTH LMStudio and
+  # OpenRouter, or a fallback silently swaps the model out from under a lesson.
+  # Only two do (`gemma-4-26b-a4b`, `gemma-4-31b`), and measured on this machine,
+  # 250 completion tokens on the same prompt:
+  #
+  #   gemma-4-26b-a4b    3.8 s     MoE, ~4B active     OpenRouter twin: yes
+  #   gemma-4-e4b        5.4 s     4B dense            OpenRouter twin: NO
+  #   gemma-4-31b       23.2 s     31B dense           OpenRouter twin: yes
+  #
+  # So the 26B MoE is both the fastest AND the one with a cloud twin — it beats
+  # the 4B dense model on speed outright, which is why e4b is not used anywhere.
+  # The 31B is 6x slower for a quality gain no lesson depends on; it stays
+  # available as the explicit `gemma-31b-local` alias below, but nothing routes
+  # to it by default.
+  #
+  # THE FALLBACK IS LIKE-FOR-LIKE. gemma-cloud is `google/gemma-4-26b-a4b-it`,
+  # the same model these two serve locally. A fallback therefore changes WHERE
+  # the request runs and never WHAT ran — which is the property that makes it
+  # safe to leave the chain switched on for every lesson.
+  #
+  # NOTE ON WHICH CHAIN ACTUALLY FIRES. Local and cloud both hold 262144, so
+  # overflow is not what sends a request out; only gpt-mini (272000) is bigger.
+  # The chain that matters is the ERROR one — LMStudio not running or the model
+  # not loaded, both the common case on a fresh machine.
+  #
+  # THE THREE ARE THE SAME MODEL TODAY, AND THAT IS NOT REDUNDANCY. They are
+  # named for the JOB, not the size, because the job is what a lesson knows about
+  # itself and the model is what you will want to change later. Wanting a
+  # stronger judge without touching the agents is one line here; with names like
+  # `-small`/`-large` it was a sweep through forty lessons.
+  #
+  # They also stopped meaning anything: both used to describe a size difference
+  # that no longer exists. A name that has to be explained is worse than no name.
+  #
+  #   gemma-chat    the lesson's own LLM call -- the thing under observation
+  #   gemma-judge   LLM-as-judge, scorers, simulators -- the thing doing the grading
+  #   gemma-agent   agent loops and tool calling -- needs reliable structured tool_calls
+  #
+  # A lesson that both RUNS an agent and JUDGES it should name both, so the two
+  # roles can diverge later without re-reading the lesson to work out which call
+  # was which.
+  - model_name: gemma-chat             # the application under observation
     litellm_params:
-      model: lm_studio/google/gemma-4-e4b
+      model: lm_studio/google/gemma-4-26b-a4b
       api_base: os.environ/LM_STUDIO_API_BASE
       api_key: "sk-lmstudio"           # LMStudio ignores it; must be non-empty
       input_cost_per_token: 0
       output_cost_per_token: 0
+      max_tokens: 4096                 # DEFAULT ONLY — a request that sets max_tokens wins
+    model_info:                        # 262144 loaded − 8192 output reserve
+      max_input_tokens: 253952
+      max_output_tokens: 8192
+  # >> THE JUDGE IS THE ONE ALIAS THAT IS NOT LOCAL, AND THIS IS NOT A PREFERENCE.
+  # >>
+  # >> Same model as the others — google/gemma-4-26b-a4b — but the hosted copy
+  # >> rather than LMStudio's Q4_K_M quantisation. The local one degenerates into
+  # >> a repetition loop while generating a judge's JSON, mid-string:
+  # >>
+  # >>   {"result": true, "rationale": "... own- r own- r own- r own- r own-
+  # >>
+  # >> which reaches MLflow as `Failed to parse response from judge model`. It is
+  # >> not a timeout and not a bad prompt — the model simply stops producing
+  # >> valid output partway through. Measured, same lesson, judge alias only:
+  # >>
+  # >>   L2-M2.1.2 judges           local: FAIL (loop)   cloud: PASS 313s
+  # >>   L2-M2.1.3 quality_metrics  local: FAIL (loop)   cloud: PASS 170s
+  # >>   L2-M2.1.1 agent_testing    local: FAIL (0 test  cloud: PASS 341s
+  # >>                                     cases generated)
+  # >>
+  # >> The agent being judged still runs locally on gemma-agent; only the grading
+  # >> moved. That separation is the entire reason these are named for their job:
+  # >> this was one line here and not one character in any of the three lessons.
+  # >>
+  # >> It costs nothing (free tier) but it does mean judges need the network and
+  # >> OPENROUTER_API_KEY. There is deliberately NO local entry in its fallback
+  # >> chain below: falling back to the quantised copy would not raise an error,
+  # >> it would quietly resume producing corrupt judgements, which is worse.
+  # >>
+  # >> Revisit if a better local quantisation lands — the pin is on the Q4 build's
+  # >> behaviour, not on anything intrinsic to running locally.
+  - model_name: gemma-judge            # LLM-as-judge, scorers, simulators
+    litellm_params:
+      model: openrouter/google/gemma-4-26b-a4b-it:free
+      api_key: os.environ/OPENROUTER_API_KEY
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      max_tokens: 4096
+      extra_body:
+        provider:
+          require_parameters: true
+    model_info:                        # 262144 ctx − 32768 free-tier output cap
+      max_input_tokens: 229376
+      max_output_tokens: 32768
+  - model_name: gemma-agent            # agent loops and tool calling
+    litellm_params:
+      model: lm_studio/google/gemma-4-26b-a4b
+      api_base: os.environ/LM_STUDIO_API_BASE
+      api_key: "sk-lmstudio"
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      max_tokens: 4096
+    model_info:
+      max_input_tokens: 253952
+      max_output_tokens: 8192
+
+  # Same weights, same loaded instance, a DELIBERATELY SMALL declared window.
+  #
+  # This is the one knob a lesson can turn without touching LMStudio. Context
+  # length is a property of the loaded MODEL, not of a request: measured on this
+  # machine, loading a second instance of the same model with `-c 8192` came back
+  # at 262144, inheriting the first instance's window, while a DIFFERENT model
+  # loaded at 16384 honoured the flag. So one model = one context length, and
+  # per-lesson context ALLOCATION is not available.
+  #
+  # Per-lesson context POLICY is, and this alias is how: it costs no extra RAM
+  # (same instance) and the pre-call check enforces the declared 8192 exactly as
+  # if the model were smaller. Point a lesson here to demonstrate
+  # ContextWindowExceededError and watch context_window_fallbacks route onward.
+  - model_name: gemma-tight            # 8192 guard for overflow demos
+    litellm_params:
+      model: lm_studio/google/gemma-4-26b-a4b
+      api_base: os.environ/LM_STUDIO_API_BASE
+      api_key: "sk-lmstudio"
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      max_tokens: 1024
+    model_info:                        # 8192 − 1024 output reserve
+      max_input_tokens: 7168
+      max_output_tokens: 1024
+  # The 31B counterpart of the OpenRouter `gemma-31b` alias, served from the
+  # host GPU instead of the network. Same weights, different route — so a lesson
+  # can be pointed at it to run offline, or to A/B a hosted provider against
+  # local inference. The `-local` suffix is what separates it from `gemma-31b`
+  # (paid OpenRouter) and `gemma-31b-free`; nothing falls back to or from it,
+  # because a machine without the model loaded should fail loudly rather than
+  # quietly start spending on OpenRouter.
+  #
+  # Needs LMStudio running natively AND `lms load google/gemma-4-31b` — ~20 GB
+  # of weights, so it is not loaded by default.
+  #
+  # IT EMITS REASONING TOKENS, and they are charged against max_tokens. Measured:
+  # a one-line reply cost 72 completion tokens, 62 of them reasoning. So a caller
+  # with max_tokens=20 gets HTTP 200, a full usage block, and `content: ""` —
+  # no error anywhere. Give it a few hundred tokens of headroom.
+  - model_name: gemma-31b-local        # tutorial alias: 31B on the host GPU
+    litellm_params:
+      model: lm_studio/google/gemma-4-31b
+      api_base: os.environ/LM_STUDIO_API_BASE
+      api_key: "sk-lmstudio"
+      input_cost_per_token: 0
+      output_cost_per_token: 0
+      max_tokens: 4096                 # DEFAULT ONLY — a request that sets max_tokens wins
+    model_info:                        # 262144 loaded − 8192 output reserve
+      max_input_tokens: 253952
+      max_output_tokens: 8192
   - model_name: nomic-embed            # embeddings for the RAG lessons
     litellm_params:
       model: lm_studio/text-embedding-nomic-embed-text-v1.5
@@ -170,14 +495,65 @@ litellm_settings:
   # trace in MLflow, which is a confusing thing to debug from the UI side.
   turn_off_message_logging: false
   redact_messages_in_exceptions: false
-  # Free OpenRouter tiers rate-limit and occasionally 404 → fall back to the paid
-  # model, then to OpenAI. This is what makes "free, or paid if free errors" a
-  # config concern instead of retry logic in every lesson.
+  # ---- ORDER 1: on ERROR ---------------------------------------------------
+  # Left to right, first entry tried first. Both tutorial aliases start on the
+  # LOCAL gemma-4-26b-a4b, so the first hop off is the ordinary case rather than
+  # an emergency: LMStudio not running, or the model not loaded.
+  #
+  # THE FIRST TWO HOPS ARE THE SAME MODEL. gemma-cloud and gemma-26b are
+  # `google/gemma-4-26b-a4b-it` free and paid — identical weights to the local
+  # entry. So the common fallback changes only WHERE the request runs. Only the
+  # last hop, gpt-mini, is a genuinely different model, and it sits last for
+  # exactly that reason.
+  #
+  # Free OpenRouter tiers rate-limit and occasionally 404, which is why the paid
+  # model sits behind the free one. This is what makes "local, or free, or paid
+  # if those error" a config concern instead of retry logic in every lesson.
   fallbacks:
-    - {"gemma-large": ["gemma-26b", "gemma-31b", "gpt-mini"]}
+    - {"gemma-chat": ["gemma-cloud", "gemma-26b", "gpt-mini"]}
+    # NOT to any local entry — see the judge block above. Paid tier, then OpenAI.
+    - {"gemma-judge": ["gemma-26b", "gpt-mini"]}
+    - {"gemma-agent": ["gemma-cloud", "gemma-26b", "gpt-mini"]}
+    - {"gemma-tight": ["gemma-cloud", "gemma-26b", "gpt-mini"]}
+    - {"gemma-31b-local": ["gemma-31b-free", "gemma-31b", "gpt-mini"]}
+    - {"gemma-cloud": ["gemma-26b"]}
     - {"gemma-26b-free": ["gemma-26b"]}
     - {"gemma-31b-free": ["gemma-31b"]}
     - {"frontier": ["gemma-26b"]}
+
+  # ---- ORDER 2: on OVERFLOW ------------------------------------------------
+  # Fires only when the prompt exceeds every candidate's declared
+  # max_input_tokens. Every gemma-4 route here — local and both OpenRouter tiers
+  # — holds 262144, so the only genuinely larger target is gpt-mini (272000 in).
+  # These chains are therefore short by necessity, not by oversight: there is
+  # nowhere else to escape TO. They exist so that the failure at ~254k tokens is
+  # a route to a bigger model rather than a provider error.
+  context_window_fallbacks:
+    - {"gemma-chat": ["gpt-mini"]}
+    - {"gemma-judge": ["gpt-mini"]}
+    - {"gemma-agent": ["gpt-mini"]}
+    # gemma-tight is the interesting one: its 7168 guard is small enough that
+    # ordinary prompts trip it, so the overflow chain is observable here and
+    # nowhere else. It escapes to the FULL-window aliases, not straight to gpt-mini.
+    - {"gemma-tight": ["gemma-chat", "gemma-cloud", "gpt-mini"]}
+    - {"gemma-31b-local": ["gpt-mini"]}
+    - {"gemma-cloud": ["gpt-mini"]}
+    - {"gemma-26b-free": ["gpt-mini"]}
+    - {"gemma-31b-free": ["gpt-mini"]}
+
+router_settings:
+  # Makes every `model_info.max_input_tokens` above actually do something.
+  # LiteLLM defaults this to False (router.py: `enable_pre_call_checks: bool =
+  # False`), and with it off the declarations are inert decoration — the router
+  # dispatches to a deployment that cannot hold the prompt and the failure
+  # surfaces as a provider error, or worse as a silent truncation.
+  #
+  # On, the router counts the prompt ONCE per request (skipped entirely for
+  # model groups where nothing declares a limit, so it is not a tax on the hot
+  # path), drops the deployments that are too small, and raises
+  # ContextWindowExceededError only when none are left — which is precisely the
+  # signal context_window_fallbacks waits for.
+  enable_pre_call_checks: true
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

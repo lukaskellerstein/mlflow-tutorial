@@ -19,10 +19,19 @@ import pandas as pd
 from mlflow.models import ModelSignature, infer_signature
 from mlflow.types import ColSpec, DataType, ParamSchema, ParamSpec, Schema
 
-os.environ["OPENAI_BASE_URL"] = "http://localhost:1234/v1"
-os.environ["OPENAI_API_KEY"] = "lm-studio"
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
 
-MODEL = "google/gemma-4-e4b"
+# The openai FLAVOR builds its own client at load time, so it reads these rather
+# than any client constructed here.
+os.environ["OPENAI_BASE_URL"] = GATEWAY_URL
+os.environ["OPENAI_API_KEY"] = GATEWAY_KEY
+
+MODEL = "gemma-chat"
 
 
 # ------------------------------------------------------------------- #
@@ -36,14 +45,14 @@ class LLMModel(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
         from openai import OpenAI
 
-        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
         temperature = (params or {}).get("temperature", 0.7)
         max_tokens = (params or {}).get("max_tokens", 1024)
         questions = model_input["question"].tolist()
         answers = []
         for q in questions:
             resp = client.chat.completions.create(
-                model="google/gemma-4-e4b",
+                model="gemma-chat",
                 messages=[{"role": "user", "content": q}],
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -58,7 +67,7 @@ def part1_pyfunc_flavor() -> str:
     print("Part 1: Logging an LLM model with the PyFunc flavor")
     print("=" * 60)
     print("  The pyfunc flavor wraps ANY Python code as an MLflow model.")
-    print("  Here we wrap a direct OpenAI SDK call to LMStudio.\n")
+    print("  Here we wrap a direct OpenAI SDK call to the LiteLLM gateway.\n")
 
     input_df = pd.DataFrame({"question": ["What is MLflow?"]})
     output = LLMModel().predict(context=None, model_input=input_df)

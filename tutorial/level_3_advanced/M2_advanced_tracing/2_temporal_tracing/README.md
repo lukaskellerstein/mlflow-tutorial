@@ -12,7 +12,8 @@ This lesson integrates MLflow tracing with Temporal.io durable workflows. You wi
 - Completed: L2-M4.1 (LangGraph Tracing) -- familiarity with MLflow tracing concepts
 - MLflow server running at <http://127.0.0.1:5555>
 - Temporal server running at localhost:7233 (start with `podman compose up -d` from `infra/`)
-- LMStudio running with `google/gemma-4-e4b` model loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 

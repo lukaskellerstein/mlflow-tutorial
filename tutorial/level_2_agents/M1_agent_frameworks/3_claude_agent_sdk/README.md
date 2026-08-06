@@ -31,7 +31,7 @@ STDIO.
 
 The SDK drives the Claude Code CLI, which speaks Anthropic's Messages API. The
 LiteLLM gateway from `infra/` speaks the OpenAI API. They do not meet, so this
-lesson does **not** use `gemma-large` — it uses whatever your Claude Code CLI is
+lesson does **not** use `gemma-chat` — it uses whatever your Claude Code CLI is
 authenticated as. That mismatch is the lesson: not every agent framework fits
 behind one endpoint, and the tracing you write has to survive that.
 

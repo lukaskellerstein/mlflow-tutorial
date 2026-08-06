@@ -36,17 +36,30 @@ curl -sf http://localhost:1234/v1/models         && echo "lmstudio up"
 
 If MLflow is down: `cd infra && podman compose up -d`.
 
-**Check which of the two LLM paths the lesson actually uses before panicking
-about LMStudio.** A lesson on the `gemma-large` alias reaches OpenRouter through
-the LiteLLM gateway and does not care that LMStudio is down; only `gemma-small`
-and `nomic-embed` are served locally. If a lesson genuinely needs LMStudio and it
-is down, say so and ask — it runs natively for GPU access and cannot be started
-from compose. `lms server start` and `lms ps` are the CLI equivalents.
+**Every lesson goes through the LiteLLM gateway; nothing calls a provider
+directly.** So the first check is always port 4000, not 1234.
 
-> [!note]
-> Editing `infra/litellm/config.yaml` needs `podman compose restart litellm` to
-> take effect. The file is bind-mounted and read once at startup, so
-> `podman compose up -d` is a no-op and leaves the old config running.
+`gemma-chat`, `gemma-judge`, `gemma-agent` and `gemma-tight` all resolve to
+LMStudio FIRST, so LMStudio being down affects all of them — but each falls back
+to OpenRouter through the gateway, and the lesson still runs. That is a comfort
+and a trap: a lesson can pass while quietly running on the cloud. Check the spend
+log (`/spend/logs`, `model` column) when it matters which one answered.
+
+`gemma-26b-free` / `gemma-31b-free` / `gemma-cloud` are OpenRouter and need no
+LMStudio at all. `nomic-embed` is local-only. If a lesson genuinely needs
+LMStudio and it is down, say so and ask — it runs natively for GPU access and
+cannot be started from compose. `lms server start` and `lms ps --json` are the
+CLI equivalents; the latter reports the live `contextLength`, which the UI does
+not always agree with.
+
+> [!warning]
+> **Editing `infra/litellm/config.yaml` needs
+> `podman compose up -d --force-recreate litellm`, not `restart`.** The file is
+> bind-mounted, and an editor that replaces the file rather than writing in place
+> changes its inode — which severs the mount. The symptom is nasty: the container
+> keeps serving the config it read at startup, `restart` then fails or silently
+> keeps the old routing, and `ls /app/config.yaml` inside the container reports
+> no such file. Recreating the container re-resolves the mount.
 
 **Lesson changes** — run the lesson from its own directory:
 

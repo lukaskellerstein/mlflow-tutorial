@@ -16,7 +16,7 @@ lets a judge learn a standard nobody ever wrote into its prompt.
   Fundamentals)
 - MLflow server running at <http://127.0.0.1:5555>
 - LiteLLM gateway running at <http://localhost:4000> (`cd infra && podman compose up -d`)
-- An `OPENROUTER_API_KEY` in `infra/.env` — both the `gemma-large` and
+- An `OPENROUTER_API_KEY` in `infra/.env` — both the `gemma-chat` and
   `text-embedding-3-small` aliases route there
 
 ## Concepts
@@ -104,7 +104,7 @@ inline_helpfulness.register(name="inline_helpfulness")  # raises MlflowException
 naive_judge = mlflow.genai.make_judge(
     name="answer_helpfulness",
     instructions="... {{ inputs }} ... {{ outputs }} ... true or false.",
-    model="openai:/gemma-large",
+    model="openai:/gemma-judge",
     feedback_value_type=bool,
 )
 registered = naive_judge.register(name="answer_helpfulness")

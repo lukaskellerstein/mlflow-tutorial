@@ -17,11 +17,16 @@ from mlflow.genai.scorers import ResponseLength, scorer
 from openai import OpenAI
 
 # -- Configuration --
-LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
-LMSTUDIO_API_KEY = "lm-studio"
-MODEL_NAME = "google/gemma-4-e4b"
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
 
-client = OpenAI(base_url=LMSTUDIO_BASE_URL, api_key=LMSTUDIO_API_KEY)
+MODEL_NAME = "gemma-chat"
+
+client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
 # -- Shared evaluation dataset --------------------------------------------- #
 

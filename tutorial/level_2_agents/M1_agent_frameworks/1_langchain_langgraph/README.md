@@ -16,7 +16,7 @@ different levels of abstraction.
 - Completed: L1-M2 (tracing), L1-M4 (evaluation)
 - MLflow server running at <http://127.0.0.1:5555>
 - LiteLLM gateway running at <http://localhost:4000> (`cd infra && podman compose up -d`)
-- An `OPENROUTER_API_KEY` in the environment — the `gemma-large` alias routes there
+- An `OPENROUTER_API_KEY` in the environment — the `gemma-chat` alias routes there
 
 ## Concepts
 
@@ -54,7 +54,7 @@ guessing at it.
 
 ### One gateway, one alias
 
-Neither variant names a provider. Both call `gemma-large` on the LiteLLM gateway
+Neither variant names a provider. Both call `gemma-chat` on the LiteLLM gateway
 from `infra/`, which starts on OpenRouter's free tier and falls back to the paid
 model when free rate-limits or 404s. Changing model or provider is an edit to
 `infra/litellm/config.yaml`, not to this lesson.
@@ -65,7 +65,7 @@ model when free rate-limits or 404s. Changing model or provider is an edit to
 
 ```python
 GATEWAY_URL = "http://localhost:4000/v1"
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-chat"
 
 
 def get_llm() -> ChatOpenAI:

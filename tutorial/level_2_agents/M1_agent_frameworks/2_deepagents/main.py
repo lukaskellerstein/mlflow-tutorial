@@ -31,12 +31,12 @@ from langchain_openai import ChatOpenAI
 from langgraph.store.memory import InMemoryStore
 from pydantic import SecretStr
 
-# The LiteLLM gateway from infra/. "gemma-large" starts on the free OpenRouter
+# The LiteLLM gateway from infra/. "gemma-agent" starts on the free OpenRouter
 # tier and the proxy falls back to paid when free rate-limits — see
 # infra/litellm/config.yaml.
 GATEWAY_URL = "http://localhost:4000/v1"
 GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-agent"
 
 EXPERIMENT = "L2/M1_agent_frameworks/2_deepagents"
 

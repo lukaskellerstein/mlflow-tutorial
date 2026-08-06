@@ -11,7 +11,8 @@ Walk through the full LLM model registry lifecycle: build two model versions wit
 
 - Completed: L1-M3.1 (Models, Flavors, and Signatures)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 

@@ -19,11 +19,17 @@ from mlflow.pyfunc import PythonModelContext
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L1/M6_deployment_gateway/2_batch_prediction"
-LLM_BASE_URL = "http://localhost:1234/v1"
-LLM_API_KEY = "lm-studio"
-LLM_MODEL = "google/gemma-4-e4b"
+LLM_API_KEY = GATEWAY_KEY
+LLM_MODEL = "gemma-chat"
 
 # Rough cost estimate per 1K tokens (local model -- effectively free, but
 # we track it to demonstrate the pattern for paid APIs).
@@ -39,7 +45,7 @@ class LLMModel(mlflow.pyfunc.PythonModel):
     def load_context(self, context: PythonModelContext) -> None:
         from openai import OpenAI
 
-        self.client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
+        self.client = OpenAI(base_url=GATEWAY_URL, api_key=LLM_API_KEY)
 
     def predict(self, context, model_input: pd.DataFrame, params=None) -> pd.DataFrame:
         responses, latencies, tokens = [], [], []

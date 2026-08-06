@@ -11,7 +11,8 @@ Learn how MLflow packages models into a portable, self-describing format. This l
 
 - Completed: L1-M2 (Tracing)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -34,7 +35,7 @@ A **flavor** is a named interface for saving and loading a model. Every model ge
 | Flavor | Use Case |
 |--------|----------|
 | `pyfunc` | Any Python code (custom models, API wrappers) |
-| `openai` | OpenAI-compatible chat/completion models (including LMStudio) |
+| `openai` | OpenAI-compatible chat/completion models (including the LiteLLM gateway) |
 | `transformers` | Hugging Face Transformers |
 
 ### Signatures
@@ -59,7 +60,7 @@ Wrap a direct OpenAI SDK call in a `PythonModel` subclass:
 ```python
 class LLMModel(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
-        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        client = OpenAI(base_url="http://localhost:4000/v1", api_key="sk-litellm-master")
         questions = model_input["question"].tolist()
         # ... call the LLM for each question
 
@@ -72,7 +73,7 @@ The `openai` flavor is declarative -- just specify the model name, task, and a m
 
 ```python
 mlflow.openai.log_model(
-    model="google/gemma-4-e4b",
+    model="gemma-chat",
     task="chat.completions",
     name="openai_llm",
     messages=[

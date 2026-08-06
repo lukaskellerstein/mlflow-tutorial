@@ -12,7 +12,8 @@ MLflow provides built-in autolog integrations for major frameworks (LangChain, s
 - Completed: L1-M3.2 (LLM/GenAI Autologging), L1-M7.1 (Manual Tracing)
 - Completed: L3-M2.1 through L3-M2.3 (Custom integration patterns)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-26b-a4b` model loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 

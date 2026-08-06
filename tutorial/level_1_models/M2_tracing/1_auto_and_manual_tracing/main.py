@@ -17,23 +17,28 @@ from langchain_openai import ChatOpenAI
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
-LMSTUDIO_API_KEY = "lm-studio"
-MODEL_NAME = "google/gemma-4-e4b"
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
+MODEL_NAME = "gemma-agent"
 
 
 # ── Part 1: mlflow.openai.autolog() -- Direct OpenAI SDK ──────────────
 
 
 def part1_openai_autolog() -> None:
-    """Trace a direct OpenAI SDK call to LMStudio automatically."""
+    """Trace a direct OpenAI SDK call to the LiteLLM gateway automatically."""
     print("=" * 60)
     print("Part 1: mlflow.openai.autolog() -- Direct OpenAI SDK")
     print("=" * 60)
 
     mlflow.openai.autolog()
 
-    client = OpenAI(base_url=LMSTUDIO_BASE_URL, api_key=LMSTUDIO_API_KEY)
+    client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[{"role": "user", "content": "What is MLflow? Answer in one sentence."}],
@@ -70,8 +75,8 @@ def part2_langchain_autolog() -> None:
 
     llm = ChatOpenAI(
         model=MODEL_NAME,
-        base_url=LMSTUDIO_BASE_URL,
-        api_key=LMSTUDIO_API_KEY,
+        base_url=GATEWAY_URL,
+        api_key=GATEWAY_KEY,
         temperature=0.7,
         max_tokens=1024,  # pyright: ignore[reportCallIssue]  # pydantic field alias; valid at runtime
     )
@@ -203,7 +208,7 @@ def part4_start_span() -> None:
 @mlflow.trace(name="summarize_with_llm")
 def summarize_with_llm(text: str) -> str:
     """Summarize text using an LLM, with manual + auto tracing combined."""
-    client = OpenAI(base_url=LMSTUDIO_BASE_URL, api_key=LMSTUDIO_API_KEY)
+    client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
     with mlflow.start_span(name="prepare_prompt") as span:
         messages: list[ChatCompletionMessageParam] = [

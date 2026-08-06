@@ -8,7 +8,13 @@ LMS CLI - <https://lmstudio.ai/docs/cli>
 
 LMS as service (headless) - <https://lmstudio.ai/docs/developer/core/headless>
 
-Selected model: Gemma4-E4B - <https://lmstudio.ai/models/google/gemma-4-e4b>
+Selected model: Gemma4-26B-A4B (MoE, ~4B active) - served behind every
+`gemma-*` alias (`gemma-chat`, `gemma-judge`, `gemma-agent`). Chosen because it is the fastest of the local options and the
+only fast one that also exists on OpenRouter, so a fallback cannot change which
+model answered.
+
+Lessons never call LMStudio directly — they go through the LiteLLM gateway on
+`localhost:4000`, which maps those aliases. See `infra/litellm/config.yaml`.
 
 ## AI Agents
 

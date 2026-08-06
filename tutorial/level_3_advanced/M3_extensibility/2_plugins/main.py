@@ -27,6 +27,13 @@ from pydantic import SecretStr
 
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 EXPERIMENT_NAME = "L3/M3_extensibility/2_plugins"
 
 
@@ -285,7 +292,7 @@ def part4_model_evaluator(llm: ChatOpenAI) -> list[dict[str, Any]]:
 
     with mlflow.start_run(run_name="evaluator-plugin-demo"):
         mlflow.log_param("num_prompts", len(prompts))
-        mlflow.log_param("model", "google/gemma-4-26b-a4b")
+        mlflow.log_param("model", "gemma-chat")
 
         print()
         for i, prompt in enumerate(prompts):
@@ -345,7 +352,7 @@ def part5_combined_demo(llm: ChatOpenAI) -> None:
 
     with mlflow.start_run(run_name="combined-plugins-demo") as run:
         mlflow.log_param("task", "explanation")
-        mlflow.log_param("model", "google/gemma-4-26b-a4b")
+        mlflow.log_param("model", "gemma-chat")
 
         # The EnvironmentContextProvider auto-injects env tags (Part 2)
         print("\n  [Context Provider] Environment tags auto-injected on run creation.")
@@ -395,9 +402,9 @@ def main() -> None:
 
     # Parts 4-5 use the LLM
     llm = ChatOpenAI(
-        model="google/gemma-4-26b-a4b",
-        base_url="http://localhost:1234/v1",
-        api_key=SecretStr("lm-studio"),
+        model="gemma-chat",
+        base_url=GATEWAY_URL,
+        api_key=SecretStr(GATEWAY_KEY),
         temperature=0.7,
     )
     part4_model_evaluator(llm)

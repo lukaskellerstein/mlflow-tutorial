@@ -1791,7 +1791,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlflow-tutorial-l1-m4-4-datasets-human-in-loop"
+name = "mlflow-tutorial-l1-m4-2-3-datasets-human-in-loop"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

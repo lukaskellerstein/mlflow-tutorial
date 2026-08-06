@@ -132,17 +132,22 @@ def part3_cost_tracking() -> None:
     print("Part 3: LLM Cost Tracking")
     print("=" * 60)
 
+    # Illustrative rates, keyed by the gateway ALIAS rather than a provider model
+    # id -- which is the point of the exercise: cost is attributed to the role a
+    # call played, so it stays meaningful when the model behind an alias changes.
+    # (The local aliases really are $0; these figures stand in for a hosted tier.)
     pricing = {
-        "google/gemma-4-e4b": {"input": 0.10, "output": 0.30},
-        "google/gemma-4-26b-a4b": {"input": 0.50, "output": 1.50},
+        "gemma-chat": {"input": 0.10, "output": 0.30},
+        "gemma-agent": {"input": 0.50, "output": 1.50},
+        "gemma-judge": {"input": 0.50, "output": 1.50},
         "gpt-4o": {"input": 2.50, "output": 10.00},
     }
 
     calls = [
-        ("google/gemma-4-e4b", 512, 128, "classification"),
-        ("google/gemma-4-e4b", 1024, 256, "summarization"),
-        ("google/gemma-4-26b-a4b", 2048, 512, "agent-reasoning"),
-        ("google/gemma-4-26b-a4b", 4096, 1024, "evaluation-judge"),
+        ("gemma-chat", 512, 128, "classification"),
+        ("gemma-chat", 1024, 256, "summarization"),
+        ("gemma-agent", 2048, 512, "agent-reasoning"),
+        ("gemma-judge", 4096, 1024, "evaluation-judge"),
         ("gpt-4o", 3000, 800, "complex-analysis"),
     ]
 

@@ -17,6 +17,13 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 # Evaluation dataset — Q&A pairs for a geography knowledge task
 # ---------------------------------------------------------------------------
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 EVAL_DATA = [
     {
         "question": "What is the capital of France?",
@@ -94,9 +101,9 @@ def score_answer(predicted: str, expected: str) -> dict[str, float]:
 # ---------------------------------------------------------------------------
 # LLM helper
 # ---------------------------------------------------------------------------
-MODEL_NAME = "google/gemma-4-26b-a4b"
+MODEL_NAME = "gemma-chat"
 
-llm_client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+llm_client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
 
 def ask_llm(prompt: str, question: str) -> str:

@@ -15,6 +15,13 @@ from langchain_openai import ChatOpenAI
 from mlflow.entities import Trace
 from pydantic import SecretStr
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 # ── Part 1: Generate traces by running several LLM calls ──────────────
 
 
@@ -202,11 +209,11 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
 
         total_all = token_df["total_tokens"].sum()
         print(f"\n  Total tokens across all traces: {total_all}")
-        print("  Note: LMStudio local models do not have per-token pricing.")
+        print("  Note: the gateway prices local models at 0 -- see infra/litellm/config.yaml.")
         print("  For cloud APIs, cost = input_tokens * rate + output_tokens * rate")
     else:
         print("\n  Token usage data not available in traces.")
-        print("  (LMStudio may not report token counts via LangChain autolog.)")
+        print("  (Local models may not report token counts via LangChain autolog.)")
         print("  For cloud-hosted LLMs (OpenAI, Anthropic), token counts")
         print("  are automatically captured in span attributes.")
 
@@ -322,9 +329,9 @@ def main() -> None:
     # Step 1 — Enable autologging and generate traces
     mlflow.langchain.autolog()
     llm = ChatOpenAI(
-        model="google/gemma-4-26b-a4b",
-        base_url="http://localhost:1234/v1",
-        api_key=SecretStr("lm-studio"),
+        model="gemma-chat",
+        base_url=GATEWAY_URL,
+        api_key=SecretStr(GATEWAY_KEY),
         temperature=0.7,
     )
     generate_traces(llm)

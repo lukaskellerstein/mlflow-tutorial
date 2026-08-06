@@ -2321,7 +2321,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlflow-tutorial-l2-m2-2-judges"
+name = "mlflow-tutorial-l2-m2-1-2-judges"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
