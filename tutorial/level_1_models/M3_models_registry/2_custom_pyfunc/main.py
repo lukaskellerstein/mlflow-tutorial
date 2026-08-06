@@ -18,6 +18,13 @@ import pandas as pd
 from mlflow.models import infer_signature
 from openai import OpenAI
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L1/M3_models_registry/2_custom_pyfunc"
 
@@ -137,10 +144,10 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Save config
         config = {
-            "base_url": "http://localhost:1234/v1",
-            "api_key": "lm-studio",
-            "llm_model": "google/gemma-4-e4b",
-            "embedding_model": "text-embedding-nomic-embed-text-v1.5",
+            "base_url": GATEWAY_URL,
+            "api_key": GATEWAY_KEY,
+            "llm_model": "gemma-chat",
+            "embedding_model": "nomic-embed",
         }
         config_path = Path(tmp_dir) / "config.json"
         with open(config_path, "w") as f:

@@ -36,18 +36,23 @@ from mlflow.genai.scorers import (
 )
 from pydantic import SecretStr
 
-# The LiteLLM gateway from infra/, not a provider directly. "gemma-large" is an
+# The LiteLLM gateway from infra/, not a provider directly. "gemma-agent" is an
 # alias defined in infra/litellm/config.yaml -- swapping model or provider is a
 # change there, never here. See L2-M1.1.
 GATEWAY_URL = "http://localhost:4000/v1"
 GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-agent"
+# The agent and the thing grading it are named separately on purpose: both
+# resolve to the same model today, but a judge and an agent are different
+# jobs and will not always want the same one. Splitting them here means that
+# change is a config edit, not a re-read of this lesson.
+JUDGE_ALIAS = "gemma-judge"
 
 # Session-level scorers judge a whole conversation, so they need their model
 # resolved through LiteLLM the same way judges do in L2-M2.1.2.
 os.environ["OPENAI_API_KEY"] = GATEWAY_KEY
 os.environ["OPENAI_BASE_URL"] = GATEWAY_URL
-SESSION_MODEL = f"openai:/{MODEL_ALIAS}"
+SESSION_MODEL = f"openai:/{JUDGE_ALIAS}"
 
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 # Experiment name left exactly as it was, even though the lesson is now numbered
@@ -286,7 +291,7 @@ def reasoning_quality_scorer(inputs: dict, outputs: dict) -> Feedback:
     return Feedback(
         value=float(scores.get("score", 0.5)),
         rationale=str(scores.get("rationale", "")),
-        source=AssessmentSource(source_type="LLM_JUDGE", source_id="google/gemma-4-26b-a4b"),
+        source=AssessmentSource(source_type="LLM_JUDGE", source_id="gemma-agent"),
     )
 
 
@@ -515,7 +520,7 @@ def main() -> None:
         mlflow.log_params(
             {
                 "temperature": 0.3,
-                "model": "google/gemma-4-26b-a4b",
+                "model": "gemma-agent",
                 "num_test_cases": len(EVAL_CASES),
             }
         )
@@ -529,7 +534,7 @@ def main() -> None:
         mlflow.log_params(
             {
                 "temperature": 0.9,
-                "model": "google/gemma-4-26b-a4b",
+                "model": "gemma-agent",
                 "num_test_cases": len(EVAL_CASES),
             }
         )

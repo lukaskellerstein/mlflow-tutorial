@@ -35,12 +35,17 @@ from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 # ── MLflow setup ──────────────────────────────────────────────────
-# The LiteLLM gateway from infra/, not a provider directly. "gemma-large" is an
+# The LiteLLM gateway from infra/, not a provider directly. "gemma-agent" is an
 # alias defined in infra/litellm/config.yaml -- swapping model or provider is a
 # change there, never here. See L2-M1.1.
 GATEWAY_URL = "http://localhost:4000/v1"
 GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-agent"
+# The agent and the thing grading it are named separately on purpose: both
+# resolve to the same model today, but a judge and an agent are different
+# jobs and will not always want the same one. Splitting them here means that
+# change is a config edit, not a re-read of this lesson.
+JUDGE_ALIAS = "gemma-judge"
 
 # The correctness judge resolves its model through LiteLLM, which reads these.
 # Assignments, not setdefault -- a real OPENAI_API_KEY in the environment would
@@ -313,7 +318,7 @@ def get_or_register_judge() -> Any:
         judge = mlflow.genai.make_judge(
             name=JUDGE_NAME,
             instructions=CORRECTNESS_INSTRUCTIONS,
-            model=f"openai:/{MODEL_ALIAS}",
+            model=f"openai:/{JUDGE_ALIAS}",
             feedback_value_type=bool,
         )
         registered = judge.register(name=JUDGE_NAME)

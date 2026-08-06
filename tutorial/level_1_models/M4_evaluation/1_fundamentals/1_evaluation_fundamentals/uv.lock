@@ -1914,7 +1914,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlflow-tutorial-l1-m4-1-evaluation-fundamentals"
+name = "mlflow-tutorial-l1-m4-1-1-evaluation-fundamentals"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

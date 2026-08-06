@@ -32,6 +32,13 @@ from pydantic import SecretStr
 # ---------------------------------------------------------------------------
 # 1. Prometheus metrics definitions
 # ---------------------------------------------------------------------------
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 LLM_REQUEST_DURATION = Histogram(
     "llm_request_duration_seconds",
     "Latency of LLM requests in seconds",
@@ -68,12 +75,12 @@ LLM_ACTIVE_REQUESTS = Gauge(
 class InstrumentedLLMService:
     """Wraps a ChatOpenAI model with Prometheus and MLflow instrumentation."""
 
-    def __init__(self, model: str = "google/gemma-4-26b-a4b", temperature: float = 0.7):
+    def __init__(self, model: str = "gemma-chat", temperature: float = 0.7):
         self.model_name = model
         self.llm = ChatOpenAI(
             model=model,
-            base_url="http://localhost:1234/v1",
-            api_key=SecretStr("lm-studio"),
+            base_url=GATEWAY_URL,
+            api_key=SecretStr(GATEWAY_KEY),
             temperature=temperature,
         )
         self.call_count = 0
@@ -262,7 +269,7 @@ def main() -> None:
 
     # -- Part 2: Create instrumented LLM service ----------------------------
     print("\n--- Part 2: Creating instrumented LLM service ---")
-    service = InstrumentedLLMService(model="google/gemma-4-26b-a4b", temperature=0.7)
+    service = InstrumentedLLMService(model="gemma-chat", temperature=0.7)
     print(f"  Model: {service.model_name}")
 
     # -- Part 3: Generate sample traffic ------------------------------------

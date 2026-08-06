@@ -12,11 +12,19 @@ import json
 
 import mlflow
 import pandas as pd
-from mlflow.models import infer_signature
+from mlflow.models import ModelSignature
 from mlflow.pyfunc import PythonModelContext
+from mlflow.types import ColSpec, DataType, Schema
 
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L1/M6_deployment_gateway/1_model_serving")
+
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
 
 MODEL_NAME = "L1-llm-serving-demo"
 
@@ -29,7 +37,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
     column and optional 'temperature' and 'max_tokens' columns.
     """
 
-    def __init__(self, model_name: str = "google/gemma-4-e4b", default_temperature: float = 0.7):
+    def __init__(self, model_name: str = "gemma-chat", default_temperature: float = 0.7):
         self.model_name = model_name
         self.default_temperature = default_temperature
         self.client = None
@@ -37,7 +45,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
     def load_context(self, context: PythonModelContext) -> None:
         from openai import OpenAI
 
-        self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        self.client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
     def predict(self, context: PythonModelContext, model_input: pd.DataFrame, params: dict | None = None) -> list:
         answers = []
@@ -78,18 +86,28 @@ def part1_log_model(temperature: float, run_name: str) -> str:
             "max_tokens": [256],
         }
     )
-    output_example = [
-        "Machine learning is a branch of AI that enables computers "
-        "to learn from data without being explicitly programmed."
-    ]
-    signature = infer_signature(input_example, output_example)
+    # The signature is DECLARED, not inferred. infer_signature() marks every
+    # column of the example as required, which would reject a frame carrying
+    # only `question` -- even though predict() falls back to its own defaults
+    # for the other two. Declaring it is what makes "optional" true rather than
+    # merely documented in the docstring.
+    signature = ModelSignature(
+        inputs=Schema(
+            [
+                ColSpec(DataType.string, "question"),
+                ColSpec(DataType.double, "temperature", required=False),
+                ColSpec(DataType.long, "max_tokens", required=False),
+            ]
+        ),
+        outputs=Schema([ColSpec(DataType.string)]),
+    )
     print(f"  Model signature:\n{signature}\n")
 
     with mlflow.start_run(run_name=run_name):
         info = mlflow.pyfunc.log_model(
             name="model",
             python_model=LLMChatModel(
-                model_name="google/gemma-4-e4b",
+                model_name="gemma-chat",
                 default_temperature=temperature,
             ),
             signature=signature,
@@ -97,7 +115,7 @@ def part1_log_model(temperature: float, run_name: str) -> str:
             registered_model_name=MODEL_NAME,
             pip_requirements=["openai>=1.0", "mlflow>=2.0", "pandas>=2.0"],
         )
-        mlflow.log_param("model_backend", "google/gemma-4-e4b")
+        mlflow.log_param("model_backend", "gemma-chat")
         mlflow.log_param("default_temperature", temperature)
         print(f"  Model logged: {info.model_uri}")
         print(f"  Registered as: {MODEL_NAME}")

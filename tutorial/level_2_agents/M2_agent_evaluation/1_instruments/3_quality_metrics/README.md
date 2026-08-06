@@ -16,7 +16,7 @@ session-level scorers that judge a whole multi-turn conversation.
 - Completed: L2-M2.1.1 (Test Generation and Simulation), L2-M2.1.2 (Judges), L1-M4.1.1 (Evaluation Fundamentals)
 - MLflow server running at <http://127.0.0.1:5555>
 - LiteLLM gateway running at <http://localhost:4000> (`cd infra && podman compose up -d`)
-- An `OPENROUTER_API_KEY` in `infra/.env` — the `gemma-large` alias routes there
+- An `OPENROUTER_API_KEY` in `infra/.env` — the `gemma-chat` alias routes there
 
 ## Concepts
 

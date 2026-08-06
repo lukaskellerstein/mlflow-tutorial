@@ -51,7 +51,7 @@ MODELS = ["gemma-26b-free", "gemma-31b-free"]
 TOOL_BUDGETS = {"minimal": MINIMAL_TOOLS, "full": ALL_TOOLS}
 ```
 
-`gemma-small` is deliberately absent — it is served by LMStudio, and a sweep that dies when LMStudio is asleep teaches the wrong lesson about reproducibility.
+The local aliases (`gemma-chat`, `gemma-judge`, `gemma-agent`) are deliberately absent, and the reason is sharper than "LMStudio might be asleep". Both carry an error fallback to OpenRouter in `infra/litellm/config.yaml`, so an unloaded model does not fail the sweep — it silently *substitutes a different model* and the run keeps going. A sweep whose independent variable can change without telling you is worse than one that crashes.
 
 ### Step 2: One nested run per configuration
 

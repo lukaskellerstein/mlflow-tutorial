@@ -19,6 +19,13 @@ import pandas as pd
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 
 # ── Part 1: Quality Gate Definitions ──────────────────────
 @dataclass
@@ -75,13 +82,13 @@ TEST_CASES: list[dict[str, str]] = [
 class EvaluationHarness:
     """Runs test cases against an LLM and collects quality metrics."""
 
-    def __init__(self, model_name: str = "google/gemma-4-26b-a4b", temperature: float = 0.0):
+    def __init__(self, model_name: str = "gemma-chat", temperature: float = 0.0):
         self.model_name = model_name
         self.temperature = temperature
         self.llm = ChatOpenAI(
             model=model_name,
-            base_url="http://localhost:1234/v1",
-            api_key=SecretStr("lm-studio"),
+            base_url=GATEWAY_URL,
+            api_key=SecretStr(GATEWAY_KEY),
             temperature=temperature,
         )
 
@@ -229,7 +236,7 @@ class GateChecker:
 # ── Part 4: Simulate CI/CD Pipeline ───────────────────────
 def run_cicd_pipeline(
     gate: QualityGate,
-    model_name: str = "google/gemma-4-26b-a4b",
+    model_name: str = "gemma-chat",
     pipeline_label: str = "ci-run",
 ) -> tuple[EvalMetrics, list[GateResult]]:
     """Simulate a CI/CD pipeline: evaluate, gate-check, log to MLflow."""

@@ -11,7 +11,8 @@ In production, tracing every single LLM request creates unacceptable overhead. T
 
 - Completed: L1-M5 (Tracing basics), L2-M4 (Advanced Tracing)
 - MLFlow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-26b-a4b` model loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 

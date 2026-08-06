@@ -11,7 +11,8 @@ Build custom evaluation scorers that go beyond MLflow's built-in options, then u
 
 - Completed: L1-M4.1.1 (Evaluation Fundamentals)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` model loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -85,7 +86,7 @@ def llm_technical_quality(inputs, outputs, expectations) -> Feedback:
     return Feedback(
         value=avg_score,
         rationale="accuracy=0.9, completeness=0.8, clarity=0.85",
-        source=AssessmentSource(source_type="LLM_JUDGE", source_id="google/gemma-4-e4b"),
+        source=AssessmentSource(source_type="LLM_JUDGE", source_id="gemma-chat"),
     )
 ```
 

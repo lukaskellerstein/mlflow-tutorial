@@ -11,7 +11,8 @@ Batch LLM inference lets you score a collection of prompts in one pipeline run r
 
 - Completed: L1-M6.1 (Model Serving)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -41,7 +42,7 @@ Even with a free local model, tracking token usage and latency per prompt builds
 
 We define `LLMModel(mlflow.pyfunc.PythonModel)` with two methods:
 
-- `load_context` -- initializes the OpenAI client pointing at LMStudio.
+- `load_context` -- initializes the OpenAI client pointing at the LiteLLM gateway.
 - `predict` -- iterates over the `prompt` column, calls the LLM, and returns a DataFrame with `response`, `latency_ms`, and `tokens_used`.
 
 The model is logged with an inferred signature so MLflow validates inputs at prediction time.
@@ -51,7 +52,7 @@ class LLMModel(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
         from openai import OpenAI
 
-        self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        self.client = OpenAI(base_url="http://localhost:4000/v1", api_key="sk-litellm-master")
 
     def predict(self, context, model_input, params=None):
         # Loop over prompts, call LLM, collect responses + timing + tokens

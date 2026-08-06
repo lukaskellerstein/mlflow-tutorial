@@ -17,7 +17,7 @@ cannot be improved on one axis without sacrificing another.
 - Completed: L2-M1.1 (LangChain + LangGraph Agents)
 - MLflow server running at <http://127.0.0.1:5555>
 - LiteLLM gateway running at <http://localhost:4000> (`cd infra && podman compose up -d`)
-- An `OPENROUTER_API_KEY` in `infra/.env` — the `gemma-large` alias routes there
+- An `OPENROUTER_API_KEY` in `infra/.env` — the `gemma-chat` alias routes there
 
 ## The yardstick is the point
 

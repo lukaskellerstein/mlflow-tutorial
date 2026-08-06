@@ -32,7 +32,12 @@ from test_framework import AgentTestRunner, TestCase, print_summary
 
 GATEWAY_URL = "http://localhost:4000/v1"
 GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-agent"
+# The agent and the thing grading it are named separately on purpose: both
+# resolve to the same model today, but a judge and an agent are different
+# jobs and will not always want the same one. Splitting them here means that
+# change is a config edit, not a re-read of this lesson.
+JUDGE_ALIAS = "gemma-judge"
 
 # The simulator and test_agent resolve their own model through LiteLLM, which
 # reads these. Assignments, not setdefault: a real OPENAI_API_KEY in the
@@ -41,7 +46,7 @@ MODEL_ALIAS = "gemma-large"
 os.environ["OPENAI_API_KEY"] = GATEWAY_KEY
 os.environ["OPENAI_BASE_URL"] = GATEWAY_URL
 
-SIM_MODEL = f"openai:/{MODEL_ALIAS}"
+SIM_MODEL = f"openai:/{JUDGE_ALIAS}"
 EXPERIMENT = "L2/M2_agent_evaluation/1_instruments/1_agent_testing"
 DATASET_NAME = "support_agent_regression"
 MAX_TURNS = 3

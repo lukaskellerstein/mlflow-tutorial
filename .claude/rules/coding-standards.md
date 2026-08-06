@@ -29,27 +29,52 @@ import mlflow
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 ```
 
-## LMStudio / LLM Setup
+## LLM Setup — always through the LiteLLM gateway
 
-Models are served locally via LMStudio with an OpenAI-compatible API.
+**Every lesson talks to the LiteLLM gateway. Nothing calls LMStudio or
+OpenRouter directly.** LMStudio still serves the local models, but it sits
+*behind* the gateway — a lesson never names its URL or a raw model key.
+
+That indirection is the point: which model an alias resolves to, the fallback
+order when it errors or a prompt overflows, and each model's context window all
+live in `infra/litellm/config.yaml`. Changing any of them is a config change, not
+an edit to 40 lessons. A lesson that hardcodes `http://localhost:1234/v1` opts
+out of all of it and reintroduces exactly the sprawl this replaced.
+
+| Alias | Resolves to | Use for |
+|:--|:--|:--|
+| `gemma-chat` | LMStudio `google/gemma-4-26b-a4b` | the lesson's own LLM call |
+| `gemma-judge` | **OpenRouter** `google/gemma-4-26b-a4b-it` | LLM-as-judge, scorers, simulators (hosted — the local Q4 build loops mid-JSON) |
+| `gemma-agent` | LMStudio `google/gemma-4-26b-a4b` | agent loops, tool calling |
+| `gemma-tight` | same model, 7168 guard | context-overflow demos |
+| `nomic-embed` | LMStudio nomic embeddings | RAG / vector DB |
+| `gemma-26b-free` / `gemma-31b-free` | OpenRouter, free tier | sweeps needing a fixed cloud model |
+| `frontier` / `gpt-mini` | OpenAI `gpt-5.4-mini` | hosted frontier baseline |
 
 ### Direct usage (preferred for most lessons)
 
 ```python
 from openai import OpenAI
 
-client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
+client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
 # Small model — fast, for simple tasks and basic examples
 response = client.chat.completions.create(
-    model="google/gemma-4-e4b",
+    model="gemma-chat",
     messages=[{"role": "user", "content": "Hello"}],
     temperature=0.7,
 )
 
-# Large MoE model — for complex tasks, evaluation judges, agents
+# The judge that grades it — named separately so the two can diverge later
 response = client.chat.completions.create(
-    model="google/gemma-4-26b-a4b",
+    model="gemma-judge",
     messages=[{"role": "user", "content": "Hello"}],
     temperature=0.7,
 )
@@ -68,17 +93,17 @@ from pydantic import SecretStr
 
 # Small model
 llm = ChatOpenAI(
-    base_url="http://localhost:1234/v1",
-    api_key=SecretStr("lm-studio"),
-    model="google/gemma-4-e4b",
+    base_url=GATEWAY_URL,
+    api_key=SecretStr(GATEWAY_KEY),
+    model="gemma-chat",
     temperature=0.7,
 )
 
-# Large MoE model
+# Agent model
 llm = ChatOpenAI(
-    base_url="http://localhost:1234/v1",
-    api_key=SecretStr("lm-studio"),
-    model="google/gemma-4-26b-a4b",
+    base_url=GATEWAY_URL,
+    api_key=SecretStr(GATEWAY_KEY),
+    model="gemma-agent",
     temperature=0.7,
 )
 ```
@@ -89,23 +114,44 @@ llm = ChatOpenAI(
 from langchain_openai import OpenAIEmbeddings
 
 embeddings = OpenAIEmbeddings(
-    base_url="http://localhost:1234/v1",
-    api_key="lm-studio",
-    model="text-embedding-nomic-embed-text-v1.5",
+    base_url=GATEWAY_URL,
+    api_key=GATEWAY_KEY,
+    model="nomic-embed",
     check_embedding_ctx_length=False,
 )
 ```
 
 ### Which model to use where
 
-- **Level 1 lessons**: use `google/gemma-4-e4b` (fast, keeps lessons snappy)
-- **Level 2/3 agent and evaluation lessons**: use `google/gemma-4-26b-a4b` (better reasoning)
-- **LLM-as-judge / evaluation judges**: use `google/gemma-4-26b-a4b` (judge quality matters)
-- **RAG / embeddings**: use `text-embedding-nomic-embed-text-v1.5`
+- **The lesson's own LLM call** (the thing under observation): use `gemma-chat`
+- **Agent loops and tool calling**: use `gemma-agent`
+- **LLM-as-judge, scorers, simulators**: use `gemma-judge`
+- **A lesson that runs an agent AND judges it**: name BOTH. They are the same
+  model today; the split is what lets them stop being one later.
+- **RAG / embeddings**: use `nomic-embed`
+- **A sweep comparing configurations**: use a cloud alias (`gemma-26b-free`,
+  `gemma-31b-free`). The local aliases carry an error fallback, so an unloaded
+  model does not fail the sweep — it silently substitutes a different model, and
+  an independent variable that can change without telling you is worse than a
+  crash.
+
+### Server-side judges are the exception
+
+A judge started with `scorer.start()` runs **inside the MLflow server**, which
+cannot use the constants above — it has neither your base URL nor your key. It
+needs an MLflow AI Gateway endpoint, and that endpoint reaches LiteLLM by its
+CONTAINER name, `http://litellm:4000/v1`. Two traps, both silent:
+
+- The key is `api_base` inside `auth_config`. `base_url` is not a synonym, and
+  an `api_base` in `secret_value` is ignored just as quietly.
+- Either mistake sends the request to the provider's own API, surfacing as an
+  authentication error about a key you never sent.
+
+`L1-M4.3.1` and `L2-M2.3.1` are the worked examples.
 
 ## Error Handling
 
-- Check that LMStudio server is reachable before making LLM calls.
+- Check that the LiteLLM gateway is reachable before making LLM calls.
 - Print clear error messages if MLFlow server is not running.
 - Do not silently swallow exceptions — this is educational code.
 

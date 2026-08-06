@@ -93,7 +93,7 @@ def calculate(expression: str) -> str:
 
 def build_agent():
     llm = ChatOpenAI(
-        model="gemma-large",  # a LiteLLM alias, not a provider model id
+        model="gemma-chat",  # a LiteLLM alias, not a provider model id
         base_url="http://localhost:4000/v1",
         api_key=SecretStr("sk-litellm-master"),
         temperature=0.0,

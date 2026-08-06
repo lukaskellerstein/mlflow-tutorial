@@ -4,8 +4,8 @@
 
 This tutorial is structured in three domain-based levels:
 
-- **Level 1 — Models**: Everything about models and LLMs in MLflow. Tracking, tracing, evaluation (offline and online), prompt registry, deployment, AI gateway, and optimization. Each topic is covered end-to-end so that a user finishing Level 1 has full command of MLflow for single-model workflows. Uses `google/gemma-4-e4b` (fast, lightweight) for all lessons.
-- **Level 2 — AI Agents**: Everything about AI agents. Assumes Level 1 knowledge. Covers agent frameworks (LangChain, LangGraph, multi-agent), custom integrations (Claude Agent SDK, DeepAgents), agent evaluation (instruments, offline including standardized benchmarks, online), and agent optimization. Uses `google/gemma-4-26b-a4b` (stronger reasoning) for all lessons.
+- **Level 1 — Models**: Everything about models and LLMs in MLflow. Tracking, tracing, evaluation (offline and online), prompt registry, deployment, AI gateway, and optimization. Each topic is covered end-to-end so that a user finishing Level 1 has full command of MLflow for single-model workflows. Uses the `gemma-chat` alias for all lessons.
+- **Level 2 — AI Agents**: Everything about AI agents. Assumes Level 1 knowledge. Covers agent frameworks (LangChain, LangGraph, multi-agent), custom integrations (Claude Agent SDK, DeepAgents), agent evaluation (instruments, offline including standardized benchmarks, online), and agent optimization. Uses the `gemma-agent` and `gemma-judge` aliases -- agents and the judges that grade them are named separately.
 - **Level 3 — Advanced**: Production patterns, infrastructure, extensibility, and capstone projects. Ties together everything from Levels 1 and 2 into production-grade systems.
 
 Each level builds on the previous. A user can stop after Level 1 and have complete mastery of MLflow for model/LLM workflows, continue through Level 2 for agent expertise, or go through Level 3 for production readiness.
@@ -21,17 +21,72 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 - **Python**: 3.10+
 - **Package Manager**: `uv` (every lesson is a standalone project)
 - **MLFlow**: Latest (2.x+)
-- **LLM provider**: LMStudio (local, OpenAI-compatible API on `localhost:1234`)
-- **LLM models**:
-  - `google/gemma-4-e4b` -- 4B model for simple/fast tasks (Level 1)
-  - `google/gemma-4-26b-a4b` -- 26B MoE model for complex tasks (Level 2/3, evaluation judges, agents)
-  - `text-embedding-nomic-embed-text-v1.5` -- embedding model for RAG/vector DB
+- **LLM entry point**: LiteLLM gateway (`localhost:4000`, OpenAI-compatible). Every
+  lesson calls this and nothing else -- see "The gateway convention" below.
+- **LLM providers behind it**: LMStudio (local, GPU), OpenRouter, OpenAI
+- **LLM aliases**:
+  - `gemma-chat` -- the lesson's own LLM call, the thing under observation
+  - `gemma-judge` -- LLM-as-judge, scorers, simulators. The one alias served from
+    OpenRouter rather than locally: the local Q4 quantisation degenerates into a
+    repetition loop while writing a judge's JSON, which MLflow reports as
+    `Failed to parse response from judge model`
+  - `gemma-agent` -- agent loops and tool calling
+  - `gemma-tight` -- same model, 7168-token guard, for context-overflow demos
+    All resolve to `google/gemma-4-26b-a4b` today -- see "The gateway convention".
+  - `nomic-embed` -- embedding model for RAG/vector DB
+  - `gemma-26b-free` / `gemma-31b-free` -- OpenRouter free tier, for sweeps that need a fixed cloud model
+  - `frontier` / `gpt-mini` -- OpenAI `gpt-5.4-mini`, hosted frontier baseline
 - **Agent Frameworks**: LangChain v1.0+, LangGraph, DeepAgents, Claude Agent SDK
 - **Vector DB**: Qdrant (via Podman Compose)
 - **Evaluation Benchmarks**: SWE-Bench, GAIA
 - **Workflow Orchestration**: Temporal.io (via Podman Compose)
 - **Observability**: Grafana + Prometheus (via Podman Compose)
 - **Container runtime**: Podman (not Docker)
+
+## The gateway convention
+
+**Every lesson in all three levels talks to the LiteLLM gateway, and nothing
+else.** No lesson names a provider URL, a provider API key, or a raw model id.
+It names an alias — `gemma-chat`, `gemma-judge`, `gemma-agent` — and the gateway
+decides what that means.
+
+```python
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"
+client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
+client.chat.completions.create(model="gemma-chat", ...)
+```
+
+Three things live in `infra/litellm/config.yaml` rather than in lesson code, and
+each is a decision the course would otherwise have to repeat in 40 places:
+
+| Concern | Mechanism |
+|:--|:--|
+| Which model an alias resolves to | the `model_list` entry |
+| What happens when it errors | `fallbacks` — an ordered chain, left to right |
+| What happens when a prompt is too big | `context_window_fallbacks`, gated on each model's declared `max_input_tokens` |
+
+Aliases are named for the **job**, not the model size. `gemma-chat`,
+`gemma-judge` and `gemma-agent` all resolve to one model today; the split
+exists so that giving judges a stronger model later is one config line rather
+than a sweep through forty lessons. A lesson that both runs an agent and judges
+it names both, so the two can diverge without re-reading the lesson.
+
+The teaching point is not the proxy. It is that **provider choice is
+configuration, not code** — swapping a local model for a hosted one, or adding a
+fallback, changes one file and every lesson follows.
+
+Two consequences worth stating, because both surprise people:
+
+- **Local aliases can silently become cloud aliases.** Every `gemma-*` alias
+  falls back to OpenRouter when LMStudio is unreachable. That is
+  right for a demo and wrong for a comparison, which is why optimization sweeps
+  (L2-M3.2, L2-M3.3) deliberately use the fixed `*-free` cloud aliases instead.
+- **Server-side judges cannot use the constants above.** A scorer started with
+  `scorer.start()` runs inside the MLflow server, which has neither your base URL
+  nor your key. It reaches the same proxy through an MLflow AI Gateway endpoint
+  pointed at `http://litellm:4000/v1` — the container name, not localhost.
+  L1-M4.3.1 and L2-M2.3.1 are the worked examples.
 
 ## Reference Sources
 
@@ -59,7 +114,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 ## LEVEL 1 -- MODELS
 
 *Goal: Complete mastery of MLflow for single-model and LLM workflows. Tracking, tracing, evaluation (offline and online), prompt registry, deployment, gateway, and optimization -- each topic covered end-to-end.*
-*LLM model: `google/gemma-4-e4b`*
+*LLM alias: `gemma-chat`*
 *Estimated time: ~17.25 hours (19 lessons)*
 
 ---
@@ -73,7 +128,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 - MLflow's pillars: Tracking, Models, Registry, Evaluation, Deployment
 - Architecture: tracking server, backend store (PostgreSQL), artifact store
 - Key concepts: experiments, runs, parameters, metrics, artifacts, tags
-- Calling a local LLM via LMStudio (OpenAI-compatible API)
+- Calling a local LLM through the LiteLLM gateway (OpenAI-compatible API)
 - Logging LLM configuration as parameters and results as metrics
 - Bulk logging with `log_params()` and `log_metrics()`
 - Step-based metric logging (`log_metric(..., step=N)`) across multiple prompts
@@ -134,7 +189,7 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 **Duration:** 45 min
 **Topics:**
-- `mlflow.openai.autolog()` -- trace OpenAI-compatible calls (LMStudio)
+- `mlflow.openai.autolog()` -- trace OpenAI-compatible calls (the LiteLLM gateway)
 - `mlflow.langchain.autolog()` -- trace LangChain agents
 - `mlflow.autolog()` -- the universal autolog (enables all 16+ GenAI integrations)
 - Other LLM integrations: `mlflow.anthropic.autolog()`, Mistral, Gemini, Bedrock, Groq, LiteLLM, CrewAI, DSPy, and more
@@ -479,7 +534,7 @@ scorer defined there. Two ways to change a model's behaviour: change its context
 
 *Goal: Complete mastery of AI agent building, observability, evaluation and optimization with MLflow. Covers agent frameworks, custom integrations, agent-specific evaluation (offline, online, and standardized benchmarks), and optimization.*
 *Prerequisite: Level 1 completed*
-*LLM model: `google/gemma-4-26b-a4b`*
+*LLM aliases: `gemma-agent`, `gemma-judge`*
 *Estimated time: ~22.5 hours (15 lessons)*
 
 ---

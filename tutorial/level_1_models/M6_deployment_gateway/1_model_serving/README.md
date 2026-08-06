@@ -11,7 +11,8 @@ MLflow can serve any logged model as a REST API with a single CLI command. This 
 
 - Completed: L1-M3 (Models and Flavors, Model Registry)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -70,7 +71,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
         from openai import OpenAI
 
-        self.client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        self.client = OpenAI(base_url="http://localhost:4000/v1", api_key="sk-litellm-master")
 
     def predict(self, context, model_input, params=None):
         # Iterate rows, call LLM, return list of answers
@@ -82,7 +83,7 @@ class LLMChatModel(mlflow.pyfunc.PythonModel):
 ```python
 mlflow.pyfunc.log_model(
     name="model",
-    python_model=LLMChatModel(model_name="google/gemma-4-e4b", default_temperature=0.7),
+    python_model=LLMChatModel(model_name="gemma-chat", default_temperature=0.7),
     signature=signature,
     input_example=input_example,
     registered_model_name="L1-llm-serving-demo",

@@ -23,11 +23,12 @@ Learn MLflow by building. Each lesson is a standalone Python project you can run
 ```mermaid
 graph TD
     subgraph Local Machine
-        LMS[LMStudio<br/>gemma-4-e4b · gemma-4-26b-a4b<br/>nomic-embed-text]
+        LMS[LMStudio<br/>gemma-4-26b-a4b<br/>nomic-embed-text]
         UV[uv<br/>Lesson Runner]
     end
 
     subgraph Podman Compose
+        LL[LiteLLM Gateway<br/>:4000]
         ML[MLflow Server<br/>:5555]
         PG[(PostgreSQL<br/>:5432)]
         QD[(Qdrant<br/>:6333)]
@@ -38,7 +39,10 @@ graph TD
     end
 
     UV -->|tracking & tracing| ML
-    UV -->|LLM calls| LMS
+    UV -->|"LLM calls (aliases)"| LL
+    LL -->|local, default| LMS
+    LL -.->|fallback| OR[OpenRouter / OpenAI]
+    ML -->|"server-side judges"| LL
     UV -->|vectors| QD
     UV -->|workflows| TMP
     ML -->|metadata| PG
@@ -107,11 +111,17 @@ podman machine start
 ### 2. Load LMStudio models
 
 ```bash
-lms load google/gemma-4-e4b           # Small 4B model (Level 1, fast tasks)
-lms load google/gemma-4-26b-a4b       # Large 26B MoE model (Level 2-3, agents, judges)
-# Also load: text-embedding-nomic-embed-text-v1.5 for RAG lessons
 lms server start
+lms unload --all   # keep exactly one model resident — a second one measurably slows the first
+lms load google/gemma-4-26b-a4b --context-length 262144 --parallel 1 --gpu max  # serves every gemma-* alias
+# Also load: text-embedding-nomic-embed-text-v1.5 for RAG lessons (-> nomic-embed)
 ```
+
+`--context-length` matters: LMStudio's own default is far smaller, and the
+gateway declares these windows in `infra/litellm/config.yaml`. If a model is
+loaded smaller than declared, an oversized prompt is routed to it anyway.
+`--parallel 1` is deliberate: the lessons are sequential loops, and splitting the GPU across four slots made the same lesson 38% slower (199s -> 275s) while the evaluation lesson showed no gain.
+`lms ps --json` reports what is actually loaded — trust it over the UI.
 
 ### 3. Start all infrastructure
 
@@ -135,7 +145,8 @@ uv run python main.py
 | Service | URL | Notes |
 | --------- | ----- | ------- |
 | MLflow UI | <http://localhost:5555> | Tracking, models, traces |
-| LMStudio | <http://localhost:1234> | OpenAI-compatible API |
+| LiteLLM gateway | <http://localhost:4000> | **Every lesson's LLM entry point** |
+| LMStudio | <http://localhost:1234> | Serves the local models *behind* the gateway |
 | Temporal UI | <http://localhost:8080> | Workflow orchestration |
 | Qdrant | <http://localhost:6333/dashboard> | Vector database |
 | Grafana | <http://localhost:3000> | Dashboards (admin/admin) |
@@ -144,11 +155,19 @@ uv run python main.py
 
 ### LLM Models
 
-| Model | Size | Use Case |
+Lessons name an **alias**, never a model. The mapping, the fallback order and
+each model's context window live in `infra/litellm/config.yaml` — change a model
+there and every lesson follows, with no lesson edited.
+
+| Alias | Resolves to | Use Case |
 | ------- | ------ | ---------- |
-| `google/gemma-4-e4b` | 4B | Level 1 lessons, fast tasks, basic examples |
-| `google/gemma-4-26b-a4b` | 26B MoE | Level 2-3, agents, LLM-as-judge |
-| `text-embedding-nomic-embed-text-v1.5` | 137M | Embeddings for RAG and vector DB |
+| `gemma-chat` | LMStudio `google/gemma-4-26b-a4b` | The lesson's own LLM call — the thing under observation |
+| `gemma-judge` | **OpenRouter** `google/gemma-4-26b-a4b-it` | LLM-as-judge, scorers, simulators — hosted, because the local Q4 build corrupts judge JSON |
+| `gemma-agent` | LMStudio `google/gemma-4-26b-a4b` | Agent loops and tool calling |
+| `gemma-tight` | same model, 7168-token guard | Demonstrating context overflow and its fallback |
+| `nomic-embed` | LMStudio nomic embeddings (137M) | Embeddings for RAG and vector DB |
+| `gemma-26b-free`, `gemma-31b-free` | OpenRouter, free tier | Sweeps needing a fixed cloud model |
+| `frontier`, `gpt-mini` | OpenAI `gpt-5.4-mini` | Hosted frontier baseline |
 
 ### Infrastructure Management
 

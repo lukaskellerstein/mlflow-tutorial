@@ -19,8 +19,15 @@ from mlflow.models import infer_signature
 from mlflow.tracking import MlflowClient
 from openai import OpenAI
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 MODEL_NAME = "L1-llm-assistant"
-LLM_MODEL = "google/gemma-4-e4b"
+LLM_MODEL = "gemma-chat"
 
 MODEL_CONFIGS = [
     {
@@ -57,12 +64,12 @@ class LLMAssistant(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
         from openai import OpenAI
 
-        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
         questions = model_input["question"].tolist() if isinstance(model_input, pd.DataFrame) else [str(model_input)]
         results = []
         for question in questions:
             resp = client.chat.completions.create(
-                model="google/gemma-4-e4b",
+                model="gemma-chat",
                 messages=[
                     {"role": "system", "content": self.system_prompt},
                     {"role": "user", "content": question},
@@ -283,7 +290,7 @@ def comparison_summary(client: MlflowClient, results: list[dict]) -> None:
 
 def main() -> None:
     mlflow_client = MlflowClient()
-    llm_client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+    llm_client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
     results = build_and_register(llm_client)
     results = evaluate_models(llm_client, results)

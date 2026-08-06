@@ -11,7 +11,8 @@ This lesson covers three advanced tracking patterns: nested runs for organizing 
 
 - Completed: L1-M1.1 (Tracking Fundamentals), L1-M1.2 (Search, Query, and MlflowClient)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -128,7 +129,7 @@ uv run python main.py
 ============================================================
 Part 1: Nested Runs -- LLM Configuration Sweep
 ============================================================
-  Model:           google/gemma-4-e4b
+  Model:           gemma-chat
   Temperatures:    [0.3, 0.7, 1.0]
   Prompt variants: ['concise', 'detailed', 'creative']
   Total configs:   9

@@ -10,8 +10,9 @@ This lesson introduces MLflow's five core pillars, walks you through your first 
 ## Prerequisites
 
 - MLflow server running at <http://127.0.0.1:5555> (start with `podman compose up -d` from `infra/`)
-- LMStudio running with `google/gemma-4-e4b` loaded (`lms load google/gemma-4-e4b --gpu max -y`)
-- LMStudio server started (`lms server start`)
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio started (`lms server start`)
 - Python 3.10+
 - `uv` package manager installed
 

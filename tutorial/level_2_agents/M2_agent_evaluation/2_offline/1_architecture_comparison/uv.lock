@@ -2079,7 +2079,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlflow-tutorial-l2-m2-4-architecture-comparison"
+name = "mlflow-tutorial-l2-m2-2-1-architecture-comparison"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

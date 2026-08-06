@@ -30,13 +30,13 @@ from mlflow.entities import Trace
 from pydantic import SecretStr
 from typing_extensions import TypedDict
 
-# The LiteLLM gateway from infra/, not a provider directly. "gemma-large" is an
+# The LiteLLM gateway from infra/, not a provider directly. "gemma-agent" is an
 # alias defined in infra/litellm/config.yaml: it starts on the free OpenRouter
 # tier and the proxy falls back to the paid model when free rate-limits or 404s.
 # Swapping model or provider is a change there, never here.
 GATEWAY_URL = "http://localhost:4000/v1"
 GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-agent"
 
 EXPERIMENT = "L2/M1_agent_frameworks/1_langchain_langgraph"
 

@@ -202,6 +202,13 @@ def build_performance_summary(records: list[TraceRecord]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # 4. Main
 # ---------------------------------------------------------------------------
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 PROMPTS = [
     "What is the capital of France?",
     "Explain recursion in one sentence.",
@@ -303,8 +310,8 @@ def run_part3_error_tracing(llm: ChatOpenAI) -> list[TraceRecord]:
     print("\n  3b. Simulated error (invalid model):")
     bad_llm = ChatOpenAI(
         model="nonexistent_model_xyz",
-        base_url="http://localhost:1234/v1",
-        api_key=SecretStr("lm-studio"),
+        base_url=GATEWAY_URL,
+        api_key=SecretStr(GATEWAY_KEY),
         temperature=0.0,
     )
     meta = {**metadata_base, "request_id": str(uuid.uuid4()), "user_id": "user_test"}
@@ -417,9 +424,9 @@ def main() -> None:
     print("=" * 60)
 
     llm = ChatOpenAI(
-        model="google/gemma-4-26b-a4b",
-        base_url="http://localhost:1234/v1",
-        api_key=SecretStr("lm-studio"),
+        model="gemma-chat",
+        base_url=GATEWAY_URL,
+        api_key=SecretStr(GATEWAY_KEY),
         temperature=0.0,
     )
 

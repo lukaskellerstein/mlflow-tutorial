@@ -21,17 +21,20 @@ single chat.completions.create() call qualifies exactly as an agent does -- whic
 is why this lesson lives in Level 1 rather than waiting for Level 2.
 """
 
-import os
 import time
 from typing import Any
 
 import mlflow
 from openai import OpenAI
 
-# The app under observation runs on LMStudio, per Level 1 convention.
-LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
-LMSTUDIO_API_KEY = "lm-studio"
-MODEL_NAME = "google/gemma-4-e4b"
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
+MODEL_NAME = "gemma-chat"
 
 EXPERIMENT = "L1/M4_evaluation/3_online/1_online_scoring"
 
@@ -42,13 +45,20 @@ EXPERIMENT_ID = mlflow.set_experiment(EXPERIMENT).experiment_id
 # the whole lesson observable.
 mlflow.openai.autolog(log_traces=True)
 
-# The JUDGE cannot run on LMStudio. Scoring happens inside the MLflow server, so
-# the judge needs a credentialed gateway endpoint the server owns -- it cannot
-# borrow a base URL or key from your shell.
-GATEWAY_SECRET_NAME = "openrouter-tutorial"
-GATEWAY_MODEL_NAME = "or-gemma-large"
+# The JUDGE cannot reuse the client above. Scoring happens inside the MLflow
+# server, so the judge needs a credentialed gateway endpoint the server owns --
+# it cannot borrow a base URL or key from your shell.
+#
+# That endpoint points back at the SAME LiteLLM proxy, but by its CONTAINER name:
+# the MLflow server dials it over the compose network, so "localhost" would be
+# the MLflow container itself. This is the one place in the tutorial where the
+# gateway URL is not localhost, and getting it wrong fails at scoring time, not
+# at setup time.
+MLFLOW_SIDE_GATEWAY_URL = "http://litellm:4000/v1"
+GATEWAY_SECRET_NAME = "litellm-tutorial"
+GATEWAY_MODEL_NAME = "litellm-gemma-large"
 GATEWAY_ENDPOINT_NAME = "tutorial-gemma-endpoint"
-UPSTREAM_MODEL = "google/gemma-4-26b-a4b-it:free"
+UPSTREAM_MODEL = "gemma-judge"  # the JUDGE runs server-side; the app above is gemma-chat
 
 ONLINE_JUDGE_NAME = "l1_production_answer_quality"
 
@@ -58,7 +68,7 @@ ONLINE_JUDGE_NAME = "l1_production_answer_quality"
 # ---------------------------------------------------------------------------
 def answer(question: str) -> str:
     """A plain LLM call -- no agent, no tools, no framework."""
-    client = OpenAI(base_url=LMSTUDIO_BASE_URL, api_key=LMSTUDIO_API_KEY)
+    client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
@@ -70,18 +80,29 @@ def answer(question: str) -> str:
     return response.choices[0].message.content or ""
 
 
-def check_lmstudio() -> None:
-    """Fail early and clearly rather than deep inside an OpenAI client error."""
+def check_gateway() -> None:
+    """Fail early and clearly rather than deep inside an OpenAI client error.
+
+    The request carries the key because /v1/models is authenticated: an
+    unauthenticated probe gets a 401, and urllib raises HTTPError for it --
+    a subclass of URLError. Catching URLError alone would therefore report a
+    perfectly healthy gateway as unreachable.
+    """
     import urllib.error
     import urllib.request
 
+    req = urllib.request.Request(f"{GATEWAY_URL}/models", headers={"Authorization": f"Bearer {GATEWAY_KEY}"})
     try:
-        urllib.request.urlopen(f"{LMSTUDIO_BASE_URL}/models", timeout=5)
+        urllib.request.urlopen(req, timeout=5)
+    except urllib.error.HTTPError as exc:
+        raise SystemExit(
+            f"The gateway answered {exc.code} at {GATEWAY_URL}. It is running, so this\n"
+            f"is a config problem -- check GATEWAY_KEY against LITELLM_MASTER_KEY in infra/.env."
+        ) from exc
     except (urllib.error.URLError, OSError) as exc:
         raise SystemExit(
-            f"LMStudio is not reachable at {LMSTUDIO_BASE_URL}.\n"
-            "It runs natively (not in podman) so it can reach the GPU.\n"
-            f"Start it and load the model:  lms server start && lms load {MODEL_NAME}"
+            f"The LiteLLM gateway is not reachable at {GATEWAY_URL}.\n"
+            "Start the stack:  cd infra && podman compose up -d"
         ) from exc
 
 
@@ -93,13 +114,6 @@ def ensure_gateway_endpoint() -> str:
     from mlflow.entities import GatewayEndpointModelConfig, GatewayModelLinkageType
     from mlflow.tracking._tracking_service.utils import _get_store
 
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        raise SystemExit(
-            "OPENROUTER_API_KEY is not set. The gateway secret is created from the\n"
-            "environment -- never hardcode it. `source infra/.env` and re-run."
-        )
-
     store = _get_store()
 
     existing = {e.name: e for e in store.list_gateway_endpoints()}
@@ -107,18 +121,24 @@ def ensure_gateway_endpoint() -> str:
         print(f"  reusing gateway endpoint '{GATEWAY_ENDPOINT_NAME}'")
         return GATEWAY_ENDPOINT_NAME
 
+    # provider="openai" because LiteLLM speaks the OpenAI protocol. The base URL
+    # belongs in auth_config, NOT in secret_value: a base URL placed in
+    # secret_value is silently ignored and the server calls api.openai.com
+    # instead, which surfaces as an OpenAI "Incorrect API key" 401 that says
+    # nothing about the real mistake.
     secrets = {s.secret_name: s for s in store.list_secret_infos()}
     secret = secrets.get(GATEWAY_SECRET_NAME) or store.create_gateway_secret(
         secret_name=GATEWAY_SECRET_NAME,
-        secret_value={"api_key": api_key},
-        provider="openrouter",
+        secret_value={"api_key": GATEWAY_KEY},
+        provider="openai",
+        auth_config={"api_base": MLFLOW_SIDE_GATEWAY_URL},
     )
 
     defs = {d.name: d for d in store.list_gateway_model_definitions()}
     model_def = defs.get(GATEWAY_MODEL_NAME) or store.create_gateway_model_definition(
         name=GATEWAY_MODEL_NAME,
         secret_id=secret.secret_id,
-        provider="openrouter",
+        provider="openai",
         model_name=UPSTREAM_MODEL,
     )
 
@@ -134,7 +154,7 @@ def ensure_gateway_endpoint() -> str:
             )
         ],
     )
-    print(f"  created gateway endpoint '{GATEWAY_ENDPOINT_NAME}' -> openrouter/{UPSTREAM_MODEL}")
+    print(f"  created gateway endpoint '{GATEWAY_ENDPOINT_NAME}' -> {MLFLOW_SIDE_GATEWAY_URL} ({UPSTREAM_MODEL})")
     return GATEWAY_ENDPOINT_NAME
 
 
@@ -284,7 +304,7 @@ def main() -> None:
     print("  L1-M4.3.1 — Online Scoring for LLM Applications")
     print("=" * 60)
 
-    check_lmstudio()
+    check_gateway()
     endpoint = ensure_gateway_endpoint()
     register_and_start(endpoint)
 

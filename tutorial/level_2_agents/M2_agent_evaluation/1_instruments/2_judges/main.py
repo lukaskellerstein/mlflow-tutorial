@@ -29,7 +29,7 @@ from pydantic import SecretStr
 # The LiteLLM gateway from infra/, not a provider directly. See L2-M1.1.
 GATEWAY_URL = "http://localhost:4000/v1"
 GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-large"
+MODEL_ALIAS = "gemma-judge"
 
 # MLflow judges resolve their model through LiteLLM, which reads these two env
 # vars. Setting them here is what lets `make_judge(model="openai:/gemma-large")`

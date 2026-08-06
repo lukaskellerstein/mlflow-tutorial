@@ -19,11 +19,17 @@ from openai import OpenAI
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 MLFLOW_TRACKING_URI = "http://127.0.0.1:5555"
 EXPERIMENT_NAME = "L1/M1_tracking/3_advanced_tracking_patterns"
 
-LMSTUDIO_URL = "http://localhost:1234/v1"
-MODEL = "google/gemma-4-e4b"
+MODEL = "gemma-chat"
 
 
 def call_llm(
@@ -310,7 +316,7 @@ def part3_artifact_organization(client: OpenAI) -> None:
 
             eval_config = {
                 "num_prompts": 8,
-                "judge_model": "gemma-4-26b",
+                "judge_model": "gemma-chat",
                 "metrics": ["quality", "latency"],
             }
             eval_path = os.path.join(tmpdir, "eval_config.json")
@@ -364,7 +370,7 @@ def main() -> None:
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     mlflow.set_experiment(EXPERIMENT_NAME)
 
-    client = OpenAI(base_url=LMSTUDIO_URL, api_key="lm-studio")
+    client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
     part1_nested_runs(client)
     part2_async_logging(client)

@@ -11,7 +11,8 @@ This lesson demonstrates how to wrap a complete RAG (Retrieval-Augmented Generat
 
 - Completed: L1-M3.1 (Models and Flavors — PyFunc basics)
 - MLFlow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` and `text-embedding-nomic-embed-text-v1.5` models loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias and `text-embedding-nomic-embed-text-v1.5` behind `nomic-embed`
 
 ## Concepts
 
@@ -55,9 +56,9 @@ Before logging the model, we create two JSON files that will be bundled as artif
 
 ```python
 config = {
-    "base_url": "http://localhost:1234/v1",
+    "base_url": "http://localhost:4000/v1",
     "api_key": "lm-studio",
-    "llm_model": "google/gemma-4-e4b",
+    "llm_model": "gemma-chat",
     "embedding_model": "text-embedding-nomic-embed-text-v1.5",
 }
 ```
@@ -139,7 +140,7 @@ uv run python main.py
 ============================================================
 Step 1: Preparing RAG model artifacts
 ============================================================
-  Config saved: LLM=google/gemma-4-e4b
+  Config saved: LLM=gemma-chat
   Documents saved: 8 entries
 
 ============================================================

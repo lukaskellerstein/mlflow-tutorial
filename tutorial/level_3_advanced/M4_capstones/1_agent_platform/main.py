@@ -28,6 +28,13 @@ mlflow.set_experiment("L3/M4_capstones/1_agent_platform")
 # ---------------------------------------------------------------------------
 # Shared tools available to agents
 # ---------------------------------------------------------------------------
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 KNOWLEDGE_BASE = {
     "python": "Python is a high-level programming language known for readability "
     "and a vast ecosystem of libraries for data science and AI.",
@@ -96,9 +103,9 @@ class AgentRegistry:
     def register(self, config: AgentConfig) -> None:
         """Register an agent with the given configuration."""
         llm = ChatOpenAI(
-            model="google/gemma-4-26b-a4b",
-            base_url="http://localhost:1234/v1",
-            api_key=SecretStr("lm-studio"),
+            model="gemma-agent",
+            base_url=GATEWAY_URL,
+            api_key=SecretStr(GATEWAY_KEY),
             temperature=0.0,
         )
         agent = create_agent(

@@ -11,7 +11,8 @@ Learn three complementary approaches to evaluating LLM outputs, all using one sh
 
 - Completed: L1-M3 (Models and Registry)
 - MLflow server running at <http://127.0.0.1:5555>
-- LMStudio running with `google/gemma-4-e4b` model loaded
+- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
+  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 

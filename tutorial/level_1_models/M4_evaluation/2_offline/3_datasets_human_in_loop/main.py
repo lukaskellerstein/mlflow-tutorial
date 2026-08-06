@@ -24,6 +24,13 @@ from openai import OpenAI
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 mlflow.set_experiment("L1/M4_evaluation/2_offline/3_datasets_human_in_loop")
 
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
 QA_ROWS = [
     ("What is MLflow?", "An open-source platform for managing the ML lifecycle."),
     ("What is an MLflow experiment?", "A named collection of runs for organizing work."),
@@ -36,7 +43,7 @@ QA_ROWS = [
 def ask_llm(client: OpenAI, question: str) -> str:
     """Send a question to the LLM and return the response text."""
     response = client.chat.completions.create(
-        model="google/gemma-4-e4b",
+        model="gemma-chat",
         messages=[{"role": "user", "content": question}],
         temperature=0.3,
         max_tokens=1024,
@@ -54,7 +61,7 @@ def auto_judge_score(client: OpenAI, question: str, expected: str, answer: str) 
     )
     try:
         response = client.chat.completions.create(
-            model="google/gemma-4-e4b",
+            model="gemma-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
             max_tokens=1024,
@@ -117,7 +124,7 @@ def part1_create_and_log_dataset(client: OpenAI) -> tuple[str, list[dict]]:
         # Log inference results as a table artifact
         results_df = cast(pd.DataFrame, pd.DataFrame(results)[["question", "expected", "answer"]])
         mlflow.log_table(results_df, artifact_file="inference_results.json")
-        mlflow.log_param("model", "google/gemma-4-e4b")
+        mlflow.log_param("model", "gemma-chat")
         print("  Logged inference results as 'inference_results.json'")
 
     mlflow.flush_trace_async_logging()
@@ -202,7 +209,7 @@ def part3_combined_evaluation(client: OpenAI, results: list[dict]) -> None:
                     trace_id=trace_id,
                     name="auto_judge_score",
                     value=score,
-                    source=AssessmentSource(source_type=AssessmentSourceType.LLM_JUDGE, source_id="google/gemma-4-e4b"),
+                    source=AssessmentSource(source_type=AssessmentSourceType.LLM_JUDGE, source_id="gemma-chat"),
                     rationale=judge["reasoning"],
                 )
 
@@ -263,7 +270,7 @@ def part4_query_lineage(run_id: str) -> None:
 
 
 def main() -> None:
-    client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+    client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
     run_id, results = part1_create_and_log_dataset(client)
     part2_human_assessments(results)

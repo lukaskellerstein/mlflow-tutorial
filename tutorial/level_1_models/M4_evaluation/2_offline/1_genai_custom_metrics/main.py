@@ -20,9 +20,14 @@ from mlflow.genai.scorers import ResponseLength, scorer
 from openai import OpenAI
 
 # -- Configuration --
-LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
-LMSTUDIO_API_KEY = "lm-studio"
-MODEL_NAME = "google/gemma-4-e4b"
+# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
+# defined in infra/litellm/config.yaml, which also owns the fallback order and
+# each model's context window. Swapping model or provider is a change there,
+# never here.
+GATEWAY_URL = "http://localhost:4000/v1"
+GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+
+MODEL_NAME = "gemma-chat"
 
 # -- Shared evaluation dataset -------------------------------------------- #
 
@@ -141,7 +146,7 @@ Return ONLY valid JSON (no markdown fences):
 @scorer
 def llm_technical_quality(inputs, outputs, expectations) -> Feedback:
     """Use LLM judge to assess technical accuracy and completeness."""
-    llm_client = OpenAI(base_url=LMSTUDIO_BASE_URL, api_key=LMSTUDIO_API_KEY)
+    llm_client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
     prompt = JUDGE_PROMPT.format(
         question=inputs.get("question", ""),
         expected=expectations.get("expected_response", ""),
@@ -278,7 +283,7 @@ def build_predict_fn(temperature: float):
     """Return a predict function with the given temperature."""
 
     def predict_fn(question: str) -> str:
-        llm_client = OpenAI(base_url=LMSTUDIO_BASE_URL, api_key=LMSTUDIO_API_KEY)
+        llm_client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
         resp = llm_client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
