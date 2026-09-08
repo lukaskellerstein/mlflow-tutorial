@@ -11,10 +11,10 @@ This capstone builds a reusable benchmarking system that systematically compares
 
 - Completed: L2-M2.2.5 (Architecture Comparison) -- this capstone extends and productionizes that lesson's approach
 - Completed: L2-M3.5 (Evaluation Pipeline) -- reusable pipeline patterns
-- Completed: L2-M1.1 (LangChain Agents), L2-M1.2 (LangGraph Agents)
+- Completed: L2-M1.1.1 (LangChain + LangGraph Agents), L2-M1.1.2 (DeepAgents)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
-  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`), with Unsloth
+  Studio serving `gemma-4-26B-A4B-it-qat` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -29,7 +29,7 @@ In L2-M2.2.5 you compared three architectures in a single script. This capstone 
 
 A valid benchmark requires controlled conditions. All agents must share:
 
-1. **The same LLM** -- ChatOpenAI with `google/gemma-4-26b-a4b` at temperature 0.0
+1. **The same LLM** -- ChatOpenAI on the `gemma-agent` alias at temperature 0.0
 2. **The same tools** -- identical `lookup` and `calculate` implementations
 3. **The same test cases** -- 6 questions spanning three difficulty categories
 4. **The same scoring functions** -- deterministic correctness and tool-usage metrics

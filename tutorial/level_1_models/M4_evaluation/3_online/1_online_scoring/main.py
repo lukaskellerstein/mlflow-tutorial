@@ -27,12 +27,12 @@ from typing import Any
 import mlflow
 from openai import OpenAI
 
-# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
-# defined in infra/litellm/config.yaml, which also owns the fallback order and
-# each model's context window. Swapping model or provider is a change there,
-# never here.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+# The MLflow AI Gateway -- the tracking server itself, not a provider directly.
+# The aliases below are defined in infra/mlflow/gateway/seed_gateway.py, which also
+# owns the fallback order. Swapping model or provider is a change there, never
+# here.
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
 
 MODEL_NAME = "gemma-chat"
 
@@ -45,20 +45,20 @@ EXPERIMENT_ID = mlflow.set_experiment(EXPERIMENT).experiment_id
 # the whole lesson observable.
 mlflow.openai.autolog(log_traces=True)
 
-# The JUDGE cannot reuse the client above. Scoring happens inside the MLflow
-# server, so the judge needs a credentialed gateway endpoint the server owns --
-# it cannot borrow a base URL or key from your shell.
+# THE JUDGE CANNOT REUSE THE CLIENT ABOVE, and the reason is worth holding on to.
+# Scoring happens INSIDE the MLflow server: it samples its own traces on its own
+# schedule, long after this script has exited. So it cannot borrow a base URL or
+# a key from your shell -- it needs a model the server itself owns.
 #
-# That endpoint points back at the SAME LiteLLM proxy, but by its CONTAINER name:
-# the MLflow server dials it over the compose network, so "localhost" would be
-# the MLflow container itself. This is the one place in the tutorial where the
-# gateway URL is not localhost, and getting it wrong fails at scoring time, not
-# at setup time.
-MLFLOW_SIDE_GATEWAY_URL = "http://litellm:4000/v1"
-GATEWAY_SECRET_NAME = "litellm-tutorial"
-GATEWAY_MODEL_NAME = "litellm-gemma-large"
-GATEWAY_ENDPOINT_NAME = "tutorial-gemma-endpoint"
-UPSTREAM_MODEL = "gemma-judge"  # the JUDGE runs server-side; the app above is gemma-chat
+# `gateway:/<name>` is that model. It names a gateway ENDPOINT, and the server
+# resolves it against its own database. `openai:/gemma-judge` would register
+# happily and then fail to start, because an `openai:/` model is resolved
+# client-side and the server has no client.
+#
+# Nothing has to be built here: infra/mlflow/gateway/seed_gateway.py already defines
+# `gemma-judge` as an endpoint, seeded on every `podman compose up -d`. That is
+# the whole setup.
+JUDGE_ENDPOINT = "gemma-judge"  # the JUDGE runs server-side; the app above is gemma-chat
 
 ONLINE_JUDGE_NAME = "l1_production_answer_quality"
 
@@ -83,25 +83,18 @@ def answer(question: str) -> str:
 def check_gateway() -> None:
     """Fail early and clearly rather than deep inside an OpenAI client error.
 
-    The request carries the key because /v1/models is authenticated: an
-    unauthenticated probe gets a 401, and urllib raises HTTPError for it --
-    a subclass of URLError. Catching URLError alone would therefore report a
-    perfectly healthy gateway as unreachable.
+    The gateway IS the MLflow server, so /health answers for both. It is
+    unauthenticated and exempt from the server's Host header check, which makes
+    it the one probe that works before anything else is configured.
     """
     import urllib.error
     import urllib.request
 
-    req = urllib.request.Request(f"{GATEWAY_URL}/models", headers={"Authorization": f"Bearer {GATEWAY_KEY}"})
     try:
-        urllib.request.urlopen(req, timeout=5)
-    except urllib.error.HTTPError as exc:
-        raise SystemExit(
-            f"The gateway answered {exc.code} at {GATEWAY_URL}. It is running, so this\n"
-            f"is a config problem -- check GATEWAY_KEY against LITELLM_MASTER_KEY in infra/.env."
-        ) from exc
+        urllib.request.urlopen("http://127.0.0.1:5555/health", timeout=5)
     except (urllib.error.URLError, OSError) as exc:
         raise SystemExit(
-            f"The LiteLLM gateway is not reachable at {GATEWAY_URL}.\n"
+            f"The MLflow AI Gateway is not reachable at {GATEWAY_URL}.\n"
             "Start the stack:  cd infra && podman compose up -d"
         ) from exc
 
@@ -109,53 +102,25 @@ def check_gateway() -> None:
 # ---------------------------------------------------------------------------
 # Part 1: the gateway endpoint the judge runs on
 # ---------------------------------------------------------------------------
-def ensure_gateway_endpoint() -> str:
-    """Build (or reuse) secret -> model definition -> endpoint. Returns its name."""
-    from mlflow.entities import GatewayEndpointModelConfig, GatewayModelLinkageType
+def check_judge_endpoint() -> str:
+    """Confirm the server holds the endpoint the judge will name.
+
+    This is a check, not a build. The stack seeds every alias into the gateway
+    on `up -d`, so a missing endpoint here means the seeder did not run or had
+    no key -- and finding that out now beats finding it out when a sampled trace
+    fails to score, hours later and with SCORER_ERROR as the only clue.
+    """
     from mlflow.tracking._tracking_service.utils import _get_store
 
-    store = _get_store()
-
-    existing = {e.name: e for e in store.list_gateway_endpoints()}
-    if GATEWAY_ENDPOINT_NAME in existing:
-        print(f"  reusing gateway endpoint '{GATEWAY_ENDPOINT_NAME}'")
-        return GATEWAY_ENDPOINT_NAME
-
-    # provider="openai" because LiteLLM speaks the OpenAI protocol. The base URL
-    # belongs in auth_config, NOT in secret_value: a base URL placed in
-    # secret_value is silently ignored and the server calls api.openai.com
-    # instead, which surfaces as an OpenAI "Incorrect API key" 401 that says
-    # nothing about the real mistake.
-    secrets = {s.secret_name: s for s in store.list_secret_infos()}
-    secret = secrets.get(GATEWAY_SECRET_NAME) or store.create_gateway_secret(
-        secret_name=GATEWAY_SECRET_NAME,
-        secret_value={"api_key": GATEWAY_KEY},
-        provider="openai",
-        auth_config={"api_base": MLFLOW_SIDE_GATEWAY_URL},
-    )
-
-    defs = {d.name: d for d in store.list_gateway_model_definitions()}
-    model_def = defs.get(GATEWAY_MODEL_NAME) or store.create_gateway_model_definition(
-        name=GATEWAY_MODEL_NAME,
-        secret_id=secret.secret_id,
-        provider="openai",
-        model_name=UPSTREAM_MODEL,
-    )
-
-    store.create_gateway_endpoint(
-        name=GATEWAY_ENDPOINT_NAME,
-        model_configs=[
-            GatewayEndpointModelConfig(
-                model_definition_id=model_def.model_definition_id,
-                # The ENUM, not the string "PRIMARY".
-                linkage_type=GatewayModelLinkageType.PRIMARY,
-                weight=1,
-                fallback_order=0,
-            )
-        ],
-    )
-    print(f"  created gateway endpoint '{GATEWAY_ENDPOINT_NAME}' -> {MLFLOW_SIDE_GATEWAY_URL} ({UPSTREAM_MODEL})")
-    return GATEWAY_ENDPOINT_NAME
+    names = {e.name for e in _get_store().list_gateway_endpoints()}
+    if JUDGE_ENDPOINT not in names:
+        raise SystemExit(
+            f"The gateway has no endpoint named '{JUDGE_ENDPOINT}'.\n"
+            "Seed it:  cd infra && podman compose up -d\n"
+            "Then read what it built:  podman compose logs mlflow-seed"
+        )
+    print(f"  gateway endpoint '{JUDGE_ENDPOINT}' is present")
+    return JUDGE_ENDPOINT
 
 
 def register_and_start(endpoint: str) -> None:
@@ -305,7 +270,7 @@ def main() -> None:
     print("=" * 60)
 
     check_gateway()
-    endpoint = ensure_gateway_endpoint()
+    endpoint = check_judge_endpoint()
     register_and_start(endpoint)
 
     send_live_traffic(

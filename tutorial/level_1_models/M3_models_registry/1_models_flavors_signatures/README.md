@@ -11,8 +11,8 @@ Learn how MLflow packages models into a portable, self-describing format. This l
 
 - Completed: L1-M2 (Tracing)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
-  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`), with Unsloth
+  Studio serving `gemma-4-26B-A4B-it-qat` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -35,7 +35,7 @@ A **flavor** is a named interface for saving and loading a model. Every model ge
 | Flavor | Use Case |
 |--------|----------|
 | `pyfunc` | Any Python code (custom models, API wrappers) |
-| `openai` | OpenAI-compatible chat/completion models (including the LiteLLM gateway) |
+| `openai` | OpenAI-compatible chat/completion models (including the MLflow AI Gateway) |
 | `transformers` | Hugging Face Transformers |
 
 ### Signatures
@@ -60,7 +60,7 @@ Wrap a direct OpenAI SDK call in a `PythonModel` subclass:
 ```python
 class LLMModel(mlflow.pyfunc.PythonModel):
     def predict(self, context, model_input, params=None):
-        client = OpenAI(base_url="http://localhost:4000/v1", api_key="sk-litellm-master")
+        client = OpenAI(base_url="http://127.0.0.1:5555/gateway/mlflow/v1", api_key="not-needed")
         questions = model_input["question"].tolist()
         # ... call the LLM for each question
 

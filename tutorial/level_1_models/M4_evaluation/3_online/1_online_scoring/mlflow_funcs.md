@@ -44,7 +44,7 @@ Functions and imports from `mlflow` used in this lesson's `main.py`.
 
 - `mlflow.openai.autolog()` is what produces the traces. Without it the scorer is
   active but has nothing to sample.
-- `start()` requires a **gateway** model. The app's LMStudio base URL and key live
+- `start()` requires a **gateway** model. The app's base URL lives
   in your process; the MLflow server has neither, and scoring runs there.
 - `register()` only works for `INSTRUCTIONS`-kind scorers (`make_judge`).
   `@scorer`-decorated functions are `DECORATOR` kind and cannot be registered

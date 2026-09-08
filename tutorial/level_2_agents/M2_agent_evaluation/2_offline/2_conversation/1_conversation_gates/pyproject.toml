@@ -1,0 +1,12 @@
+[project]
+name = "mlflow-tutorial-L2-M2-2-2-1-conversation-gates"
+version = "0.1.0"
+description = "Offline Gates on Whole Conversations"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2",
+    "mlflow[genai]>=3.15",
+    "langchain>=1.0",
+    "langchain-openai>=1.0",
+    "langchain-core>=1.0",
+]

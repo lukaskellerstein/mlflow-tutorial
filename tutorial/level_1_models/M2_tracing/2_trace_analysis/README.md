@@ -11,8 +11,8 @@ Traces capture the full execution flow of your LLM applications, but their real 
 
 - Completed: L1-M5.1 (Auto Tracing), L1-M7.1 (Manual Tracing)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
-  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`), with Unsloth
+  Studio serving `gemma-4-26B-A4B-it-qat` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -47,8 +47,8 @@ We run four different LLM calls to produce a variety of traces with different co
 ```python
 mlflow.langchain.autolog()
 llm = ChatOpenAI(
-    base_url="http://localhost:4000/v1",
-    api_key="sk-litellm-master",
+    base_url="http://127.0.0.1:5555/gateway/mlflow/v1",
+    api_key="not-needed",
     model="gemma-chat",
     temperature=0.7,
 )

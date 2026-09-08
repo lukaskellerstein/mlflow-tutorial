@@ -29,37 +29,46 @@ can see what you intend to verify. Example:
 absent:
 
 ```bash
-curl -sf http://localhost:5555/health            && echo "mlflow up"
-curl -sf http://localhost:4000/health/readiness  && echo "litellm up"
-curl -sf http://localhost:1234/v1/models         && echo "lmstudio up"
+curl -sf http://localhost:5555/health && echo "mlflow + gateway up"
+curl -sf http://127.0.0.1:8888/v1/status -H "Authorization: Bearer $UNSLOTH_API_KEY" && echo "unsloth up"
 ```
 
-If MLflow is down: `cd infra && podman compose up -d`.
+There is no separate gateway port: the MLflow server IS the gateway, so one
+probe answers for both. If MLflow is down: `cd infra && podman compose up -d`.
+`/v1/models` does not exist on this gateway — do not probe it.
 
-**Every lesson goes through the LiteLLM gateway; nothing calls a provider
-directly.** So the first check is always port 4000, not 1234.
+**Level 3 lessons that use Temporal (`L3-M2.2`) or Prometheus/Grafana
+(`L3-M1.2`) need the `level3` profile** — those services are not in the default
+tier. Check `nc -z localhost 7233` / `curl -sf localhost:9090/-/ready` and, if
+closed, `cd infra && podman compose --profile level3 up -d`. A Level 3 lesson
+that fails on `localhost:7233` against the default tier is not a lesson bug.
 
-`gemma-chat`, `gemma-judge`, `gemma-agent` and `gemma-tight` all resolve to
-LMStudio FIRST, so LMStudio being down affects all of them — but each falls back
-to OpenRouter through the gateway, and the lesson still runs. That is a comfort
-and a trap: a lesson can pass while quietly running on the cloud. Check the spend
-log (`/spend/logs`, `model` column) when it matters which one answered.
+**Every lesson goes through the MLflow AI Gateway; nothing calls a provider
+directly.**
 
-`gemma-26b-free` / `gemma-31b-free` / `gemma-cloud` are OpenRouter and need no
-LMStudio at all. `nomic-embed` is local-only. If a lesson genuinely needs
-LMStudio and it is down, say so and ask — it runs natively for GPU access and
-cannot be started from compose. `lms server start` and `lms ps --json` are the
-CLI equivalents; the latter reports the live `contextLength`, which the UI does
-not always agree with.
+**Every alias resolves to Unsloth, and none has a fallback.** So Unsloth being
+down fails every lesson that calls a model, loudly and at the first call. That
+is the design: there is no hosted provider left in the gateway, so a lesson can
+no longer pass while quietly running somewhere else. A failure here is one real
+cause, not a mystery about which model answered.
+
+Unsloth runs natively for GPU access and cannot be started from compose. If it
+is down, say so and ask.
 
 > [!warning]
-> **Editing `infra/litellm/config.yaml` needs
-> `podman compose up -d --force-recreate litellm`, not `restart`.** The file is
-> bind-mounted, and an editor that replaces the file rather than writing in place
-> changes its inode — which severs the mount. The symptom is nasty: the container
-> keeps serving the config it read at startup, `restart` then fails or silently
-> keeps the old routing, and `ls /app/config.yaml` inside the container reports
-> no such file. Recreating the container re-resolves the mount.
+> **Unsloth holds ONE model at a time.** `Settings → API → Model auto-switch`
+> must be ON, or every alias but the currently loaded model fails with
+> `400 ... 'Switch model by request' is off`. This is a GUI setting with no CLI
+> equivalent, so it cannot be fixed from here — ask. With it on, a swap costs
+> 4–14 s and needs no intervention.
+
+> [!warning]
+> **Editing `infra/mlflow/gateway/seed_gateway.py` is not enough on its own.** The
+> seeder is idempotent, so `podman compose up -d` reports an existing alias as
+> `reused` and it quietly keeps the model it already had. ADDING an alias works
+> with `up -d`; CHANGING one needs
+> `podman compose run --rm mlflow-seed --reset --prune`. The script is the
+> container's entrypoint, so pass only its flags.
 
 **Lesson changes** — run the lesson from its own directory:
 

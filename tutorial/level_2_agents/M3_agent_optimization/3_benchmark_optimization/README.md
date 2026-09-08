@@ -12,7 +12,8 @@ Wanting the best possible SWE-Bench or GAIA score is a legitimate goal, and peop
 - Completed: L2-M2.2.3 (SWE-Bench) and L2-M2.2.4 (GAIA)
 - Completed: L2-M3.1 (Prompt and Instruction Optimization)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway running at <http://localhost:4000> (`cd infra && podman compose up -d`)
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`) — it is the
+  MLflow server itself, at <http://127.0.0.1:5555/gateway/mlflow/v1>
 
 ## Concepts
 

@@ -18,7 +18,7 @@ part -- it works for any knob anyone invents later.
   Part 3: read a Pareto frontier rather than a single winner
   Part 4: know when to stop -- variance vs. the size of the improvement
 
-Builds on L2-M2.1.3 (Quality Metrics) and L2-M3.1 (Prompt Optimization).
+Builds on L2-M2.1.6 (Quality Metrics) and L2-M3.1 (Prompt Optimization).
 """
 
 import itertools
@@ -31,11 +31,11 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
-# The LiteLLM gateway from infra/. Swapping a model is a change to the alias
+# The MLflow AI Gateway -- the tracking server itself. Swapping a model is a change to the alias
 # list below, never to provider code -- which is what makes a model sweep cheap
-# to express. See L2-M1.1.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+# to express. See L2-M1.1.1.
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
 
 EXPERIMENT = "L2/M3_agent_optimization/2_configuration_optimization"
 
@@ -92,10 +92,17 @@ MINIMAL_TOOLS = [search_knowledge, calculate]
 # ---------------------------------------------------------------------------
 # Part 1: the search space
 # ---------------------------------------------------------------------------
-# Free-tier aliases keep the sweep cheap. `gemma-small` is deliberately absent:
-# it is served by LMStudio, and a sweep that dies when LMStudio is asleep teaches
-# the wrong lesson about reproducibility.
-MODELS = ["gemma-26b-free", "gemma-31b-free"]
+# Two model sizes, both local. The sweep crosses between them on every
+# iteration, and Unsloth holds one model at a time, so each crossing pays a
+# 4-14 s auto-switch. That is the whole cost -- no key, no bill, no network.
+#
+# This used to name the OpenRouter free tier, on the reasoning that a sweep
+# dying when Unsloth is asleep teaches the wrong lesson. The reasoning was
+# backwards. A sweep that keeps going on a DIFFERENT model than the one it
+# reports is the wrong lesson; a sweep that stops and names the cause is the
+# right one. There is no cloud fallback anywhere in this stack now, so what the
+# run says it measured is what it measured.
+MODELS = ["gemma-agent", "gemma-31b-local"]
 TOOL_BUDGETS = {"minimal": MINIMAL_TOOLS, "full": ALL_TOOLS}
 
 EVAL_CASES = [
@@ -129,7 +136,7 @@ def score_config(model_alias: str, budget_name: str, tools: list) -> dict:
             latencies.append(time.time() - started)
             answer = response["messages"][-1].content or ""
             # A deterministic scorer keeps the sweep fast and free. Swap in a
-            # registered judge from M2.1.2 when the answers are open-ended.
+            # registered judge from M2.1.5 when the answers are open-ended.
             if case["expect"].lower() in answer.lower():
                 correct += 1
             tool_calls += sum(1 for m in response["messages"] if getattr(m, "name", None))

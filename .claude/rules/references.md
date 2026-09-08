@@ -43,11 +43,12 @@ Always consult these sources when building lessons. Do NOT guess at APIs — rea
   - AI workflows: `.../MY/5_AI/`
 - **Docker reference**: `~/Projects/Github/lukaskellerstein/my-workflows/temporal-io/docker`
 
-## LMStudio
+## Unsloth Studio
 
-- **CLI docs**: <https://lmstudio.ai/docs/cli>
-- **Headless mode**: <https://lmstudio.ai/docs/developer/core/headless>
-- **Model**: Gemma4-E4B — <https://lmstudio.ai/models/google/gemma-4-e4b>
+- **Site**: <https://unsloth.ai/>
+- Serves every local alias on `127.0.0.1:8888`, OpenAI-compatible.
+- Needs an API key on **every** route, `/v1/models` included.
+- Holds ONE model at a time — `Settings → API → Model auto-switch` must be ON.
 
 ## Evaluation
 
@@ -59,13 +60,15 @@ Always consult these sources when building lessons. Do NOT guess at APIs — rea
 
 ## Infrastructure
 
-- All services run via `podman compose up -d` from `infra/`
+- All services run from `infra/`: `podman compose up -d` for the Level 1 + 2
+  tier, `podman compose --profile level3 up -d` to add the Level 3 services
 - MLflow: <http://localhost:5555> (PostgreSQL backend)
-- LMStudio: <http://localhost:1234> (native, not in Podman)
-- Temporal: <http://localhost:8080> (UI), localhost:7233 (gRPC)
+- MLflow AI Gateway: <http://localhost:5555/gateway/mlflow/v1> (the MLflow server itself)
+- Unsloth Studio: <http://127.0.0.1:8888> (native, not in Podman; needs a key)
 - Qdrant: <http://localhost:6333> (REST), localhost:6334 (gRPC)
-- Grafana: <http://localhost:3000> (admin/admin)
-- Prometheus: <http://localhost:9090>
+- Temporal: <http://localhost:8080> (UI), localhost:7233 (gRPC) — `level3` profile
+- Grafana: <http://localhost:3000> (admin/admin) — `level3` profile
+- Prometheus: <http://localhost:9090> — `level3` profile
 
 ## How to Use References
 

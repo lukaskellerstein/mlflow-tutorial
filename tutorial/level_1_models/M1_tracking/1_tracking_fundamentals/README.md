@@ -10,9 +10,9 @@ This lesson introduces MLflow's five core pillars, walks you through your first 
 ## Prerequisites
 
 - MLflow server running at <http://127.0.0.1:5555> (start with `podman compose up -d` from `infra/`)
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
-  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio started (`lms server start`)
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`), with Unsloth
+  Studio serving `gemma-4-26B-A4B-it-qat` behind the `gemma-chat` alias
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`), with Unsloth Studio running
 - Python 3.10+
 - `uv` package manager installed
 

@@ -37,7 +37,7 @@ globs: ["tutorial/**/*.py"]
 
 - `mlflow.autolog()` — universal autolog
 - `mlflow.langchain.autolog()` — LangChain and LangGraph
-- `mlflow.openai.autolog()` — OpenAI (also covers LMStudio via OpenAI-compatible API)
+- `mlflow.openai.autolog()` — OpenAI (also covers the MLflow AI Gateway, which is OpenAI-compatible)
 - `mlflow.anthropic.autolog()` — Anthropic/Claude
 - `mlflow.transformers.autolog()` — Hugging Face
 

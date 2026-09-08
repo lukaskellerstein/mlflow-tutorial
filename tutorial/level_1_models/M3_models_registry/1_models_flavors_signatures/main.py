@@ -19,12 +19,12 @@ import pandas as pd
 from mlflow.models import ModelSignature, infer_signature
 from mlflow.types import ColSpec, DataType, ParamSchema, ParamSpec, Schema
 
-# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
-# defined in infra/litellm/config.yaml, which also owns the fallback order and
-# each model's context window. Swapping model or provider is a change there,
-# never here.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+# The MLflow AI Gateway -- the tracking server itself, not a provider directly.
+# The aliases below are defined in infra/mlflow/gateway/seed_gateway.py, which also
+# owns the fallback order. Swapping model or provider is a change there, never
+# here.
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
 
 # The openai FLAVOR builds its own client at load time, so it reads these rather
 # than any client constructed here.
@@ -67,7 +67,7 @@ def part1_pyfunc_flavor() -> str:
     print("Part 1: Logging an LLM model with the PyFunc flavor")
     print("=" * 60)
     print("  The pyfunc flavor wraps ANY Python code as an MLflow model.")
-    print("  Here we wrap a direct OpenAI SDK call to the LiteLLM gateway.\n")
+    print("  Here we wrap a direct OpenAI SDK call to the MLflow AI Gateway.\n")
 
     input_df = pd.DataFrame({"question": ["What is MLflow?"]})
     output = LLMModel().predict(context=None, model_input=input_df)

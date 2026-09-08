@@ -13,9 +13,12 @@ You will learn how to define custom Prometheus metrics, instrument LLM calls, ge
 
 - Completed: L1-M1 (Tracking), L1-M4 (Evaluation), L3-M3.1 (Production Tracing)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
-  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
-- Prometheus running at <http://localhost:9090> (via `podman compose up -d` from `infra/`)
+- Prometheus at <http://localhost:9090> and Grafana at <http://localhost:3000>
+  — both are in the **Level 3 tier** of the stack, so start them with
+  `podman compose --profile level3 up -d` from `infra/`; the plain
+  `podman compose up -d` used through Levels 1 and 2 does not include them
+- MLflow AI Gateway seeded (same command), with Unsloth Studio serving
+  `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 - Grafana running at <http://localhost:3000> (admin/admin)
 
 ## Concepts

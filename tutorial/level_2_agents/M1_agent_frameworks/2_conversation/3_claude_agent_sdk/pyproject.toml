@@ -1,0 +1,10 @@
+[project]
+name = "mlflow-tutorial-L2-M1-2-3-claude-agent-sdk"
+version = "0.1.0"
+description = "Multi-turn Claude Agent SDK conversations — the SDK session id as the MLflow session id"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow>=3.15",
+    "claude-agent-sdk>=0.2",
+    "anyio>=4.0",
+]

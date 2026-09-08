@@ -13,10 +13,11 @@ the obvious question: did the optimizer beat the human?
 
 ## Prerequisites
 
-- Completed: L2-M2.2.1 (Architecture Comparison), L2-M2.1.2 (Judges)
+- Completed: L2-M2.2.1 (Architecture Comparison), L2-M2.1.5 (Judges)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway running at <http://localhost:4000> (`cd infra && podman compose up -d`)
-- An `OPENROUTER_API_KEY` in `infra/.env` — the `gemma-chat` alias routes there
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`) — it is the
+  MLflow server itself, at <http://127.0.0.1:5555/gateway/mlflow/v1>
+- An `UNSLOTH_API_KEY` in the environment — every alias, `gemma-chat` included, routes to Unsloth
 
 ## Concepts
 

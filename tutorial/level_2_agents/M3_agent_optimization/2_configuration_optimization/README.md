@@ -9,10 +9,11 @@ L2-M3.1 used `mlflow.genai.optimize_prompts()` — a real optimizer with a real 
 
 ## Prerequisites
 
-- Completed: L2-M2.1.3 (Agent Quality Metrics)
+- Completed: L2-M2.1.6 (Agent Quality Metrics)
 - Completed: L2-M3.1 (Prompt and Instruction Optimization)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway running at <http://localhost:4000> (`cd infra && podman compose up -d`)
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`) — it is the
+  MLflow server itself, at <http://127.0.0.1:5555/gateway/mlflow/v1>
 
 ## Concepts
 
@@ -47,11 +48,13 @@ With five test cases, one flipped answer moves accuracy by 20 points. If the spr
 ### Step 1: Define the search space
 
 ```python
-MODELS = ["gemma-26b-free", "gemma-31b-free"]
+MODELS = ["gemma-agent", "gemma-31b-local"]
 TOOL_BUDGETS = {"minimal": MINIMAL_TOOLS, "full": ALL_TOOLS}
 ```
 
-The local aliases (`gemma-chat`, `gemma-judge`, `gemma-agent`) are deliberately absent, and the reason is sharper than "LMStudio might be asleep". Both carry an error fallback to OpenRouter in `infra/litellm/config.yaml`, so an unloaded model does not fail the sweep — it silently *substitutes a different model* and the run keeps going. A sweep whose independent variable can change without telling you is worse than one that crashes.
+These are the two distinct local models: the 26B MoE and the denser 31B. The sweep crosses between them on every iteration, and Unsloth holds one model at a time, so each crossing pays a 4–14 s auto-switch. That is the whole cost.
+
+**Why not a cloud alias, which is what this lesson used to name?** Because the reason for it has gone. The local aliases used to carry an error fallback to OpenRouter, so an unloaded model did not fail the sweep — it silently *substituted a different model* and the run kept going. A sweep whose independent variable can change without telling you is worse than one that crashes. There is no fallback and no hosted provider in the gateway now, so the local aliases are the trustworthy choice rather than the risky one.
 
 ### Step 2: One nested run per configuration
 

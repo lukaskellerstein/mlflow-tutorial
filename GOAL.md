@@ -2,19 +2,24 @@
 
 Source code: /Users/lkellers/Projects/github/mlflow/mlflow
 
-## LMStudio
+## Unsloth Studio
 
-LMS CLI - <https://lmstudio.ai/docs/cli>
+Unsloth Studio - <https://unsloth.ai/>
 
-LMS as service (headless) - <https://lmstudio.ai/docs/developer/core/headless>
+It serves an OpenAI-compatible API on :8888, needs a key on every route, and
+holds ONE model at a time (Settings -> API -> Model auto-switch must be ON).
 
 Selected model: Gemma4-26B-A4B (MoE, ~4B active) - served behind every
-`gemma-*` alias (`gemma-chat`, `gemma-judge`, `gemma-agent`). Chosen because it is the fastest of the local options and the
-only fast one that also exists on OpenRouter, so a fallback cannot change which
-model answered.
+`gemma-*` alias (`gemma-chat`, `gemma-judge`, `gemma-agent`). Chosen because it
+is the fastest of the local options.
 
-Lessons never call LMStudio directly — they go through the LiteLLM gateway on
-`localhost:4000`, which maps those aliases. See `infra/litellm/config.yaml`.
+Every alias in the gateway is served by Unsloth. There is no hosted provider and
+no fallback, so nothing can change which model answered.
+
+Lessons never call Unsloth directly — they go through the MLflow AI Gateway on
+`localhost:5555/gateway/mlflow/v1`, which maps those aliases. There is no
+separate proxy: the tracking server IS the gateway. See
+`infra/mlflow/gateway/seed_gateway.py`.
 
 ## AI Agents
 

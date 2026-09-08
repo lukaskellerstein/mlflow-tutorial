@@ -18,14 +18,14 @@ import pandas as pd
 from mlflow.models import infer_signature
 from openai import OpenAI
 
-# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
-# defined in infra/litellm/config.yaml, which also owns the fallback order and
-# each model's context window. Swapping model or provider is a change there,
-# never here.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-
+# The MLflow AI Gateway -- the tracking server itself, not a provider directly.
+# The aliases below are defined in infra/mlflow/gateway/seed_gateway.py, which also
+# owns the fallback order. Swapping model or provider is a change there, never
+# here.
 TRACKING_URI = "http://127.0.0.1:5555"
+GATEWAY_URL = f"{TRACKING_URI}/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
+
 EXPERIMENT_NAME = "L1/M3_models_registry/2_custom_pyfunc"
 
 # Sample documents about MLflow for the RAG knowledge base
@@ -41,12 +41,50 @@ DOCUMENTS = [
 ]
 
 
+class GatewayEmbeddings:
+    """The gateway's embedding route, which is NOT the OpenAI one.
+
+    The MLflow AI Gateway serves chat at an OpenAI-compatible path, so the
+    OpenAI client and LangChain's ChatOpenAI both work against it unchanged.
+    Embeddings are the exception: there is no `/gateway/mlflow/v1/embeddings`
+    (it answers 404), and the only route that takes an ALIAS is
+
+        POST /gateway/<alias>/mlflow/invocations   body: {"input": [...]}
+
+    That shape is close to OpenAI's but not equal to it -- the alias is in the
+    path rather than in a "model" field -- so `OpenAIEmbeddings(base_url=...)`
+    cannot drive it. These fifteen lines are the bridge, and they are worth
+    having: the alternative is naming the real embedding model and its engine
+    URL in the lesson, which is exactly what the gateway exists to prevent.
+    """
+
+    def __init__(self, mlflow_url: str, alias: str) -> None:
+        self.url = f"{mlflow_url}/gateway/{alias}/mlflow/invocations"
+
+    def _embed(self, texts: list[str]) -> list[list[float]]:
+        import urllib.request
+
+        request = urllib.request.Request(
+            self.url,
+            data=json.dumps({"input": texts}).encode(),
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(request, timeout=300) as response:
+            payload = json.load(response)
+        return [row["embedding"] for row in payload["data"]]
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self._embed(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._embed([text])[0]
+
+
 class RAGModel(mlflow.pyfunc.PythonModel):
     """A RAG pipeline wrapped as a single MLflow PyFunc model."""
 
     def load_context(self, context) -> None:
         """Initialize LLM client, embeddings, and Qdrant vector store."""
-        from langchain_openai import OpenAIEmbeddings
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, PointStruct, VectorParams
 
@@ -56,11 +94,9 @@ class RAGModel(mlflow.pyfunc.PythonModel):
             self.config = json.load(f)
 
         # Initialize embedding model
-        self.embeddings = OpenAIEmbeddings(
-            model=self.config["embedding_model"],
-            base_url=self.config["base_url"],
-            api_key=self.config["api_key"],
-            check_embedding_ctx_length=False,
+        self.embeddings = GatewayEmbeddings(
+            mlflow_url=self.config["mlflow_url"],
+            alias=self.config["embedding_model"],
         )
 
         # Initialize Qdrant in-memory
@@ -146,6 +182,9 @@ def main() -> None:
         config = {
             "base_url": GATEWAY_URL,
             "api_key": GATEWAY_KEY,
+            # The server root, not the /gateway/mlflow/v1 base above: the
+            # embedding route puts the alias in the PATH. See GatewayEmbeddings.
+            "mlflow_url": TRACKING_URI,
             "llm_model": "gemma-chat",
             "embedding_model": "nomic-embed",
         }
@@ -187,9 +226,9 @@ def main() -> None:
                     "documents": str(docs_path),
                 },
                 signature=signature,
+                # No embedding library: GatewayEmbeddings needs only urllib.
                 pip_requirements=[
                     "openai",
-                    "langchain-openai",
                     "qdrant-client",
                 ],
             )
