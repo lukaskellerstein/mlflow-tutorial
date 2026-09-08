@@ -35,5 +35,5 @@ Two reads are mandatory and neither is optional:
 A lesson is a **leaf**: its own `pyproject.toml`, its own `.venv`, its own
 `uv.lock`, runnable with no reference to any other lesson. When you are asked to
 change "the tutorial", establish which leaves are actually in scope before
-touching anything — there are 43, and a change that belongs in one rarely belongs
+touching anything — there are 62, and a change that belongs in one rarely belongs
 in all of them.

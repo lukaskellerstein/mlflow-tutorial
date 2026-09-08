@@ -20,22 +20,26 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 - **Python**: 3.10+
 - **Package Manager**: `uv` (every lesson is a standalone project)
-- **MLFlow**: Latest (2.x+)
-- **LLM entry point**: LiteLLM gateway (`localhost:4000`, OpenAI-compatible). Every
-  lesson calls this and nothing else -- see "The gateway convention" below.
-- **LLM providers behind it**: LMStudio (local, GPU), OpenRouter, OpenAI
+- **MLFlow**: 3.x
+- **LLM entry point**: the MLflow AI Gateway
+  (`localhost:5555/gateway/mlflow/v1`, OpenAI-compatible). There is no separate
+  proxy: the tracking server IS the gateway. Every lesson calls it and nothing
+  else -- see "The gateway convention" below.
+- **LLM provider behind it**: Unsloth Studio (local, GPU) — the only one
 - **LLM aliases**:
   - `gemma-chat` -- the lesson's own LLM call, the thing under observation
-  - `gemma-judge` -- LLM-as-judge, scorers, simulators. The one alias served from
-    OpenRouter rather than locally: the local Q4 quantisation degenerates into a
-    repetition loop while writing a judge's JSON, which MLflow reports as
-    `Failed to parse response from judge model`
+  - `gemma-judge` -- LLM-as-judge, scorers, simulators
   - `gemma-agent` -- agent loops and tool calling
-  - `gemma-tight` -- same model, 7168-token guard, for context-overflow demos
-    All resolve to `google/gemma-4-26b-a4b` today -- see "The gateway convention".
-  - `nomic-embed` -- embedding model for RAG/vector DB
-  - `gemma-26b-free` / `gemma-31b-free` -- OpenRouter free tier, for sweeps that need a fixed cloud model
-  - `frontier` / `gpt-mini` -- OpenAI `gpt-5.4-mini`, hosted frontier baseline
+  - `gemma-tight` -- context-overflow demos. LiteLLM enforced a 7168-token guard
+    here; the MLflow gateway has no equivalent, so overflow fails at the model
+  - `gemma-31b-local` -- the denser local model
+    The first five resolve to `unsloth/gemma-4-26B-A4B-it-qat-GGUF` today, and
+    `gemma-31b-local` to the 31B -- see "The gateway convention".
+  - `nomic-embed` / `text-embedding-3-small` -- the local embedding model
+  - `gpt-4.1-mini` -- MLflow's aligner chat model, hardcoded by that name
+
+  Eight aliases, three models, one provider. Every one is local and none has a
+  fallback.
 - **Agent Frameworks**: LangChain v1.0+, LangGraph, DeepAgents, Claude Agent SDK
 - **Vector DB**: Qdrant (via Podman Compose)
 - **Evaluation Benchmarks**: SWE-Bench, GAIA
@@ -45,26 +49,38 @@ Each level builds on the previous. A user can stop after Level 1 and have comple
 
 ## The gateway convention
 
-**Every lesson in all three levels talks to the LiteLLM gateway, and nothing
+**Every lesson in all three levels talks to the MLflow AI Gateway, and nothing
 else.** No lesson names a provider URL, a provider API key, or a raw model id.
 It names an alias — `gemma-chat`, `gemma-judge`, `gemma-agent` — and the gateway
 decides what that means.
 
+The gateway is not a separate service. It is the same MLflow server the lesson
+already logs its runs and traces to, which is why a lesson needs no second URL
+and no key at all.
+
 ```python
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys
 client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 client.chat.completions.create(model="gemma-chat", ...)
 ```
 
-Three things live in `infra/litellm/config.yaml` rather than in lesson code, and
-each is a decision the course would otherwise have to repeat in 40 places:
+Two things live in `infra/mlflow/gateway/seed_gateway.py` rather than in lesson
+code, and each is a decision the course would otherwise have to repeat in 50
+places:
 
 | Concern | Mechanism |
 |:--|:--|
-| Which model an alias resolves to | the `model_list` entry |
+| Which model an alias resolves to | the `ENDPOINTS` entry and its `model` |
 | What happens when it errors | `fallbacks` — an ordered chain, left to right |
-| What happens when a prompt is too big | `context_window_fallbacks`, gated on each model's declared `max_input_tokens` |
+
+MLflow has no config file of its own: its gateway lives in the tracking database
+and arrives over an API. So compose runs a one-shot `mlflow-seed` on every
+`up -d` that writes the aliases in. That script holds the alias list itself —
+there is no separate YAML, because nothing but the script ever read one. Adding
+an alias needs only `up -d`; **changing** one needs
+`podman compose run --rm mlflow-seed --reset --prune`, because the seeder is
+idempotent and reuses an endpoint it already has.
 
 Aliases are named for the **job**, not the model size. `gemma-chat`,
 `gemma-judge` and `gemma-agent` all resolve to one model today; the split
@@ -78,15 +94,25 @@ fallback, changes one file and every lesson follows.
 
 Two consequences worth stating, because both surprise people:
 
-- **Local aliases can silently become cloud aliases.** Every `gemma-*` alias
-  falls back to OpenRouter when LMStudio is unreachable. That is
-  right for a demo and wrong for a comparison, which is why optimization sweeps
-  (L2-M3.2, L2-M3.3) deliberately use the fixed `*-free` cloud aliases instead.
+- **An alias can never silently become a different model.** There is no hosted
+  provider and no fallback chain, so a lesson that cannot reach Unsloth fails
+  and says so. Aliases used to fall back to OpenRouter, which was right for a
+  demo and wrong for a comparison — the optimization sweeps (L2-M3.2, L2-M3.3)
+  had to name fixed cloud aliases to get a trustworthy result. They run on
+  `gemma-agent` and `gemma-31b-local` now.
 - **Server-side judges cannot use the constants above.** A scorer started with
-  `scorer.start()` runs inside the MLflow server, which has neither your base URL
-  nor your key. It reaches the same proxy through an MLflow AI Gateway endpoint
-  pointed at `http://litellm:4000/v1` — the container name, not localhost.
-  L1-M4.3.1 and L2-M2.3.1 are the worked examples.
+  `scorer.start()` runs inside the MLflow server, on its own schedule, long after
+  your script has exited — so it has no base URL to borrow. It names
+  `gateway:/gemma-judge`, and the server already holds that endpoint because the
+  seeder built it. This is the main simplification the single gateway bought:
+  the lesson used to build a secret, a model definition and an endpoint by hand.
+  L1-M4.3.1 and L2-M2.3.1.1 are the worked examples.
+- **Embeddings are the one thing this gateway does not serve OpenAI-style.**
+  `POST /gateway/mlflow/v1/embeddings` answers 404; the only alias-addressed
+  route is `POST /gateway/<alias>/mlflow/invocations`. L1-M3.2 wraps it in
+  fifteen lines. L2-M2.1.1.2 is the single place in the course that has to go
+  around the gateway entirely, because MLflow's judge aligner insists on
+  `{OPENAI_BASE_URL}/embeddings`.
 
 ## Reference Sources
 
@@ -128,7 +154,7 @@ Two consequences worth stating, because both surprise people:
 - MLflow's pillars: Tracking, Models, Registry, Evaluation, Deployment
 - Architecture: tracking server, backend store (PostgreSQL), artifact store
 - Key concepts: experiments, runs, parameters, metrics, artifacts, tags
-- Calling a local LLM through the LiteLLM gateway (OpenAI-compatible API)
+- Calling a local LLM through the MLflow AI Gateway (OpenAI-compatible API)
 - Logging LLM configuration as parameters and results as metrics
 - Bulk logging with `log_params()` and `log_metrics()`
 - Step-based metric logging (`log_metric(..., step=N)`) across multiple prompts
@@ -189,7 +215,7 @@ Two consequences worth stating, because both surprise people:
 
 **Duration:** 45 min
 **Topics:**
-- `mlflow.openai.autolog()` -- trace OpenAI-compatible calls (the LiteLLM gateway)
+- `mlflow.openai.autolog()` -- trace OpenAI-compatible calls (the MLflow AI Gateway)
 - `mlflow.langchain.autolog()` -- trace LangChain agents
 - `mlflow.autolog()` -- the universal autolog (enables all 16+ GenAI integrations)
 - Other LLM integrations: `mlflow.anthropic.autolog()`, Mistral, Gemini, Bedrock, Groq, LiteLLM, CrewAI, DSPy, and more
@@ -421,7 +447,7 @@ trigger.*
 
 ---
 
-### L1-M6: Deployment and Gateway
+### L1-M6: Deployment
 
 #### L1-M6.1 -- Model Serving
 
@@ -454,24 +480,6 @@ trigger.*
 
 **Deliverables:**
 - Batch LLM inference pipeline with result tracking in MLflow
-
----
-
-#### L1-M6.3 -- AI Gateway
-
-**Duration:** 60 min
-**Topics:**
-- What is the AI Gateway? (unified LLM endpoint management)
-- Route configuration: providers, rate limits, fallbacks
-- Supported providers: OpenAI, Anthropic, Mistral, Gemini, Bedrock, etc.
-- Cost management and usage tracking
-- When to use Gateway vs. direct API calls
-- Provider routing: primary/fallback chains
-- Load balancing across providers
-- Budget limits and analytics
-
-**Deliverables:**
-- Gateway with multi-provider routing, fallbacks, and rate limits
 
 ---
 
@@ -523,9 +531,9 @@ scorer defined there. Two ways to change a model's behaviour: change its context
 | M3: Models and Registry | 3 lessons | ~2.75 hours |
 | M4: Evaluation (1 fundamentals, 3 offline, 1 online) | 5 lessons | ~5 hours |
 | M5: Prompt Registry and Management | 1 lesson | ~0.75 hours |
-| M6: Deployment and Gateway | 3 lessons | ~2.75 hours |
+| M6: Deployment | 2 lessons | ~1.75 hours |
 | M7: Optimization | 2 lessons | ~2 hours |
-| **Total** | **19 lessons** | **~17.25 hours** |
+| **Total** | **18 lessons** | **~16.25 hours** |
 
 ---
 ---
@@ -535,20 +543,35 @@ scorer defined there. Two ways to change a model's behaviour: change its context
 *Goal: Complete mastery of AI agent building, observability, evaluation and optimization with MLflow. Covers agent frameworks, custom integrations, agent-specific evaluation (offline, online, and standardized benchmarks), and optimization.*
 *Prerequisite: Level 1 completed*
 *LLM aliases: `gemma-agent`, `gemma-judge`*
-*Estimated time: ~22.5 hours (15 lessons)*
+*Estimated time: ~37.75 hours (33 lessons)*
 
 ---
 
 ### L2-M1: Agent Frameworks
 
-#### L2-M1.1 -- LangChain + LangGraph Agents
+*Six lessons in two groups, split by **scope** -- how much of an interaction one
+run covers. `1_turn` runs one task from an empty message list, and meets each
+framework. `2_conversation` runs four dependent turns in one session, and teaches
+only what changes: where the state lives, and how MLflow groups the traces.*
+
+*The same three frameworks appear in both groups, deliberately. Comparing one
+framework across the two groups shows what memory costs; comparing the three
+frameworks inside `2_conversation` shows that they disagree about who owns the
+session key -- LangGraph and DeepAgents make you invent one, the Claude Agent SDK
+hands you one after the turn is over.*
+
+#### L2-M1.1: Turn -- one task, one answer
+
+*Nothing is carried between tasks. Every run starts from an empty message list.*
+
+##### L2-M1.1.1 -- LangChain + LangGraph Agents
 
 **Duration:** 90 min
 **Topics:**
 - Creating agents with LangChain v1+ (`create_agent` from `langchain.agents`)
 - Tools with the `@tool` decorator (`langchain_core.tools`)
-- Building the same agent by hand with LangGraph (`StateGraph`, nodes, edges, `ToolNode`)
-- `create_agent` returns a compiled `StateGraph` -- one `mlflow.langchain.autolog()` call instruments both
+- `create_agent` returns a compiled `StateGraph` -- one `mlflow.langchain.autolog()` call instruments the whole agent, node spans included
+- Drawing the compiled graph the agent is made of (`agent.get_graph().draw_mermaid()`)
 - ReAct agent pattern and how it maps to MLflow traces
 - Tracking tool calls, reasoning steps, and state transitions between nodes
 - Conditional edge tracing (`add_conditional_edges`) and parallel node execution
@@ -559,19 +582,19 @@ scorer defined there. Two ways to change a model's behaviour: change its context
 - Reference: `~/Projects/Github/lukaskellerstein/ai-agents-course/Version_2/6_langchain-ai/1_langchain/10_agent` and `.../2_langgraph/5_agent`
 
 **Deliverables:**
-- The same ReAct agent built twice -- `create_agent` and a hand-rolled `StateGraph` -- with both traces compared side by side
-- Tool usage and state transition metrics, execution graph visualization
+- One ReAct agent from `create_agent`, built by a single `build_agent()` and used by every part of the lesson
+- Tool usage and state transition metrics, execution graph visualization from the compiled graph itself
 
 ---
 
-#### L2-M1.2 -- DeepAgents + MLflow
+##### L2-M1.1.2 -- DeepAgents + MLflow
 
 **Duration:** 90 min
 **Topics:**
 - DeepAgents architecture: `create_deep_agent()` built on top of `create_agent()`
 - Built-in tools (filesystem, planning, sub-agent delegation via `task` tool)
 - Sub-agents with isolated context windows
-- Backends: `StateBackend`, `FilesystemBackend`, `CompositeBackend`
+- Backends: `StateBackend` and `FilesystemBackend` -- where a file lives once the turn ends, and how MLflow logs it
 - Tracing multi-agent orchestration flows with MLflow
 - Evaluating multi-agent collaboration quality
 - Comparing DeepAgents sub-agent delegation vs. LangGraph shared-state multi-agent patterns
@@ -579,11 +602,11 @@ scorer defined there. Two ways to change a model's behaviour: change its context
 
 **Deliverables:**
 - DeepAgents system with MLflow tracing
-- Comparison with the LangGraph multi-agent approach from L2-M1.1
+- Comparison with the LangGraph multi-agent approach from L2-M1.1.1
 
 ---
 
-#### L2-M1.3 -- Claude Agent SDK + MLflow
+##### L2-M1.1.3 -- Claude Agent SDK + MLflow
 
 **Duration:** 90 min
 **Topics:**
@@ -602,10 +625,86 @@ scorer defined there. Two ways to change a model's behaviour: change its context
 
 ---
 
+#### L2-M1.2: Conversation -- many turns, one session
+
+*The same three frameworks, now carrying state across a turn boundary. Every
+lesson runs the same four-turn conversation, where turns 2 and 4 are unanswerable
+without memory, and every lesson has the same four parts: run it, run a control
+that removes the memory and fails, show the framework-specific twist, then read
+the whole session back.*
+
+*Two keys have to line up, and they belong to different systems. The framework's
+thread key decides what the AGENT remembers; MLflow's `session_id` decides which
+traces belong to ONE conversation. Setting both to the same value is what lets
+one id be followed from the caller through the agent and into the trace store.*
+
+*Requires MLflow 3.11+: `mlflow.search_sessions()`, and the `session_id` / `user`
+arguments on `mlflow.update_current_trace()` and `mlflow.tracing.context()`.*
+
+##### L2-M1.2.1 -- Multi-Turn Conversations with LangChain + LangGraph
+
+**Duration:** 45 min
+**Topics:**
+- `thread_id` versus `session_id` -- two keys, two owners, one value
+- LangGraph checkpointers: `InMemorySaver`, and what changes for `SqliteSaver` / `PostgresSaver`
+- `create_agent(checkpointer=...)` -- one argument is the whole difference between a stateless agent and one with memory
+- Sending only the new message; the checkpointer restores the rest
+- Two ways to stamp a session: `mlflow.update_current_trace(session_id=...)` inside a `@mlflow.trace` function, versus `mlflow.tracing.context(...)` around a block
+- `@mlflow.trace` serializes every argument -- why the agent is bound in a closure
+- Reading a conversation back with `mlflow.search_sessions()`; `Session.id`, `len()`, iteration in time order
+
+**Deliverables:**
+- A four-turn conversation logged as one MLflow session, plus a control run on a fresh thread that provably loses the memory
+- Two runnable scripts, `main_decorator.py` and `main_context.py`, that differ only in the stamping call -- everything they hold fixed lives in a shared `conversation.py`
+- A side-by-side comparison of the two stamping APIs, including what each does to the trace previews
+
+---
+
+##### L2-M1.2.2 -- Multi-Turn Conversations with DeepAgents
+
+**Duration:** 45 min
+**Topics:**
+- What a deep agent has to remember: messages, todos, and the virtual filesystem
+- One `checkpointer=` argument carries all three, because all three are graph state
+- Verifying persistence from `state["files"]` rather than by asking the model
+- The backend decides the scope: `StateBackend` is per-thread, `FilesystemBackend` is per-directory
+- A checkpointer can scope what it stores, and cannot scope a disk -- one thread reads another thread's file
+- Isolating properly: `StateBackend`, or a per-session `root_dir`
+- Sharing on purpose: `CompositeBackend` routes `/memories/` to a `StoreBackend`, scoped by a namespace you choose -- the same crossing as the leak, decided per path
+- `write_todos` is offered, not forced -- why the todo channel is often empty on a local model
+
+**Deliverables:**
+- A four-turn conversation whose file survives every turn, with the file contents read from the graph state
+- A demonstrated cross-thread file leak under `FilesystemBackend`, logged as the `cross_thread_read` metric
+- A demonstrated per-path share under `CompositeBackend` and `StoreBackend`, logged as `shared_memory_read` = 1 next to `cross_thread_read` = 0
+
+---
+
+##### L2-M1.2.3 -- Multi-Turn Conversations with the Claude Agent SDK
+
+**Duration:** 45 min
+**Topics:**
+- The inversion: the SDK assigns the session id, and reports it in `ResultMessage.session_id`
+- Stamping a trace on the way out -- `update_current_trace` only has to run before the trace closes
+- An open `ClaudeSDKClient` IS the conversation; a new client is a new session
+- Why L2-M1.1.3 had no memory: one fresh client per query
+- `ClaudeAgentOptions(resume=...)` -- continuing a session from a new client with no checkpoint store to run
+- A resumed turn keeps the same session id, so MLflow files it into the original conversation
+- Asserting on it: `distinct_session_ids` and `session_id_preserved` as metrics
+- Cost control with `max_budget_usd`; no gateway and no local fallback
+
+**Deliverables:**
+- A four-turn conversation grouped under the id the SDK chose, with the control run proving a new client starts over
+- A resumed fifth turn that lands in the same MLflow session
+
+---
+
 ### L2-M2: Agent Evaluation
 
 *Three groups, in the order you use them. **M2.1 Instruments** builds the
-materials: a dataset, a set of judges, a metric suite. **M2.2 Offline** answers
+materials, and splits again by scope: three lessons on judging one turn, four on
+judging a whole conversation, two on storing what they produce. **M2.2 Offline**
+answers
 "is this version good enough to ship?" -- against curated data you own, and
 against public benchmarks you do not. **M2.3 Online** answers "is what shipped
 still good?" -- against sampled production traces.*
@@ -621,65 +720,202 @@ dataset, each carries its own copy -- no lesson imports from another.*
 
 #### L2-M2.1: Instruments
 
-##### L2-M2.1.1 -- Agent Test Generation and Simulation
+*Nine lessons in three groups, split by **scope** -- what a scorer is allowed to
+see, which is what decides what it can ask. `1_turn` judges one request and its
+answer. `2_conversation` judges a whole discussion. `3_dataset_store` keeps what
+both produce. Inside each group the lessons still climb the same ladder: how
+much a human has to write, falling toward none.*
 
-**Duration:** 90 min
+*Scope is not the same as pass/fail. **Ground truth** decides that: a case with
+a right answer yields pass or fail, a case with only a rubric yields a score.
+Both appear at both scopes.*
+
+##### L2-M2.1.1: Turn -- one request, one answer
+
+###### L2-M2.1.1.1 -- Hand-Written Agent Test Suites
+
+**Duration:** 45 min
 **Topics:**
-- Hand-written test suites as the baseline, and where they stop scaling
-- `mlflow.genai.test_agent()` -- self-description, test generation, simulation, issue discovery
-- `guidance` and `num_test_cases` for steering what gets tested
-- `ConversationSimulator` -- multi-turn simulation with `goal`, `persona`, `simulation_guidelines`
-- `max_turns` and why single-shot test lists miss multi-turn failures
-- `mlflow.genai.simulators.generate_test_cases()` -- distilling goal and persona from existing traces
-- Promoting discovered issues into a versioned `mlflow.genai.create_dataset()`
-- Regression baselines that survive across lessons
+- A test case with two halves: expected answer AND expected tool calls
+- A hand-rolled runner, with one nested MLflow run per case
+- Pass/fail reporting by difficulty; `mlflow.log_table()` for the results frame
+- Regression baselines stored as a run artifact, not a file on disk
+- Catching a real regression: the same agent shipped with a tool removed
+- The three structural limits -- single-turn, only-what-you-imagined, linear cost
 
 **Deliverables:**
-- Auto-discovered issue list for a LangGraph agent, with failure analysis
-- Versioned evaluation dataset reused by every later lesson in the module
+- A working hand-rolled test harness, with a caught regression and a delta report
+- A measured statement of the ceiling that motivates the rest of the group
 
 ---
 
-##### L2-M2.1.2 -- Judges for Agents: Inline, Registered, Aligned
+###### L2-M2.1.1.2 -- Judges for Agents: Inline, Registered, Aligned
 
 **Duration:** 90 min
 **Topics:**
-- Three ways to express the same rubric, and what each one costs you:
-  - **Inline** -- `@scorer` + hand-built prompt + direct LLM call. Full control, no governance, dies with the script
-  - **Registered** -- `make_judge(name, instructions, model=, base_url=)` then `judge.register(name=)`. Named, versioned, reusable, and the only form that can run online
-  - **Built-in** -- `Correctness`, `Guidelines`, `RelevanceToQuery`, `Safety`, `ToolCallCorrectness`, `ToolCallEfficiency`
-- Judge discovery and versioning: `list_scorers()`, `get_scorer(name, version=)`, `delete_scorer()`
-- `ScorerKind` and the registration rule that follows from it: `@scorer` functions are `DECORATOR` kind and **cannot** be registered against a non-Databricks tracking URI (they deserialize via `exec()`); `make_judge` produces `INSTRUCTIONS` kind and registers fine against a local server
-- Judge alignment: `judge.align(traces, optimizer)` -- correcting a judge against human labels instead of hand-tuning its prompt
-- Alignment optimizers (DSPy / SIMBA / GEPA) and when alignment beats prompt editing
-- Choosing a judge model through the LiteLLM gateway; judge cost as a first-class concern
+- Three ways to express one rubric, and what each costs you:
+  - **Inline** -- `@scorer` + hand-built prompt. Full control, no governance
+  - **Registered** -- `make_judge(...)` then `.register()`. The only form that can run online
+  - **Built-in** -- `Correctness`, `Guidelines`, `RelevanceToQuery`, `Safety`
+- `ScorerKind`: `@scorer` is `DECORATOR` kind and cannot be registered against a
+  non-Databricks server; `make_judge` produces `INSTRUCTIONS` kind and registers fine
+- Judge alignment: `judge.align(traces, optimizer)` against human labels
+- **Alignment is turn-only.** `align()` raises `NotImplementedError` on a
+  session-level scorer -- which is why judges live in the turn group
+- `class Judge(Scorer)`: every judge is a scorer, and the test is `model=`
 
 **Deliverables:**
-- One rubric implemented three ways (inline, registered, aligned), scored on the M2.1.1 dataset
-- Disagreement table showing where the inline and aligned judges diverge
-- A registered, versioned judge -- the pattern later lessons re-implement for themselves, since every lesson is a standalone leaf
+- One rubric implemented three ways, with a disagreement table
+- A registered, versioned judge
 
 ---
 
-##### L2-M2.1.3 -- Agent Quality Metrics and Session Scorers
+###### L2-M2.1.1.3 -- Turn-Level Quality Metrics
 
 **Duration:** 90 min
 **Topics:**
-- Designing metrics for agent-specific behaviors:
-  - Task completion rate (binary + partial credit)
-  - Tool selection accuracy (precision/recall/F1 of tool choices)
-  - Reasoning quality (coherence, relevance, completeness)
-  - Plan quality (for plan-and-execute agents)
-- Composite scorers: combining sub-dimensions with explicit, tunable weights
-- **Session-level scorers** -- the multi-turn dimension single-turn metrics cannot reach:
-  `ConversationCompleteness`, `UserFrustration`, `ConversationalToolCallEfficiency`,
-  `ConversationalRoleAdherence`, `KnowledgeRetention`
-- `is_session_level_scorer` and why session scoring takes a different execution path
-- Aggregation strategies across test cases; statistical significance for agent comparisons
+- Scope A, from `(inputs, outputs)`: task completion with partial credit,
+  reasoning quality via an inline judge, a composite with visible weights
+- Scope B, from a flattened dict: tool selection precision / recall / F1
+- Scope B, from the TRACE: `ToolCallCorrectness` and `ToolCallEfficiency`,
+  which see the arguments and the repeated call that a flattened list discards
+- `ToolCallCorrectness` runs ground-truth-free by default
+- Aggregation across cases; comparing two configurations side by side
 
 **Deliverables:**
-- Metric suite covering both single-turn and session dimensions
-- Scores computed over M2.1.1's simulated conversations, not just single-shot cases
+- A metric suite covering both turn scopes, over two agent configurations
+- A named statement of what a turn scorer can never ask
+
+---
+
+##### L2-M2.1.2: Conversation -- many turns, one session
+
+*One engine, three sources of goal, two kinds of verdict. The simulator only
+ever runs forward -- goal to conversation. What changes between lessons is
+where the goal came from.*
+
+###### L2-M2.1.2.1 -- Conversation Simulation: the Engine
+
+**Duration:** 45 min
+**Topics:**
+- `ConversationSimulator` -- `goal`, `persona`, `simulation_guidelines`, `max_turns`
+- **`persona` is ONE user.** The simulator has exactly two sides, that user and
+  your agent. There is no multi-party mode
+- `goal` is the only required key; `context` and `expectations` are optional
+- The `predict_fn` contract: `input` xor `messages`, readable return shapes,
+  and `mlflow_session_id` for stateful agents
+- One conversation = one session = several traces; `mlflow.search_sessions()`
+- **A simulator test case is a scenario, not an assertion.** It cannot pass or
+  fail. The internal "goal achieved?" check only decides when to stop
+
+**Deliverables:**
+- Multi-turn conversations traced per turn and grouped into sessions
+- A stated boundary: this lesson produces traces and grades nothing
+
+---
+
+###### L2-M2.1.2.2 -- Goals and Personas Distilled from Real Sessions
+
+**Duration:** 45 min
+**Topics:**
+- `mlflow.genai.simulators.generate_test_cases()` -- goal and persona inferred
+  out of existing sessions, so production traffic writes the suite
+- Why this is not a second execution direction: it produces a GOAL, which then
+  runs forward through the same simulator
+- Closing the loop: a distilled case fed straight back in
+- The silent-failure trap: a session whose answer will not parse is DROPPED, so
+  the function returns a shorter list rather than raising
+
+**Deliverables:**
+- Goals and personas distilled with no human input, then replayed
+- The count-first reading pattern that makes a silent drop visible
+
+---
+
+###### L2-M2.1.2.3 -- Judging a Whole Conversation
+
+**Duration:** 90 min
+**Topics:**
+- Session-level scorers -- the multi-turn dimension no turn scorer can reach
+- All **seven** built-ins: `ConversationCompleteness`, `UserFrustration`,
+  `KnowledgeRetention`, `ConversationalToolCallEfficiency`,
+  `ConversationalRoleAdherence`, `ConversationalSafety`, `ConversationalGuidelines`
+- Writing your own: a `@scorer` whose parameter is named `session` becomes
+  session-level automatically, and needs no LLM at all
+- `discover_issues()` -- judging in WORDS, with severity and root causes
+- Three traps: every trace needs a `session_id`; traces export asynchronously;
+  these judges answer with strings, and `bool("no")` is `True`
+- **Polarity is not uniform.** `user_frustration` is good at 0.0, the rest at 1.0
+- A judge that failed to parse its own answer is not a score of zero
+
+**Deliverables:**
+- One conversation scored by eight session scorers, logged under `session/<name>`
+- A caught guideline violation, and a caught judge parse failure
+
+---
+
+###### L2-M2.1.2.4 -- test_agent(): the Whole Pipeline in One Call
+
+**Duration:** 45 min
+**Topics:**
+- `mlflow.genai.test_agent()` -- describe, generate, simulate, discover
+- It is a WRAPPER: it builds a `ConversationSimulator` and calls
+  `discover_issues()`. It reuses M2.1.2.1 and M2.1.2.3, and never touches M2.1.2.2
+- The order is description -> goals -> conversations, never the reverse
+- `traces=` / `experiment_id=`: the description step falls back to reading
+  existing traces when the agent cannot describe itself
+- It returns **issues, never scores**. For numbers, run session scorers over
+  `result.simulation_traces` yourself
+- Why "0 issues" from an LLM judge is not proof
+
+**Deliverables:**
+- Auto-discovered issue list for an agent, from nothing but the agent
+- A side-by-side of generated cases against hand-written ones
+
+---
+
+##### L2-M2.1.3: Dataset Store
+
+*Where the cases live after the script that made them ends. Who wrote a record
+decides what you can assert about it, and decides nothing about how it is stored.*
+
+###### L2-M2.1.3.1 -- The Dataset Store: Hand-Written Records
+
+**Duration:** 45 min
+**Topics:**
+- Why an agent dataset differs from L1-M4.2.3's model dataset: `inputs` is a
+  message list, `expectations` name tools
+- `mlflow.genai.create_dataset()`, `merge_records()`, `to_df()`, `delete_records()`
+- `merge_records` as an upsert, and why that makes it CI-safe
+- Versioning by tag: `set_dataset_tags()` merges, `delete_dataset_tag()` removes
+- `search_datasets()` / `get_dataset()`, and why a bare search is dangerous
+- The richest record shape -- answer AND route -- and why it is the one that
+  yields pass or fail
+- No LLM calls -- the lesson is about the store, not the agent
+
+**Deliverables:**
+- A versioned `support_agent_regression` dataset
+- The upsert demonstrated by merging the same six records twice
+
+---
+
+###### L2-M2.1.3.2 -- The Dataset Store: Generated and Multi-Turn Records
+
+**Duration:** 45 min
+**Topics:**
+- The thinner expectation shapes: route-only from a distilled goal, and empty
+  from `test_agent` -- judged rather than compared
+- The **multi-turn record**: `inputs` carrying a conversation already in
+  progress, so a stored case can start at turn 3
+- Merging four producers into one dataset with one call
+- **Two kinds of test case, one store.** An evaluation record feeds
+  `mlflow.genai.evaluate()`; a simulator scenario (`goal`, `persona`) feeds
+  `ConversationSimulator`. They are not interchangeable, and the simulator
+  raises when handed the wrong one
+
+**Deliverables:**
+- One dataset holding four record shapes, including multi-turn
+- A runtime demonstration that the two kinds of `test_cases` cannot be swapped
 
 ---
 
@@ -689,7 +925,9 @@ dataset, each carries its own copy -- no lesson imports from another.*
 Answers "is this version good enough to ship?" The first two lessons measure
 against your own bar; the last three measure against everyone else's.*
 
-##### L2-M2.2.1 -- Agent Architecture Comparison
+##### L2-M2.2.1: Turn -- one request, one answer
+
+###### L2-M2.2.1.1 -- Agent Architecture Comparison
 
 **Duration:** 90 min
 **Topics:**
@@ -710,7 +948,7 @@ against your own bar; the last three measure against everyone else's.*
 
 ---
 
-##### L2-M2.2.2 -- Offline Gates and Regression Detection
+###### L2-M2.2.1.2 -- Offline Gates and Regression Detection
 
 **Duration:** 90 min
 **Topics:**
@@ -728,7 +966,51 @@ against your own bar; the last three measure against everyone else's.*
 
 ---
 
-##### L2-M2.2.3 -- SWE-Bench Evaluation
+###### L2-M2.2.1.3 -- Comparing Two Versions of One Agent
+
+**Duration:** 60 min
+**Topics:**
+- PAIRED comparison: one agent, two versions, the SAME cases in both
+- Why that is a different question from M2.2.1.1's three architectures --
+  independent means versus matched pairs
+- WIN / LOSS / TIE per case, which a mean cannot give you: +0.05 is equally
+  consistent with "six cases better" and "one much better, two worse"
+- The SIGN TEST, and reading it honestly on the 6-20 cases a real suite has
+- Deterministic scoring, because a judge adds variance to BOTH arms and on a
+  small suite that noise swamps the effect
+- Not to be confused with L2-M3.2: that SEARCHES a space, this DECIDES between
+  two candidates you already have
+
+**Deliverables:**
+- A paired v1-vs-v2 report with per-case verdicts and a p-value
+- A worked case where the mean improves and the verdict is still "not proven"
+
+---
+
+###### L2-M2.2.1.4 -- Reading an Evaluation: Slices and Failure Taxonomy
+
+**Duration:** 60 min
+**Topics:**
+- No new metric -- two ways of reading results you already have
+- SLICES: the aggregate lies. 0.75 overall can be 1.00 on three segments and
+  0.00 on a fourth, and users experience their slice, not your mean
+- Why slice SIZE decides whether a low slice is a lead or a finding
+- A slice you did not LABEL cannot be analysed afterwards -- label before you
+  need it
+- TAXONOMY: cluster failures by cause, rank by frequency, read the cumulative
+  share. "12 failed" is not actionable; "9 of 12 share one cause" is
+- Ordering the classifier most-specific-first, so you count root causes rather
+  than symptoms
+- Simpson's paradox: an aggregate can move opposite to every slice when two
+  runs have different slice mixes
+
+**Deliverables:**
+- A slice table exposing a segment the aggregate hid
+- A ranked failure taxonomy that names the next piece of work
+
+---
+
+###### L2-M2.2.1.5 -- SWE-Bench Evaluation
 
 **Duration:** 90 min
 **Topics:**
@@ -750,7 +1032,7 @@ against your own bar; the last three measure against everyone else's.*
 
 ---
 
-##### L2-M2.2.4 -- GAIA Benchmark
+###### L2-M2.2.1.6 -- GAIA Benchmark
 
 **Duration:** 90 min
 **Topics:**
@@ -771,7 +1053,7 @@ against your own bar; the last three measure against everyone else's.*
 
 ---
 
-##### L2-M2.2.5 -- Custom Domain-Specific Benchmark
+###### L2-M2.2.1.7 -- Custom Domain-Specific Benchmark
 
 **Duration:** 90 min
 **Topics:**
@@ -792,13 +1074,107 @@ against your own bar; the last three measure against everyone else's.*
 
 ---
 
+##### L2-M2.2.2: Conversation -- many turns, one session
+
+*Same pipeline as the turn branch, different unit. A support agent can answer
+every individual turn correctly and still leave the customer unhelped -- and
+"was the task ever finished?" is a property of the session, so a turn gate is
+structurally unable to see it.*
+
+###### L2-M2.2.2.1 -- Offline Gates on Whole Conversations
+
+**Duration:** 60 min
+**Topics:**
+- The same gate pipeline with the UNIT changed: scenario -> agent -> session
+  scorers -> threshold
+- Gating on `ConversationCompleteness`, `KnowledgeRetention`, `UserFrustration`
+- **Polarity in a gate**: `user_frustration` is good at 0.0 and the other two at
+  1.0, so a gate that compares everything with `>=` passes the worst agent
+- A judge that failed to parse contributes NOTHING -- scoring it 0.0 would fail
+  the gate on a judge bug rather than on agent quality
+- Baseline stored as a run tag, and regression read against it
+- **Why one run is not a gate**: the user side is generated, so the same
+  candidate scores differently twice. Mean over many, pass^k, or a tolerance band
+
+**Deliverables:**
+- A ship/block verdict computed from session scorers, with a frozen baseline
+- A measured statement of run-to-run variance and what to do about it
+
+---
+
+###### L2-M2.2.2.2 -- Comparing Two Agent Versions Across Conversations
+
+**Duration:** 60 min
+**Topics:**
+- The method depends entirely on WHO PLAYS THE USER:
+  - **scripted** turns are fixed strings, both versions face the identical
+    conversation, and pairing works exactly as at turn scope
+  - **simulated** turns are generated and REACT, so v2 answers turn 1
+    differently, the user asks a different turn 2, and there is nothing to pair
+- Comparing distributions over k runs per version when pairing is unavailable
+- Why 2 runs can never separate two versions: the spread is the size of the effect
+- Reading a tie honestly -- session scorers answer yes/no, so they are COARSE,
+  and a tie means the suite lacks RESOLUTION rather than the versions matching
+- Scripted for the per-commit gate, simulated for the periodic sweep. Not rivals
+
+**Deliverables:**
+- The same question answered both ways, with the divergence made visible
+- A stated rule for which method a given suite is entitled to use
+
+---
+
+###### L2-M2.2.2.3 -- Where Conversations Break Down: Funnel and Slices
+
+**Duration:** 60 min
+**Topics:**
+- A session scorer returns ONE verdict for N turns -- enough to fail a build,
+  useless for fixing it
+- The FUNNEL: how many conversations are still healthy after turn 1, 2, 3 --
+  and which turn is the cliff
+- Why a funnel is not a per-turn pass rate: once a conversation breaks it stays
+  broken, because the customer already had the bad experience
+- Conversation-specific failure causes, `lost_earlier_context` above all
+- Scoring EVERY TURN, not just the session -- score only the session and this
+  analysis is impossible afterwards
+- The cause here is a real production trade-off: a history window caps token
+  cost and latency, and the funnel is how you measure what it cost
+
+**Deliverables:**
+- A funnel locating the turn where conversations die
+- A ranked cause table, and a named trade-off behind the top cause
+
+---
+
+###### L2-M2.2.2.4 -- A Multi-Turn Agent Benchmark
+
+**Duration:** 60 min
+**Topics:**
+- Why SWE-Bench and GAIA are single-turn, and what breaks when they are not
+- The three fixes, after the tau-bench pattern:
+  - **pin the user model in the benchmark spec**, not in the caller's config
+  - **score the final STATE** of a database the agent had to mutate, not the text
+  - **report pass^k**, not just pass@1
+- A task that passes by NOT acting, so refusing correctly scores
+- No LLM judge anywhere: the metric is a dict comparison, so re-scoring an old
+  transcript gives the same answer forever
+- What the benchmark still does not buy: comparability with another team, unless
+  they run the same user model, simulator version and k
+
+**Deliverables:**
+- A working multi-turn benchmark with pass@1 and pass^k reported side by side
+- The gap between those two numbers on one agent, and what it means
+
+---
+
 #### L2-M2.3: Online
 
 *Production traces, no ground truth, sampled coverage, and the server pulls the
 trigger. Answers "is what shipped still good?" Benchmarking has no counterpart
 here -- live traffic has no frozen dataset and no expected answers.*
 
-##### L2-M2.3.1 -- Online Scoring on Production Traces
+##### L2-M2.3.1: Turn -- one production trace
+
+###### L2-M2.3.1.1 -- Online Scoring on Production Traces
 
 **Duration:** 90 min
 **Topics:**
@@ -817,6 +1193,72 @@ here -- live traffic has no frozen dataset and no expected answers.*
 - A registered judge scoring a sampled live trace stream on a schedule
 - Quality trend over time, assembled from online assessments
 - The same agent seen both ways: gated offline in M2.2.2, monitored online here
+
+---
+
+###### L2-M2.3.1.2 -- A/B Testing Two Versions on Live Traffic
+
+**Duration:** 45 min
+**Topics:**
+- Both versions serving AT THE SAME TIME against traffic nobody chose
+- Why you cannot pair: request 7 is served by exactly one arm. Compare
+  distributions, and rely on assignment being random with respect to the question
+- The mechanism in three moves: assign per user, TAG the trace with the arm,
+  let ONE registered judge score a sample of both and split by tag
+- Two judges, or a judge retuned between arms, measures the judges not the agents
+- **`hash()` is salted per process.** Bucketing on it silently reassigns users
+  after every restart; `hashlib.md5` here is a STABILITY choice, not a security one
+- What online buys that offline cannot: the traffic MIX is real, including the
+  questions you would never have written
+
+**Deliverables:**
+- A live A/B with both arms scored by one judge and split by trace tag
+- A stated reason why the result is or is not readable at this sample size
+
+---
+
+##### L2-M2.3.2: Conversation -- one production session
+
+###### L2-M2.3.2.1 -- Online Session Scoring
+
+**Duration:** 45 min
+**Topics:**
+- Sampling production SESSIONS rather than traces: "did this customer get
+  helped?" instead of "was this reply good?"
+- `Scorer.is_session_level_scorer` is the only thing that changes the server's
+  behaviour -- it decides whether the judge is handed one trace or a list
+- Built-in session scorers are `BUILTIN` kind, so they DO register against an
+  open-source tracking server -- verified, not assumed
+- **`.start()` demands a `gateway:/` model.** A scorer built with `openai:/`
+  registers happily and then refuses to start
+- **`delete_scorer(name=...)` is not enough** -- pass `version="all"`
+- Cost grows with conversation length; signal arrives later, because a session
+  cannot be judged until it looks finished
+
+**Deliverables:**
+- A registered, STARTED session-level scorer sampling live sessions
+- A stated rule for sampling lower here than at turn level
+
+---
+
+###### L2-M2.3.2.2 -- A/B Testing on Live Sessions: Sticky Assignment
+
+**Duration:** 45 min
+**Topics:**
+- The variant is chosen ONCE, when the session opens, and every turn of that
+  session is served and tagged with it
+- Why that is not a nicety: assign per request and turn 1 goes to v1 while turn
+  2 goes to v2, so the conversation you score was produced by NEITHER version
+- Noise averages out; a fabricated conversation does not. It is a measurement
+  of a system you never shipped, counted against whichever arm you tagged it with
+- Turn-scope A/B has no such failure mode, which is why this is a separate lesson
+- Grouping sampled traces back into sessions by tag, then splitting by arm
+- The two costs: prompt size grows with conversation length, and a session
+  cannot be judged until the customer has stopped talking
+
+**Deliverables:**
+- A session-level A/B with sticky assignment demonstrated per session
+- A named contrast with the turn-scope A/B on both cost and time-to-signal
 
 ---
 
@@ -893,10 +1335,10 @@ and it works for any knob invented later.*
 
 | Module | Lessons | Estimated Time |
 |--------|---------|---------------|
-| M1: Agent Frameworks | 3 lessons | ~4.5 hours |
-| M2: Agent Evaluation (3 instruments, 5 offline, 1 online) | 9 lessons | ~13.5 hours |
+| M1: Agent Frameworks (3 turn, 3 conversation) | 6 lessons | ~6.75 hours |
+| M2: Agent Evaluation (9 instruments, 11 offline, 4 online) | 24 lessons | ~26.5 hours |
 | M3: Agent Optimization | 3 lessons | ~4.5 hours |
-| **Total** | **15 lessons** | **~22.5 hours** |
+| **Total** | **33 lessons** | **~37.75 hours** |
 
 ---
 ---
@@ -1134,10 +1576,10 @@ and it works for any knob invented later.*
 
 | Level | Focus | Lessons | Time |
 |-------|-------|---------|------|
-| **Level 1 -- Models** | Models/LLMs end-to-end | 19 lessons | ~17.25 hours |
-| **Level 2 -- AI Agents** | Agent frameworks, evaluation, optimization | 15 lessons | ~22.5 hours |
+| **Level 1 -- Models** | Models/LLMs end-to-end | 18 lessons | ~16.25 hours |
+| **Level 2 -- AI Agents** | Agent frameworks, evaluation, optimization | 30 lessons | ~35.5 hours |
 | **Level 3 -- Advanced** | Production, extensibility, capstones | 11 lessons | ~19 hours |
-| **Total** | | **45 lessons** | **~58.75 hours** |
+| **Total** | | **59 lessons** | **~70.75 hours** |
 
 ---
 
@@ -1169,51 +1611,77 @@ tutorial/
 │   │       └── 1_online_scoring/
 │   ├── M5_prompt_registry/
 │   │   └── 1_prompt_registry_management/
-│   ├── M6_deployment_gateway/
+│   ├── M6_deployment/
 │   │   ├── 1_model_serving/
-│   │   ├── 2_batch_prediction/
-│   │   └── 3_ai_gateway/
+│   │   └── 2_batch_prediction/
 │   └── M7_optimization/
 │       ├── 1_prompt_optimization/
 │       └── 2_finetuning_huggingface/
 ├── level_2_agents/
 │   ├── M1_agent_frameworks/
-│   │   ├── 1_langchain_langgraph/
-│   │   ├── 2_deepagents/
-│   │   └── 3_claude_agent_sdk/
+│   │   ├── 1_turn/                            # one task, one answer
+│   │   │   ├── 1_langchain_langgraph/
+│   │   │   ├── 2_deepagents/
+│   │   │   └── 3_claude_agent_sdk/
+│   │   └── 2_conversation/                    # many turns, one session
+│   │       ├── 1_langchain_langgraph/
+│   │       ├── 2_deepagents/
+│   │       └── 3_claude_agent_sdk/
 │   ├── M2_agent_evaluation/
 │   │   ├── 1_instruments/
-│   │   │   ├── 1_agent_testing/
-│   │   │   ├── 2_judges/
-│   │   │   └── 3_quality_metrics/
+│   │   │   ├── 1_turn/                        # one request, one answer
+│   │   │   │   ├── 1_hand_written_tests/
+│   │   │   │   ├── 2_judges/
+│   │   │   │   └── 3_quality_metrics/
+│   │   │   ├── 2_conversation/                # many turns, one session
+│   │   │   │   ├── 1_conversation_simulation/
+│   │   │   │   ├── 2_goals_from_real_sessions/
+│   │   │   │   ├── 3_judging_conversations/
+│   │   │   │   └── 4_test_agent/
+│   │   │   └── 3_dataset_store/               # storage for both
+│   │   │       ├── 1_hand_written_records/
+│   │   │       └── 2_generated_records/
 │   │   ├── 2_offline/
-│   │   │   ├── 1_architecture_comparison/
-│   │   │   ├── 2_offline_gates/
-│   │   │   ├── 3_swe_bench/
-│   │   │   ├── 4_gaia/
-│   │   │   └── 5_custom_benchmark/
+│   │   │   ├── 1_turn/                        # one request, one answer
+│   │   │   │   ├── 1_architecture_comparison/     # your bar
+│   │   │   │   ├── 2_offline_gates/
+│   │   │   │   ├── 3_version_comparison/
+│   │   │   │   ├── 4_failure_analysis/
+│   │   │   │   ├── 5_swe_bench/                   # everyone's bar
+│   │   │   │   ├── 6_gaia/
+│   │   │   │   └── 7_custom_benchmark/
+│   │   │   └── 2_conversation/                # many turns, one session
+│   │   │       ├── 1_conversation_gates/          # your bar
+│   │   │       ├── 2_version_comparison/
+│   │   │       ├── 3_failure_analysis/
+│   │   │       └── 4_multi_turn_benchmark/        # everyone's bar
 │   │   └── 3_online/
-│   │       └── 1_online_scoring/
+│   │       ├── 1_turn/
+│   │       │   ├── 1_online_scoring/
+│   │       │   └── 2_live_ab_testing/
+│   │       └── 2_conversation/
+│   │           ├── 1_online_session_scoring/
+│   │           └── 2_live_ab_testing/
 │   └── M3_agent_optimization/
 │       ├── 1_prompt_instruction_optimization/
 │       ├── 2_configuration_optimization/
 │       └── 3_benchmark_optimization/
-├── level_3_advanced/
-│   ├── M1_production_operations/
-│   │   ├── 1_production_tracing/
-│   │   ├── 2_grafana_dashboards/
-│   │   ├── 3_feedback_loops/
-│   │   └── 4_cicd/
-│   ├── M2_advanced_tracing/
-│   │   ├── 1_opentelemetry/
-│   │   └── 2_temporal_tracing/
-│   ├── M3_extensibility/
-│   │   ├── 1_custom_autolog/
-│   │   ├── 2_plugins/
-│   │   └── 3_enterprise_data/
-│   └── M4_capstones/
-│       ├── 1_agent_platform/
-│       └── 2_framework_benchmark/
+└── level_3_advanced/
+    ├── M1_production_operations/
+    │   ├── 1_production_tracing/
+    │   ├── 2_grafana_dashboards/
+    │   ├── 3_feedback_loops/
+    │   └── 4_cicd/
+    ├── M2_advanced_tracing/
+    │   ├── 1_opentelemetry/
+    │   └── 2_temporal_tracing/
+    ├── M3_extensibility/
+    │   ├── 1_custom_autolog/
+    │   ├── 2_plugins/
+    │   └── 3_enterprise_data/
+    └── M4_capstones/
+        ├── 1_agent_platform/
+        └── 2_framework_benchmark/
 ```
 
 ### MLflow Feature Coverage Matrix
@@ -1233,7 +1701,7 @@ tutorial/
 | Prompt Engineering | Registry, versioning, A/B testing | -- | -- |
 | GenAI Scorers/Judges | Built-in + custom scorers, LLM judges | Agent metrics, inline vs. registered judges, alignment, session scorers | -- |
 | Data/Datasets | Logging, lineage, schema | Benchmarks (SWE-Bench, GAIA, custom) | Enterprise data management |
-| AI Gateway | Multi-provider routing, fallbacks | -- | -- |
+| AI Gateway | It IS the infra — every lesson's LLM entry point (`infra/mlflow/gateway/seed_gateway.py`) | Server-side judges name `gateway:/<alias>` | -- |
 | Model Serving | CLI, Docker, multi-version | -- | -- |
 | Batch Prediction | Pipelines | -- | -- |
 | Optimization | Prompt optimization, fine-tuning | Instructions, tool/MCP budget, skills, subagents, model choice | -- |

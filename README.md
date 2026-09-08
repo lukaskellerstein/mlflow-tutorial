@@ -3,46 +3,50 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MLflow 2.x](https://img.shields.io/badge/MLflow-2.x+-0194E2.svg)](https://mlflow.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license)
-[![Lessons](https://img.shields.io/badge/lessons-42-orange.svg)](#course-structure)
+[![Lessons](https://img.shields.io/badge/lessons-60-orange.svg)](#course-structure)
 
 > A comprehensive, three-level hands-on tutorial for MLFlow — from model tracking through production AI agent evaluation.
 
-Learn MLflow by building. Each lesson is a standalone Python project you can run immediately. The tutorial emphasizes **LLMs and AI agents** — tracking experiments, evaluating model quality, tracing agent behavior, and shipping to production — all running locally with LMStudio (no API costs).
+Learn MLflow by building. Each lesson is a standalone Python project you can run immediately. The tutorial emphasizes **LLMs and AI agents** — tracking experiments, evaluating model quality, tracing agent behavior, and shipping to production — all running locally with Unsloth Studio (no API costs).
 
 ## Features
 
-- **42 self-contained lessons** across 3 domain-based levels with working code
-- **Zero API costs** — all LLM inference runs locally via LMStudio
-- **Full infrastructure included** — one `podman compose up` starts everything
+- **60 self-contained lessons** across 3 domain-based levels with working code
+- **Zero API costs** — all LLM inference runs locally via Unsloth Studio
+- **Full infrastructure included** — one `podman compose up` starts what Level 1 and 2 need; `--profile level3` adds the rest
 - **Agent evaluation focus** — LangChain, LangGraph, Claude Agent SDK, DeepAgents
 - **Production patterns** — Grafana dashboards, CI/CD quality gates, trace sampling
-- **Each lesson runs independently** — `uv sync && uv run python main.py`
+- **Each lesson runs independently** — `uv sync && uv run python main.py`, except
+  the few lessons that ship more than one script; their README names them
 
 ## Architecture
 
 ```mermaid
 graph TD
     subgraph Local Machine
-        LMS[LMStudio<br/>gemma-4-26b-a4b<br/>nomic-embed-text]
+        UNS[Unsloth Studio<br/>:8888<br/>gemma-4-26B-A4B-it-qat<br/>Nomic-embed-text-v1.5]
         UV[uv<br/>Lesson Runner]
     end
 
     subgraph Podman Compose
-        LL[LiteLLM Gateway<br/>:4000]
-        ML[MLflow Server<br/>:5555]
-        PG[(PostgreSQL<br/>:5432)]
-        QD[(Qdrant<br/>:6333)]
-        TMP[Temporal<br/>:7233]
-        TUI[Temporal UI<br/>:8080]
-        GF[Grafana<br/>:3000]
-        PR[Prometheus<br/>:9090]
+        subgraph "Level 1 + 2 tier — podman compose up -d"
+            ML["MLflow Server :5555<br/><b>tracking + AI Gateway</b>"]
+            SEED[mlflow-seed<br/>runs once, exits]
+            PG[(PostgreSQL<br/>:5432)]
+            QD[(Qdrant<br/>:6333)]
+        end
+        subgraph "Level 3 tier — --profile level3"
+            TMP[Temporal<br/>:7233]
+            TUI[Temporal UI<br/>:8080]
+            GF[Grafana<br/>:3000]
+            PR[Prometheus<br/>:9090]
+        end
     end
 
     UV -->|tracking & tracing| ML
-    UV -->|"LLM calls (aliases)"| LL
-    LL -->|local, default| LMS
-    LL -.->|fallback| OR[OpenRouter / OpenAI]
-    ML -->|"server-side judges"| LL
+    UV -->|"LLM calls (aliases)"| ML
+    SEED -->|"writes the aliases in"| ML
+    ML -->|"every alias, no fallback"| UNS
     UV -->|vectors| QD
     UV -->|workflows| TMP
     ML -->|metadata| PG
@@ -52,12 +56,18 @@ graph TD
     PR -->|scrape| ML
 ```
 
+**There is one gateway and it is the MLflow server.** A lesson names an alias
+(`gemma-chat`, `gemma-judge`, `gemma-agent`) and posts to
+`http://127.0.0.1:5555/gateway/mlflow/v1` — the same server it logs runs and
+traces to. A server-side judge needs no separate wiring at all: it names
+`gateway:/gemma-judge`, which the server already holds.
+
 ## Course Structure
 
 | Level | Focus | Modules | Lessons | Time |
 | ------- | ------- | --------- | --------- | ------ |
-| **Level 1 — Models** | Everything about models/LLMs end-to-end | 7 | 18 | ~16 hours |
-| **Level 2 — AI Agents** | Agent frameworks, evaluation, benchmarking | 4 | 13 | ~19.5 hours |
+| **Level 1 — Models** | Everything about models/LLMs end-to-end | 7 | 18 | ~16.25 hours |
+| **Level 2 — AI Agents** | Agent frameworks, evaluation, benchmarking | 3 | 30 | ~35.5 hours |
 | **Level 3 — Advanced** | Production patterns, infrastructure, capstones | 4 | 11 | ~19 hours |
 
 See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions and deliverables.
@@ -69,19 +79,18 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 | M1 Tracking | 3 | Tracking fundamentals, search/query/MlflowClient, advanced patterns |
 | M2 Tracing | 2 | Auto and manual tracing, trace analysis |
 | M3 Models & Registry | 3 | Models/flavors/signatures, custom PyFunc, registry workflows |
-| M4 Evaluation | 4 | Evaluation fundamentals, GenAI/custom metrics, RAG evaluation, datasets/human-in-loop |
-| M5 Prompt Engineering | 2 | Prompt registry/management, prompt optimization |
+| M4 Evaluation | 5 | Evaluation fundamentals, GenAI/custom metrics, RAG evaluation, datasets/human-in-loop, online scoring |
+| M5 Prompt Registry | 1 | Prompt registry, versioning and management |
 | M6 Deployment & Gateway | 3 | Model serving, batch prediction, AI gateway |
-| M7 Fine-Tuning | 1 | HuggingFace Transformers |
+| M7 Optimization | 2 | Model optimization, fine-tuning with HuggingFace Transformers |
 
 ### Level 2 — AI Agents
 
 | Module | Lessons | Topics |
 | -------- | --------- | -------- |
-| M1 Agent Frameworks | 3 | LangChain agents, LangGraph agents, multi-agent systems |
-| M2 Custom Integrations | 2 | Claude Agent SDK, DeepAgents |
-| M3 Agent Evaluation | 5 | Agent testing, quality metrics, architecture comparison, optimization, evaluation pipeline |
-| M4 Agent Benchmarks | 3 | SWE-Bench, GAIA, custom domain-specific benchmark |
+| M1 Agent Frameworks | 3 | LangChain/LangGraph, DeepAgents, Claude Agent SDK |
+| M2 Agent Evaluation | 24 | Split by SCOPE throughout: instruments (turn, conversation, dataset store), offline (turn gates + benchmarks, conversation gates + multi-turn benchmark), online (turn, conversation) |
+| M3 Agent Optimization | 3 | Prompt/instruction, configuration, benchmark optimization |
 
 ### Level 3 — Advanced
 
@@ -99,7 +108,7 @@ See [syllabus.md](./syllabus.md) for the full syllabus with lesson descriptions 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) package manager
 - [Podman](https://podman.io/) + [Podman Compose](https://github.com/containers/podman-compose)
-- [LMStudio](https://lmstudio.ai/) installed natively (for Apple Silicon GPU access)
+- [Unsloth Studio](https://unsloth.ai/) installed natively (for Apple Silicon GPU access)
 
 ### 1. Start Podman machine
 
@@ -108,27 +117,44 @@ podman machine init
 podman machine start
 ```
 
-### 2. Load LMStudio models
+### 2. Set up Unsloth Studio
 
-```bash
-lms server start
-lms unload --all   # keep exactly one model resident — a second one measurably slows the first
-lms load google/gemma-4-26b-a4b --context-length 262144 --parallel 1 --gpu max  # serves every gemma-* alias
-# Also load: text-embedding-nomic-embed-text-v1.5 for RAG lessons (-> nomic-embed)
+Start it, then set two things in **Settings → API**:
+
+1. **Model auto-switch: ON.** Unsloth holds one model at a time. With this off,
+   every alias except the currently loaded model fails with
+   `400 ... 'Switch model by request' is off`. With it on, a swap costs 4–14 s
+   and needs no intervention.
+2. **Copy the API key.** Unsloth requires one on every route, `/v1/models`
+   included. Export it as `UNSLOTH_API_KEY` before starting the stack — the
+   gateway seeder reads it from the environment, and with it blank the seeder
+   skips every local alias rather than building endpoints that 401 later.
+
+Download the three models the aliases name:
+
+```text
+unsloth/gemma-4-26B-A4B-it-qat-GGUF                gemma-chat, gemma-judge, gemma-agent
+unsloth/gemma-4-31B-it-qat-GGUF                    gemma-31b-local
+second-state/Nomic-embed-text-v1.5-Embedding-GGUF  nomic-embed, text-embedding-3-small
 ```
 
-`--context-length` matters: LMStudio's own default is far smaller, and the
-gateway declares these windows in `infra/litellm/config.yaml`. If a model is
-loaded smaller than declared, an oversized prompt is routed to it anyway.
-`--parallel 1` is deliberate: the lessons are sequential loops, and splitting the GPU across four slots made the same lesson 38% slower (199s -> 275s) while the evaluation lesson showed no gain.
-`lms ps --json` reports what is actually loaded — trust it over the UI.
+Leave **auto_download_model OFF**: with it on, a typo in a model id becomes a
+multi-gigabyte download rather than an error.
 
-### 3. Start all infrastructure
+### 3. Start the infrastructure
 
 ```bash
 cd infra
-podman compose up -d
+podman compose up -d                     # Level 1 + Level 2: MLflow, Qdrant, PostgreSQL
+podman compose --profile level3 up -d    # Level 3: adds Temporal, Prometheus, Grafana
 ```
+
+Level 1 and 2 lessons only talk to MLflow, which is also the gateway, so the
+default tier leaves Temporal (four containers plus an Elasticsearch JVM),
+Prometheus and Grafana out. Add them when you reach Level 3 — the second
+command is additive and shares the same volumes. Details, including the
+`COMPOSE_PROFILES` switch that makes the profile sticky, are in
+[infra/README.md](./infra/README.md).
 
 ### 4. Run your first lesson
 
@@ -142,40 +168,55 @@ uv run python main.py
 
 ### Services
 
-| Service | URL | Notes |
-| --------- | ----- | ------- |
-| MLflow UI | <http://localhost:5555> | Tracking, models, traces |
-| LiteLLM gateway | <http://localhost:4000> | **Every lesson's LLM entry point** |
-| LMStudio | <http://localhost:1234> | Serves the local models *behind* the gateway |
-| Temporal UI | <http://localhost:8080> | Workflow orchestration |
-| Qdrant | <http://localhost:6333/dashboard> | Vector database |
-| Grafana | <http://localhost:3000> | Dashboards (admin/admin) |
-| Prometheus | <http://localhost:9090> | Metrics collection |
-| PostgreSQL | localhost:5432 | MLflow + Temporal backend |
+| Service | Tier | URL | Notes |
+| --------- | ------ | ----- | ------- |
+| MLflow UI | L1+ | <http://localhost:5555> | Tracking, models, traces |
+| MLflow AI Gateway | L1+ | <http://localhost:5555/gateway/mlflow/v1> | **Every lesson's LLM entry point** — the same server |
+| Unsloth Studio | host | <http://127.0.0.1:8888> | Serves the local models *behind* the gateway |
+| Qdrant | L1+ | <http://localhost:6333/dashboard> | Vector database |
+| PostgreSQL | L1+ | localhost:5432 | MLflow + Temporal backend |
+| Temporal UI | L3 | <http://localhost:8080> | Workflow orchestration |
+| Grafana | L3 | <http://localhost:3000> | Dashboards (admin/admin) |
+| Prometheus | L3 | <http://localhost:9090> | Metrics collection |
 
 ### LLM Models
 
-Lessons name an **alias**, never a model. The mapping, the fallback order and
-each model's context window live in `infra/litellm/config.yaml` — change a model
-there and every lesson follows, with no lesson edited.
+Lessons name an **alias**, never a model. The mapping and the fallback order
+live in `infra/mlflow/gateway/seed_gateway.py` — change a model there, run
+`podman compose run --rm mlflow-seed --reset --prune`, and every lesson follows
+with no lesson edited.
 
 | Alias | Resolves to | Use Case |
 | ------- | ------ | ---------- |
-| `gemma-chat` | LMStudio `google/gemma-4-26b-a4b` | The lesson's own LLM call — the thing under observation |
-| `gemma-judge` | **OpenRouter** `google/gemma-4-26b-a4b-it` | LLM-as-judge, scorers, simulators — hosted, because the local Q4 build corrupts judge JSON |
-| `gemma-agent` | LMStudio `google/gemma-4-26b-a4b` | Agent loops and tool calling |
-| `gemma-tight` | same model, 7168-token guard | Demonstrating context overflow and its fallback |
-| `nomic-embed` | LMStudio nomic embeddings (137M) | Embeddings for RAG and vector DB |
-| `gemma-26b-free`, `gemma-31b-free` | OpenRouter, free tier | Sweeps needing a fixed cloud model |
-| `frontier`, `gpt-mini` | OpenAI `gpt-5.4-mini` | Hosted frontier baseline |
+| `gemma-chat` | Unsloth `gemma-4-26B-A4B-it-qat` | The lesson's own LLM call — the thing under observation |
+| `gemma-judge` | Unsloth `gemma-4-26B-A4B-it-qat` | LLM-as-judge, scorers, simulators |
+| `gemma-agent` | Unsloth `gemma-4-26B-A4B-it-qat` | Agent loops and tool calling |
+| `gemma-tight` | same model | Context-overflow demos. The 7168-token guard LiteLLM enforced has no equivalent here, so overflow now fails at the model |
+| `gemma-31b-local` | Unsloth `gemma-4-31B-it-qat` | The denser local model |
+| `nomic-embed` | Unsloth `Nomic-embed-text-v1.5` | Embeddings for RAG and vector DB |
+| `text-embedding-3-small` | Unsloth `Nomic-embed-text-v1.5` | Same local model as `nomic-embed`. The name is fixed by MLflow — its judge aligner requests it by that literal string |
+| `gpt-4.1-mini` | Unsloth `gemma-4-26B-A4B-it-qat` | MLflow's aligner chat model, likewise hardcoded |
+
+**Every alias is local, and there is no fallback anywhere.** With Unsloth
+running, no lesson touches the network or spends anything; with Unsloth down,
+a lesson fails and names the cause. There is no hosted provider to escape to,
+which is the point — an alias that can quietly answer from a different model
+makes every comparison built on it worthless.
+
+**Embeddings are the one exception to "just change the base URL".** The gateway
+serves chat at an OpenAI-compatible path but embeddings only at
+`/gateway/<alias>/mlflow/invocations`, so `OpenAIEmbeddings(base_url=...)` cannot
+drive it. `L1-M3.2` shows the fifteen-line bridge.
 
 ### Infrastructure Management
 
 ```bash
 cd infra
-podman compose up -d      # Start all services
-podman compose down        # Stop (preserves data)
-podman compose down -v     # Stop and wipe all data
+podman compose up -d                       # Start the Level 1 + 2 tier
+podman compose --profile level3 up -d      # Start everything (Level 3)
+podman compose down                        # Stop the default tier (preserves data)
+podman compose --profile level3 down       # Stop everything — plain `down` leaves L3 containers running
+podman compose --profile level3 down -v    # Stop and wipe all data
 ```
 
 ## Project Structure
@@ -183,7 +224,7 @@ podman compose down -v     # Stop and wipe all data
 ```text
 syllabus.md                        # Full syllabus -- source of truth
 infra/                             # All infrastructure (Podman Compose)
-  compose.yml                      #   Single file to start everything
+  compose.yml                      #   One file, two tiers (default / --profile level3)
 tutorial/
   level_1_models/                  # Models -- every MLflow feature end-to-end
     M1_tracking/                   #   Fundamentals, search/query, advanced patterns
@@ -194,12 +235,15 @@ tutorial/
       2_offline/                   #     GenAI metrics, RAG, datasets
       3_online/                    #     Scoring sampled live traffic
     M5_prompt_registry/            #   Prompt registry, versioning, A/B testing
-    M6_deployment_gateway/         #   Serving, batch prediction, AI gateway
+    M6_deployment/                 #   Serving, batch prediction
     M7_optimization/               #   Prompt optimization, fine-tuning
   level_2_agents/                  # AI Agents -- frameworks, eval, optimization
     M1_agent_frameworks/           #   LangChain/LangGraph, DeepAgents, Claude Agent SDK
     M2_agent_evaluation/           #   Three groups, by what the evaluation is
-      1_instruments/               #     Dataset, judges, metrics -- feed both modes
+      1_instruments/               #     Splits again by SCOPE:
+        1_turn/                    #       one request, one answer
+        2_conversation/            #       many turns, one session
+        3_dataset_store/           #       storage for what both produce
       2_offline/                   #     Comparison, gates, and benchmarks
       3_online/                    #     Registered judge on sampled live traces
     M3_agent_optimization/         #   Instructions, configuration, benchmarks
@@ -225,7 +269,7 @@ N_lesson_name/
 | Category | Technology |
 | ---------- | ------------ |
 | ML Platform | MLflow 2.x+ |
-| LLM Inference | LMStudio (local, OpenAI-compatible API) |
+| LLM Inference | Unsloth Studio (local, OpenAI-compatible API) |
 | Agent Frameworks | LangChain v1.0+, LangGraph, Claude Agent SDK, DeepAgents |
 | Vector Database | Qdrant |
 | Workflow Orchestration | Temporal.io |

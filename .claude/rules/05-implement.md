@@ -57,7 +57,7 @@ mlflow-tutorial/
 ├── syllabus.md              source of truth for lesson structure
 ├── GOAL.md                  what the tutorial is for
 ├── README.md                setup and orientation
-├── ruff.toml                lint + format opt-in (one file serves all 43 leaves)
+├── ruff.toml                lint + format opt-in (one file serves all 62 leaves)
 ├── pyrightconfig.json       one executionEnvironments entry per leaf
 ├── .editorconfig            shfmt opt-in
 ├── .hadolint.yaml           Dockerfile lint opt-in

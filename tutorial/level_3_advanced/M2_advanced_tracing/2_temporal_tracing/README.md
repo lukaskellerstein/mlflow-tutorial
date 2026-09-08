@@ -11,9 +11,12 @@ This lesson integrates MLflow tracing with Temporal.io durable workflows. You wi
 
 - Completed: L2-M4.1 (LangGraph Tracing) -- familiarity with MLflow tracing concepts
 - MLflow server running at <http://127.0.0.1:5555>
-- Temporal server running at localhost:7233 (start with `podman compose up -d` from `infra/`)
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
-  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
+- Temporal server running at localhost:7233 — it is in the **Level 3 tier**
+  of the stack, so start it with `podman compose --profile level3 up -d` from
+  `infra/`; the plain `podman compose up -d` used through Levels 1 and 2 does
+  not include it
+- MLflow AI Gateway seeded (same command), with Unsloth Studio serving
+  `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
 
 ## Concepts
 
@@ -103,11 +106,11 @@ uv sync
 uv run python main.py
 ```
 
-If Temporal is not running, the lesson falls back to running activities locally with MLflow tracing (no Temporal orchestration). Start Temporal first for the full experience:
+If Temporal is not running, the lesson falls back to running activities locally with MLflow tracing (no Temporal orchestration). Start Temporal first for the full experience — it lives in the Level 3 tier of the stack, behind the `level3` profile:
 
 ```bash
 cd infra
-podman compose up -d
+podman compose --profile level3 up -d
 ```
 
 ## Expected Output

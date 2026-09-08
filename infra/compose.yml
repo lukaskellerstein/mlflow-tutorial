@@ -1,3 +1,16 @@
+# Two tiers, selected by compose profile:
+#
+#   podman compose up -d                    Level 1 + Level 2: postgres, mlflow,
+#                                           mlflow-seed, qdrant — what every
+#                                           lesson talks to.
+#   podman compose --profile level3 up -d   Level 3 adds temporal (+ elasticsearch,
+#                                           its UI and admin tools), prometheus
+#                                           and grafana.
+#
+# Set COMPOSE_PROFILES=level3 in .env to make the second form the default for
+# every compose command, so `down`, `ps` and `logs` see the L3 containers too.
+# Only the six services tagged `profiles: [level3]` below are tier-specific;
+# volumes and the network are shared, so switching tiers never loses data.
 services:
 
   # ──────────────────────────────────────────────
@@ -30,87 +43,136 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5555:5000"
+    extra_hosts:
+      # THE SERVER dials the model engines, not you. Every gateway call leaves
+      # this container, so "localhost" in a secret's api_base would be the MLflow
+      # container itself. Podman adds host.containers.internal automatically;
+      # both are listed so the same setup works under Docker too.
+      - "host.docker.internal:host-gateway"
+      - "host.containers.internal:host-gateway"
     environment:
       # MLflow 3.x validates the Host header and rejects anything it does not
       # recognise with 403 "Invalid Host header - possible DNS rebinding attack
       # detected". Requests from the host (localhost:5555 / 127.0.0.1:5555) pass
       # by default, but IN-STACK callers addressing the container by its compose
-      # service name do not — which silently breaks the LiteLLM gateway's MLflow
-      # callback, since it posts to http://mlflow:5000. Only /health and
-      # /version are exempt, so the container looks perfectly healthy while
-      # every trace it tries to log is refused.
-      MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow:5000,localhost:5000,localhost:5555,127.0.0.1:5000,127.0.0.1:5555"
+      # service name do not. Only /health and /version are exempt, so the
+      # container can look perfectly healthy while in-stack requests are refused.
+      #
+      # 0.0.0.0:5000 is the SERVER CALLING ITSELF, and it is easy to miss because
+      # it is not a caller anyone configures. A judge started with scorer.start()
+      # runs inside this container and calls this server's OWN gateway route,
+      # building that URL from MLFLOW_GATEWAY_URI (pinned below) or, failing
+      # that, from the address the server is bound to — 0.0.0.0:5000. Without
+      # both of them here, MLflow rejects its own request
+      # and every server-side judge fails with
+      #   "Invalid Host header - possible DNS rebinding attack detected"
+      # surfaced on the assessment as SCORER_ERROR, never as a crash. The lesson
+      # runs clean and simply scores nothing. Symptom to recognise:
+      #   mlflow.server.fastapi_security: Rejected request with invalid Host
+      #   header: 0.0.0.0:5000
+      MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow:5000,localhost:5000,localhost:5555,127.0.0.1:5000,127.0.0.1:5555,0.0.0.0:5000"
+      # This server IS the gateway now. MLflow's own default is 300 s, which
+      # cuts a long local prompt off mid-run: prompt processing on this machine
+      # measures ~100 tok/s, so an agent-scale prompt needs minutes before its
+      # first token. There is no per-route figure — this one number covers every
+      # endpoint, which is one of the things LiteLLM did that this cannot.
+      MLFLOW_GATEWAY_ROUTE_TIMEOUT_SECONDS: "3600"
+      # WHERE A SERVER-SIDE JUDGE SENDS ITS OWN REQUESTS, and it is not optional.
+      #
+      # A `gateway:/<alias>` judge runs in an MLflow async job worker, and that
+      # worker calls the gateway over HTTP — the server talking to itself. It
+      # builds the URL from MLFLOW_GATEWAY_URI, falling back to the tracking URI,
+      # which inside this container is the sqlite/Postgres backend store and not
+      # an HTTP URL at all. Left unset, the worker either cannot resolve a URL or
+      # resolves one whose Host is not in the list above, and the 403 comes back
+      # as `Invalid Host header - possible DNS rebinding attack detected`.
+      #
+      # That failure is silent in the worst way: the lesson runs clean, the
+      # scorer reports ACTIVE, and the assessment lands on the trace with
+      # `value=None` and a SCORER_ERROR you only see if you read the assessment
+      # object. Pinning it to localhost:5000 — which IS in the allow list — is
+      # what makes every server-side judge in the tutorial work.
+      MLFLOW_GATEWAY_URI: http://localhost:5000
     volumes:
       - mlflow_artifacts:/mlartifacts
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - tutorial-network
-
-  # ──────────────────────────────────────────────
-  # LiteLLM Gateway (OpenAI-compatible LLM proxy)
-  # ──────────────────────────────────────────────
-  # One endpoint for every provider. Lessons call the aliases in
-  # litellm/config.yaml (gemma-large, gemma-small, frontier, ...) so switching
-  # provider or model is a config change here, not a code change in 40 lessons.
-  litellm:
-    build:
-      context: ./litellm
-      dockerfile: Dockerfile
-    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./litellm/config.yaml:/app/config.yaml:ro
-    extra_hosts:
-      # Lets the container reach LMStudio running natively on the host. Podman
-      # adds host.containers.internal automatically; both are listed so the same
-      # config.yaml works under Docker too.
-      - "host.docker.internal:host-gateway"
-      - "host.containers.internal:host-gateway"
-    environment:
-      # Defaulted, unlike the pins above: an infra/.env written before the
-      # gateway existed must keep working without being edited.
-      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-litellm-master}
-      # Virtual keys, spend logs and the admin UI all need Postgres. Without
-      # this the proxy boots in no-DB mode and those endpoints fail with
-      # {"error":"No connected db."} — completions still work. The litellm
-      # database comes from postgres/init-databases.sh; LiteLLM applies its own
-      # prisma migrations on startup.
-      DATABASE_URL: postgresql://litellm:litellm@postgres:5432/litellm_db
-      # store_prompts_in_spend_logs (config.yaml) truncates each stored string at
-      # 2048 chars by default, which clips agent transcripts mid-run. Raised so a
-      # whole exchange stays inspectable.
-      MAX_STRING_LENGTH_PROMPT_IN_DB: "100000"
-      # LMStudio runs natively on the host, not in this stack.
-      LM_STUDIO_API_BASE: ${LM_STUDIO_API_BASE:-http://host.containers.internal:1234/v1}
-      # Gateway-side traces and token/spend accounting land in their own MLflow
-      # experiment, separate from the experiment each lesson logs to.
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-      MLFLOW_EXPERIMENT_NAME: litellm-gateway
-      # Hosted providers. Empty is fine — a provider is only needed by the
-      # aliases that route to it.
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mlflow:
-        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:4000/health/liveliness').status==200 else 1)\""]
+      # /health is unauthenticated and exempt from the Host header check above,
+      # so it answers before anything else is configured. mlflow-seed waits on
+      # this: seeding against a server still running schema migrations fails.
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:5000/health').status==200 else 1)\""]
       interval: 10s
       timeout: 5s
       retries: 20
-      start_period: 30s
+      start_period: 60s
     networks:
       - tutorial-network
 
   # ──────────────────────────────────────────────
-  # Elasticsearch (Temporal visibility)
+  # MLflow AI Gateway seeder — runs once, then exits
+  # ──────────────────────────────────────────────
+  # There is no separate proxy container. The MLflow server above IS the gateway,
+  # and every lesson calls it at
+  #
+  #     http://127.0.0.1:5555/gateway/mlflow/v1/chat/completions
+  #
+  # naming an alias (gemma-chat, gemma-judge, gemma-agent, ...) rather than a
+  # model. But MLflow has no config file to mount: its gateway lives in the
+  # tracking database and arrives over an API. So this one-shot writes the
+  # aliases in over that API.
+  #
+  # The alias list IS mlflow/gateway/seed_gateway.py — there is no separate YAML.
+  # Nothing but the script ever read one, so the second file only made a reader
+  # open two things to answer one question.
+  #
+  # It shows as `exited (0)` in `podman compose ps`, and that is the finished
+  # state, not a failure. Read what it built with:
+  #
+  #     podman compose logs mlflow-seed
+  #
+  # It re-runs on every `up -d` and is idempotent — which means an alias whose
+  # model you CHANGED in the script is reported as `reused` and keeps the old
+  # one. Rebuilding is explicit, and `--prune` also drops endpoints the script
+  # no longer names. The script is the entrypoint, so pass only its flags:
+  #
+  #     podman compose run --rm mlflow-seed --reset --prune
+  mlflow-seed:
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
+    entrypoint: ["python", "/app/gateway/seed_gateway.py"]
+    volumes:
+      - ./mlflow/gateway:/app/gateway:ro
+    extra_hosts:
+      # Lets the MLflow server reach the model engines running natively on the
+      # host. Podman adds host.containers.internal automatically; both are listed
+      # so the same setup works under Docker too.
+      - "host.docker.internal:host-gateway"
+      - "host.containers.internal:host-gateway"
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # Unsloth Studio serves every local chat and embedding alias, natively on
+      # the host so it reaches the Apple Silicon GPU. The key is REQUIRED on
+      # every Unsloth route — leave it blank and the seeder skips every local
+      # alias rather than building endpoints that 401 at call time.
+      # It is the ONLY credential this stack needs: every alias is local, so
+      # there is no hosted provider key to pass and nothing to bill.
+      UNSLOTH_API_BASE: ${UNSLOTH_API_BASE:-http://host.containers.internal:8888/v1}
+      UNSLOTH_API_KEY: ${UNSLOTH_API_KEY:-}
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - tutorial-network
+
+  # ──────────────────────────────────────────────
+  # Elasticsearch (Temporal visibility) — Level 3
   # ──────────────────────────────────────────────
   elasticsearch:
+    profiles: ["level3"]
     image: docker.io/elasticsearch:${ELASTICSEARCH_VERSION}
     environment:
       - cluster.routing.allocation.disk.threshold_enabled=true
@@ -131,9 +193,10 @@ services:
       - tutorial-network
 
   # ──────────────────────────────────────────────
-  # Temporal Server
+  # Temporal Server — Level 3
   # ──────────────────────────────────────────────
   temporal:
+    profiles: ["level3"]
     image: docker.io/temporalio/auto-setup:${TEMPORAL_VERSION}
     environment:
       - DB=postgres12_pgx
@@ -160,9 +223,10 @@ services:
       - tutorial-network
 
   # ──────────────────────────────────────────────
-  # Temporal Admin Tools
+  # Temporal Admin Tools — Level 3
   # ──────────────────────────────────────────────
   temporal-admin-tools:
+    profiles: ["level3"]
     image: docker.io/temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION}
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
@@ -175,9 +239,10 @@ services:
       - tutorial-network
 
   # ──────────────────────────────────────────────
-  # Temporal UI
+  # Temporal UI — Level 3
   # ──────────────────────────────────────────────
   temporal-ui:
+    profiles: ["level3"]
     image: docker.io/temporalio/ui:${TEMPORAL_UI_VERSION}
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
@@ -192,6 +257,8 @@ services:
   # ──────────────────────────────────────────────
   # Qdrant (Vector DB)
   # ──────────────────────────────────────────────
+  # Default tier, not level3: the syllabus places it with the Level 1 RAG
+  # lessons (L1-M4.2.2), and it is small enough that carrying it costs little.
   qdrant:
     image: docker.io/qdrant/qdrant:${QDRANT_VERSION}
     ports:
@@ -203,9 +270,10 @@ services:
       - tutorial-network
 
   # ──────────────────────────────────────────────
-  # Prometheus (Metrics collection)
+  # Prometheus (Metrics collection) — Level 3
   # ──────────────────────────────────────────────
   prometheus:
+    profiles: ["level3"]
     image: docker.io/prom/prometheus:${PROMETHEUS_VERSION}
     ports:
       - "9090:9090"
@@ -215,9 +283,10 @@ services:
       - tutorial-network
 
   # ──────────────────────────────────────────────
-  # Grafana (Dashboards)
+  # Grafana (Dashboards) — Level 3
   # ──────────────────────────────────────────────
   grafana:
+    profiles: ["level3"]
     image: docker.io/grafana/grafana:${GRAFANA_VERSION}
     environment:
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}

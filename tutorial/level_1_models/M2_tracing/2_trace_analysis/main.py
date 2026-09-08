@@ -15,12 +15,12 @@ from langchain_openai import ChatOpenAI
 from mlflow.entities import Trace
 from pydantic import SecretStr
 
-# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
-# defined in infra/litellm/config.yaml, which also owns the fallback order and
-# each model's context window. Swapping model or provider is a change there,
-# never here.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+# The MLflow AI Gateway -- the tracking server itself, not a provider directly.
+# The aliases below are defined in infra/mlflow/gateway/seed_gateway.py, which also
+# owns the fallback order. Swapping model or provider is a change there, never
+# here.
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
 
 # ── Part 1: Generate traces by running several LLM calls ──────────────
 
@@ -209,7 +209,7 @@ def analyze_token_usage(traces: list) -> pd.DataFrame:
 
         total_all = token_df["total_tokens"].sum()
         print(f"\n  Total tokens across all traces: {total_all}")
-        print("  Note: the gateway prices local models at 0 -- see infra/litellm/config.yaml.")
+        print("  Note: the gateway prices local models at 0 -- see infra/mlflow/gateway/seed_gateway.py.")
         print("  For cloud APIs, cost = input_tokens * rate + output_tokens * rate")
     else:
         print("\n  Token usage data not available in traces.")

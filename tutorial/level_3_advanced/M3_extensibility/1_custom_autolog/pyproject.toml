@@ -5,7 +5,7 @@ description = "Building Custom Autolog Integrations"
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2",
-    "mlflow>=3.0",
+    "mlflow>=3.15",
     "langchain>=1.0",
     "langchain-openai>=1.0",
     "langchain-core>=1.0",

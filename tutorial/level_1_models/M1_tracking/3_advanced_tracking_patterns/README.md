@@ -11,8 +11,8 @@ This lesson covers three advanced tracking patterns: nested runs for organizing 
 
 - Completed: L1-M1.1 (Tracking Fundamentals), L1-M1.2 (Search, Query, and MlflowClient)
 - MLflow server running at <http://127.0.0.1:5555>
-- LiteLLM gateway up (`cd infra && podman compose up -d`), with LMStudio
-  serving `google/gemma-4-26b-a4b` behind the `gemma-chat` alias
+- MLflow AI Gateway seeded (`cd infra && podman compose up -d`), with Unsloth
+  Studio serving `gemma-4-26B-A4B-it-qat` behind the `gemma-chat` alias
 
 ## Concepts
 

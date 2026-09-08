@@ -1,0 +1,9 @@
+[project]
+name = "mlflow-tutorial-L2-M2-1-4-evaluation-datasets"
+version = "0.1.0"
+description = "Versioned Evaluation Datasets for Agents"
+requires-python = ">=3.10"
+dependencies = [
+    "mlflow[genai]>=3.15",
+    "pandas>=2.0",
+]

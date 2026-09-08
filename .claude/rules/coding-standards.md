@@ -29,39 +29,68 @@ import mlflow
 mlflow.set_tracking_uri("http://127.0.0.1:5555")
 ```
 
-## LLM Setup — always through the LiteLLM gateway
+## LLM Setup — always through the MLflow AI Gateway
 
-**Every lesson talks to the LiteLLM gateway. Nothing calls LMStudio or
-OpenRouter directly.** LMStudio still serves the local models, but it sits
-*behind* the gateway — a lesson never names its URL or a raw model key.
+**Every lesson talks to the MLflow AI Gateway. Nothing calls Unsloth directly.**
+There is no separate proxy container: the gateway IS the MLflow tracking server,
+at `http://127.0.0.1:5555/gateway/mlflow/v1`. Unsloth Studio serves every model,
+but it sits *behind* the gateway — a lesson never names its URL or a raw model
+key.
 
-That indirection is the point: which model an alias resolves to, the fallback
-order when it errors or a prompt overflows, and each model's context window all
-live in `infra/litellm/config.yaml`. Changing any of them is a config change, not
-an edit to 40 lessons. A lesson that hardcodes `http://localhost:1234/v1` opts
-out of all of it and reintroduces exactly the sprawl this replaced.
+That indirection is the point: which model an alias resolves to lives in
+`infra/mlflow/gateway/seed_gateway.py`. Changing it is a config change, not an
+edit to 50 lessons. A lesson that hardcodes `http://localhost:8888/v1` opts out
+of all of it and reintroduces exactly the sprawl this replaced.
 
 | Alias | Resolves to | Use for |
 |:--|:--|:--|
-| `gemma-chat` | LMStudio `google/gemma-4-26b-a4b` | the lesson's own LLM call |
-| `gemma-judge` | **OpenRouter** `google/gemma-4-26b-a4b-it` | LLM-as-judge, scorers, simulators (hosted — the local Q4 build loops mid-JSON) |
-| `gemma-agent` | LMStudio `google/gemma-4-26b-a4b` | agent loops, tool calling |
-| `gemma-tight` | same model, 7168 guard | context-overflow demos |
-| `nomic-embed` | LMStudio nomic embeddings | RAG / vector DB |
-| `gemma-26b-free` / `gemma-31b-free` | OpenRouter, free tier | sweeps needing a fixed cloud model |
-| `frontier` / `gpt-mini` | OpenAI `gpt-5.4-mini` | hosted frontier baseline |
+| `gemma-chat` | Unsloth `gemma-4-26B-A4B-it-qat` | the lesson's own LLM call |
+| `gemma-judge` | Unsloth `gemma-4-26B-A4B-it-qat` | LLM-as-judge, scorers, simulators |
+| `gemma-agent` | Unsloth `gemma-4-26B-A4B-it-qat` | agent loops, tool calling |
+| `gemma-tight` | same model | context-overflow demos — **the guard is gone**, see below |
+| `gemma-31b-local` | Unsloth `gemma-4-31B-it-qat` | the denser local model |
+| `nomic-embed` | Unsloth `Nomic-embed-text-v1.5` | RAG / vector DB |
+| `text-embedding-3-small` | Unsloth `Nomic-embed-text-v1.5` | MLflow's judge aligner, which hardcodes this name |
+| `gpt-4.1-mini` | Unsloth `gemma-4-26B-A4B-it-qat` | MLflow's aligner chat model, likewise hardcoded |
+
+That is the whole list. **Eight aliases, three models, one provider, and no
+fallback anywhere.** There is no OpenRouter alias, no OpenAI alias, and no
+hosted model to escape to — so a lesson that cannot reach Unsloth fails and
+names the cause instead of quietly answering from something else. Nothing here
+needs the network or costs anything.
+
+**Unsloth holds ONE model at a time.** `Settings → API → Model auto-switch` must
+be on, or every alias but the loaded one fails with `400 ... 'Switch model by
+request' is off`. With it on, a swap costs 4–14 s.
+
+### What this gateway cannot do
+
+Four things LiteLLM did have no equivalent here. Do not write a lesson that
+assumes them:
+
+- **No `max_input_tokens` pre-call check.** `gemma-tight` cannot guard a prompt
+  before the call; overflow fails at the model.
+- **No context-window fallbacks.** MLflow falls back on ERROR only.
+- **No `drop_params`.** Every parameter is forwarded exactly as sent. This is now
+  a feature, not a loss: Unsloth honours `response_format` correctly where
+  LMStudio compiled a decoding grammar that masked EOS and ran to `max_tokens`.
+- **No OpenAI-shaped embeddings route.** `POST /gateway/mlflow/v1/embeddings`
+  answers 404. The only alias-addressed embedding route is
+  `POST /gateway/<alias>/mlflow/invocations`, which the OpenAI SDK cannot drive —
+  see `L1-M3.2` for the fifteen-line bridge and `L2-M2.1.1.2` for the one call in
+  the tutorial that has to go around the gateway entirely.
 
 ### Direct usage (preferred for most lessons)
 
 ```python
 from openai import OpenAI
 
-# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
-# defined in infra/litellm/config.yaml, which also owns the fallback order and
-# each model's context window. Swapping model or provider is a change there,
-# never here.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+# The MLflow AI Gateway -- the tracking server itself, not a provider directly.
+# The aliases below are defined in infra/mlflow/gateway/seed_gateway.py, which also
+# owns the fallback order. Swapping model or provider is a change there, never
+# here.
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
 
 client = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_KEY)
 
@@ -110,16 +139,30 @@ llm = ChatOpenAI(
 
 ### Embeddings (RAG / vector DB)
 
-```python
-from langchain_openai import OpenAIEmbeddings
+**`OpenAIEmbeddings(base_url=GATEWAY_URL)` does not work.** There is no
+`/gateway/mlflow/v1/embeddings` — it answers 404. The only route that takes an
+alias puts it in the PATH, which the OpenAI SDK cannot drive, so post to it
+directly:
 
-embeddings = OpenAIEmbeddings(
-    base_url=GATEWAY_URL,
-    api_key=GATEWAY_KEY,
-    model="nomic-embed",
-    check_embedding_ctx_length=False,
-)
+```python
+import json
+import urllib.request
+
+MLFLOW_URL = "http://127.0.0.1:5555"
+
+
+def embed(texts: list[str], alias: str = "nomic-embed") -> list[list[float]]:
+    request = urllib.request.Request(
+        f"{MLFLOW_URL}/gateway/{alias}/mlflow/invocations",
+        data=json.dumps({"input": texts}).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    with urllib.request.urlopen(request, timeout=300) as response:
+        return [row["embedding"] for row in json.load(response)["data"]]
 ```
+
+`L1-M3.2` wraps that in an `embed_documents` / `embed_query` pair so a vector
+store can use it. Copy that shape rather than reaching for a client library.
 
 ### Which model to use where
 
@@ -129,29 +172,37 @@ embeddings = OpenAIEmbeddings(
 - **A lesson that runs an agent AND judges it**: name BOTH. They are the same
   model today; the split is what lets them stop being one later.
 - **RAG / embeddings**: use `nomic-embed`
-- **A sweep comparing configurations**: use a cloud alias (`gemma-26b-free`,
-  `gemma-31b-free`). The local aliases carry an error fallback, so an unloaded
-  model does not fail the sweep — it silently substitutes a different model, and
-  an independent variable that can change without telling you is worse than a
-  crash.
+- **A sweep comparing models**: use `gemma-agent` and `gemma-31b-local`. They
+  are the two distinct local models, and neither can substitute for the other
+  behind your back — an independent variable that changes without telling you is
+  worse than a crash. Unsloth pays a 4–14 s auto-switch each time the sweep
+  crosses between them.
 
 ### Server-side judges are the exception
 
 A judge started with `scorer.start()` runs **inside the MLflow server**, which
-cannot use the constants above — it has neither your base URL nor your key. It
-needs an MLflow AI Gateway endpoint, and that endpoint reaches LiteLLM by its
-CONTAINER name, `http://litellm:4000/v1`. Two traps, both silent:
+cannot use the constants above — it samples its own traces on its own schedule,
+long after your script has exited, so it has no base URL to borrow. It names a
+gateway ENDPOINT instead:
 
-- The key is `api_base` inside `auth_config`. `base_url` is not a synonym, and
-  an `api_base` in `secret_value` is ignored just as quietly.
-- Either mistake sends the request to the provider's own API, surfacing as an
-  authentication error about a key you never sent.
+```python
+scorer = scorer_cls(name=..., model="gateway:/gemma-judge")
+```
 
-`L1-M4.3.1` and `L2-M2.3.1` are the worked examples.
+`openai:/gemma-judge` registers happily and then refuses to start, because an
+`openai:/` model is resolved client-side and the server has no client.
+
+Nothing has to be built. Every alias in `infra/mlflow/gateway/seed_gateway.py` IS a
+gateway endpoint, seeded on every `podman compose up -d` — which is the main
+simplification this gateway bought. `L1-M4.3.1` and `L2-M2.3.1` are the worked
+examples, and both now only *check* that the endpoint is there.
 
 ## Error Handling
 
-- Check that the LiteLLM gateway is reachable before making LLM calls.
+- Check that the gateway is reachable before making LLM calls. It is the MLflow
+  server, so `GET http://127.0.0.1:5555/health` answers for both — and it is
+  unauthenticated and exempt from the Host header check, so it works before
+  anything else is configured. `/v1/models` does NOT exist here.
 - Print clear error messages if MLFlow server is not running.
 - Do not silently swallow exceptions — this is educational code.
 

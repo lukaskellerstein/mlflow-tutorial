@@ -17,12 +17,12 @@ from langchain_openai import ChatOpenAI
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-# The LiteLLM gateway from infra/, not a provider directly. The aliases below are
-# defined in infra/litellm/config.yaml, which also owns the fallback order and
-# each model's context window. Swapping model or provider is a change there,
-# never here.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+# The MLflow AI Gateway -- the tracking server itself, not a provider directly.
+# The aliases below are defined in infra/mlflow/gateway/seed_gateway.py, which also
+# owns the fallback order. Swapping model or provider is a change there, never
+# here.
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
 
 MODEL_NAME = "gemma-agent"
 
@@ -31,7 +31,7 @@ MODEL_NAME = "gemma-agent"
 
 
 def part1_openai_autolog() -> None:
-    """Trace a direct OpenAI SDK call to the LiteLLM gateway automatically."""
+    """Trace a direct OpenAI SDK call to the MLflow AI Gateway automatically."""
     print("=" * 60)
     print("Part 1: mlflow.openai.autolog() -- Direct OpenAI SDK")
     print("=" * 60)

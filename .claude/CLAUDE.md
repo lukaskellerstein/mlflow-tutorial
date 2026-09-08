@@ -63,17 +63,25 @@ The three levels:
 
 Four things worth knowing before touching anything:
 
-- **41 lesson leaves today** (45 once the syllabus is fully built out), each
+- **62 lesson leaves today**, one per lesson in `syllabus.md`, each
   independently runnable with its own `pyproject.toml`, `.venv` and `uv.lock`.
   There is **no uv workspace** — that is deliberate.
-- **Two modules carry a group tier.** `L1-M4_evaluation` and
+- **Three modules carry a group tier.** `L1-M4_evaluation` and
   `L2-M2_agent_evaluation` split into `1_fundamentals`/`1_instruments`,
-  `2_offline` and `3_online`, so their lessons are one level deeper than
-  everywhere else. A lesson's experiment name always equals its path.
+  `2_offline` and `3_online`; `L2-M1_agent_frameworks` splits into `1_turn` and
+  `2_conversation`. Their lessons are one level deeper than everywhere else. A
+  lesson's experiment name always equals its path.
+- **All three `L2-M2` groups go one level deeper still**, and `L2-M2` is the
+  only module in the repo that does. Each splits by **scope**:
+  `1_instruments/` → `1_turn/`, `2_conversation/`, `3_dataset_store/`;
+  `2_offline/` and `3_online/` → `1_turn/`, `2_conversation/`. Those lessons sit
+  four levels under the level directory. Every one of those branches carries a
+  group `README.md`, as do `L2-M1`'s two groups and the module itself — with
+  `level_2_agents/`, the only group-level READMEs in the tutorial.
 - **The syllabus is the source of truth.** Module structure, lesson topics,
   deliverables and time estimates live in **`syllabus.md`** at the project root.
   Always consult it before creating or modifying any lesson.
-- **LMStudio runs natively, not in podman**, so it can reach the Apple Silicon
+- **Unsloth Studio runs natively, not in podman**, so it can reach the Apple Silicon
   GPU. Everything else is in the compose stack.
 - **Adding a lesson means re-running `gen-pyrightconfig.py`** from mac-setup, or
   the new leaf resolves its imports against nothing.
@@ -82,15 +90,17 @@ Four things worth knowing before touching anything:
 
 - **Python**: 3.10+
 - **Package manager**: `uv` (every lesson is a standalone `uv` project)
-- **LLM provider**: LMStudio (local, no API costs, OpenAI-compatible API)
-- **LLM server**: `http://localhost:1234` with OpenAI-compatible endpoint at `/v1/`
+- **LLM provider**: Unsloth Studio (local, no API costs, OpenAI-compatible API)
+- **LLM server**: `http://127.0.0.1:8888` with OpenAI-compatible endpoint at `/v1/`.
+  It needs a key on every route, and `Settings → API → Model auto-switch` ON —
+  it holds one model at a time
 - **LLM models**:
-  - `google/gemma-4-e4b` — small 4B model for simple/fast tasks (Level 1 lessons)
-  - `google/gemma-4-26b-a4b` — large 26B MoE model for complex tasks (Level 2/3,
-    evaluation judges, agents)
-  - `text-embedding-nomic-embed-text-v1.5` — embedding model for RAG/vector DB
-- **MLFlow**: 3.x — lessons pin `mlflow>=3.0`; the server image is
-  `ghcr.io/mlflow/mlflow:latest`
+  - `unsloth/gemma-4-26B-A4B-it-qat-GGUF` — the 26B MoE behind `gemma-chat`,
+    `gemma-judge` and `gemma-agent`; the default for the whole tutorial
+  - `unsloth/gemma-4-31B-it-qat-GGUF` — the denser model behind `gemma-31b-local`
+  - `second-state/Nomic-embed-text-v1.5-Embedding-GGUF` — embedding model for RAG/vector DB
+- **MLFlow**: 3.x — every lesson pins `mlflow>=3.15` and locks 3.15.2; the
+  server image is `ghcr.io/mlflow/mlflow:latest`
 - **Agent frameworks**: LangChain v1.0+, LangGraph (latest), Claude Agent SDK,
   DeepAgents
 - **Vector DB**: Qdrant (via Podman Compose)
@@ -100,20 +110,30 @@ Four things worth knowing before touching anything:
 
 ### Starting infrastructure
 
+The stack has **two tiers**, selected by a compose profile:
+
 ```bash
 cd infra
-podman compose up -d
+podman compose up -d                     # Level 1 + Level 2: postgres, mlflow, mlflow-seed, qdrant
+podman compose --profile level3 up -d    # Level 3: adds temporal (+elasticsearch, UI, admin-tools), prometheus, grafana
 ```
 
-| Service | URL |
-|---------|-----|
-| MLflow UI | <http://localhost:5555> |
-| Temporal UI | <http://localhost:8080> |
-| Qdrant | <http://localhost:6333/dashboard> |
-| Grafana | <http://localhost:3000> (admin/admin) |
-| Prometheus | <http://localhost:9090> |
+| Service | Tier | URL |
+|---------|------|-----|
+| MLflow UI | L1+ | <http://localhost:5555> |
+| MLflow AI Gateway | L1+ | <http://localhost:5555/gateway/mlflow/v1> |
+| Qdrant | L1+ | <http://localhost:6333/dashboard> |
+| Temporal UI | L3 | <http://localhost:8080> |
+| Grafana | L3 | <http://localhost:3000> (admin/admin) |
+| Prometheus | L3 | <http://localhost:9090> |
 
-LMStudio runs natively (not in Podman) for Apple Silicon GPU access.
+A Level 3 lesson that needs Temporal or Prometheus fails with a connection
+error on the default tier — check `podman compose ps` before debugging the
+lesson. And **`podman compose down` without the profile leaves running L3
+containers untouched**; stop everything with `--profile level3 down`.
+`COMPOSE_PROFILES=level3` in `infra/.env` makes the profile implicit.
+
+Unsloth Studio runs natively (not in Podman) for Apple Silicon GPU access.
 
 ### Running a lesson
 
@@ -127,16 +147,16 @@ Level directories: `level_1_models/`, `level_2_agents/`, `level_3_advanced/`
 
 ### Key commands
 
-- `podman compose up -d` — start all infrastructure (from `infra/`)
-- `podman compose down` — stop all services (preserves data)
-- `podman compose down -v` — stop and wipe all data
+- `podman compose up -d` — start the Level 1 + 2 tier (from `infra/`)
+- `podman compose --profile level3 up -d` — start everything, for Level 3
+- `podman compose down` / `--profile level3 down` — stop that tier (preserves data)
+- `podman compose --profile level3 down -v` — stop and wipe all data
 - `uv init` — scaffold a new lesson project
 - `uv add <package>` — add a dependency
 - `uv run python main.py` — run the lesson code
-- `lms ls` — list available models in LMStudio
-- `lms ps` — show loaded models
-- `lms load <model>` — load a model
-- `lms server start` — start LMStudio server
+- `podman compose run --rm mlflow-seed --reset --prune` — rebuild every gateway
+  alias after editing `infra/mlflow/gateway/seed_gateway.py`
+- `podman compose logs mlflow-seed` — what the seeder built, and what it skipped
 
 Full facts → [`rules/01-project-config.md`](rules/01-project-config.md); stack and
 conventions → [`rules/10-tech-stack.md`](rules/10-tech-stack.md).
@@ -154,8 +174,8 @@ These actions are pre-approved. Run them yourself when the situation calls for i
   DeepAgents, Claude Agent SDK. Read the real API rather than guessing at it.
 - `podman compose ps`, `podman compose logs`, `podman ps` — from `infra/`.
 - `curl` against any local service in the table above (health checks, MLflow
-  REST API reads, `http://localhost:1234/v1/models`).
-- `lms ls`, `lms ps` — what LMStudio has loaded.
+  REST API reads, `http://127.0.0.1:8888/v1/models` with the Unsloth key).
+- `curl http://127.0.0.1:8888/v1/status` with the Unsloth key — what it has loaded.
 - `uv tree`, `uv lock --check`, `uv pip list` in any lesson directory.
 - `git status`, `git diff`, `git log` — any read-only git command.
 - This machine's own `nvim-tools` and `lukas-ps` are pre-approved too, and are
@@ -174,8 +194,10 @@ These actions are pre-approved. Run them yourself when the situation calls for i
   `README.md`, `mlflow_funcs.md`, `pyproject.toml`, `.gitignore`, and new lesson
   directories that match the structure in
   [`rules/tutorial-structure.md`](rules/tutorial-structure.md).
-- **`podman compose up -d` and `podman compose down`, run from `infra/`.**
-  `down` without `-v` preserves the volumes, so restarting is free.
+- **`podman compose up -d` and `podman compose down`, run from `infra/`, with
+  or without `--profile level3`.** `down` without `-v` preserves the volumes,
+  so restarting is free. Testing a Level 3 lesson means bringing the profile up
+  first — do that rather than reporting Temporal or Prometheus as unreachable.
 - Re-running mac-setup's `gen-pyrightconfig.py` against this repo after adding a
   leaf — then re-adding the three `report*` suppressions the generator drops
   (they are documented in the comment at the top of `pyrightconfig.json`).
@@ -184,11 +206,11 @@ These actions are pre-approved. Run them yourself when the situation calls for i
 
 ### Requires confirmation — always ask first
 
-- **`podman compose down -v`.** It wipes the volumes: every MLflow run,
-  experiment, registered model and artifact, plus all Temporal history. There is
-  no undo and no backup.
+- **`podman compose down -v`, with or without a profile.** It wipes the
+  volumes: every MLflow run, experiment, registered model and artifact, plus all
+  Temporal history. There is no undo and no backup.
 - **Editing `infra/compose.yml`, `infra/.env`, or anything else under `infra/`.**
-  One file there affects all 43 lessons at once.
+  One file there affects all 60 lessons at once.
 - **Deleting or renaming an existing lesson directory**, or changing the
   module/lesson numbering — `syllabus.md` and every cross-reference depend on it.
 - **Editing `syllabus.md`.** It is the source of truth; changing it changes what

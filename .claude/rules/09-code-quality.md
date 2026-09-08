@@ -54,7 +54,7 @@ There is no JS/TS here, so no `biome.json`.
 
 Two things to know about ruff in this repo:
 
-- **One `ruff.toml` at the root serves all 43 leaves.** Ruff resolves config per
+- **One `ruff.toml` at the root serves all 62 leaves.** Ruff resolves config per
   *file* by walking up, so there is no need for a copy in each lesson. A leaf that
   genuinely needs different rules can carry its own `[tool.ruff]`, which shadows
   the root for that leaf only.

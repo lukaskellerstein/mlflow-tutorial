@@ -31,11 +31,11 @@ from pydantic import SecretStr
 # ---------------------------------------------------------------------------
 # MLflow setup
 # ---------------------------------------------------------------------------
-# The LiteLLM gateway from infra/, not a provider directly. "gemma-agent" is an
-# alias defined in infra/litellm/config.yaml -- swapping model or provider is a
-# change there, never here. See L2-M1.1.
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
+# The MLflow AI Gateway -- the tracking server itself, not a provider directly. "gemma-agent" is an
+# alias defined in infra/mlflow/gateway/seed_gateway.py -- swapping model or provider is a
+# change there, never here. See L2-M1.1.1.
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
 MODEL_ALIAS = "gemma-agent"
 # The agent and the thing grading it are named separately on purpose: both
 # resolve to the same model today, but a judge and an agent are different
@@ -43,9 +43,10 @@ MODEL_ALIAS = "gemma-agent"
 # change is a config edit, not a re-read of this lesson.
 JUDGE_ALIAS = "gemma-judge"
 
-# The optimizer's reflection model resolves through LiteLLM, which reads these.
+# The optimizer's reflection model resolves through the litellm LIBRARY (which MLflow uses
+# internally -- not the proxy this repo used to run), and it reads these.
 # Assignments, not setdefault -- a real OPENAI_API_KEY in the environment would
-# win and every reflection call would be rejected by the gateway. See L2-M2.1.2.
+# win and every reflection call would be rejected by the gateway. See L2-M2.1.5.
 os.environ["OPENAI_API_KEY"] = GATEWAY_KEY
 os.environ["OPENAI_BASE_URL"] = GATEWAY_URL
 

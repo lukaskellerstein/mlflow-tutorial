@@ -33,9 +33,9 @@ import mlflow
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
-GATEWAY_URL = "http://localhost:4000/v1"
-GATEWAY_KEY = "sk-litellm-master"  # local dev master key, same class as admin/admin
-MODEL_ALIAS = "gemma-26b-free"
+GATEWAY_URL = "http://127.0.0.1:5555/gateway/mlflow/v1"
+GATEWAY_KEY = "not-needed"  # this gateway has no keys at all
+MODEL_ALIAS = "gemma-agent"
 
 EXPERIMENT = "L2/M3_agent_optimization/3_benchmark_optimization"
 

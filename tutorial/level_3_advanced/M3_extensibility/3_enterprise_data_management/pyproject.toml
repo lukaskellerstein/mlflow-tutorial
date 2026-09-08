@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Enterprise Patterns and Data Management"
 requires-python = ">=3.10"
 dependencies = [
-    "mlflow>=3.0",
+    "mlflow>=3.15",
     "pandas>=2.0",
 ]
 

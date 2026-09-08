@@ -6,8 +6,8 @@ not re-taught here.
 
 | Module | What it covers | Lessons |
 |:--|:--|--:|
-| [M1 — Agent Frameworks](M1_agent_frameworks/) | LangChain/LangGraph, DeepAgents, Claude Agent SDK, and tracing each of them | 3 |
-| [M2 — Agent Evaluation](M2_agent_evaluation/) | Three groups: instruments, offline (including benchmarks), online | 9 |
+| [M1 — Agent Frameworks](M1_agent_frameworks/) | LangChain/LangGraph, DeepAgents, Claude Agent SDK — each one twice: one turn, then a whole conversation | 6 |
+| [M2 — Agent Evaluation](M2_agent_evaluation/) | Three groups: instruments, offline (including benchmarks), online | 12 |
 | [M3 — Agent Optimization](M3_agent_optimization/) | Instructions, agent configuration, and optimizing against benchmarks safely | 3 |
 
 The full lesson breakdown lives in [`syllabus.md`](../../syllabus.md) at the
@@ -40,7 +40,7 @@ relative to your own previous run, it is an evaluation.
 | What decision does it drive? | ship / do not ship, which variant, is production healthy | a capability claim, position against the field |
 | How often does it run? | every pull request, plus continuously online | rarely — it is slow and expensive |
 
-The third test is the one most often missed. In **M2.1.3** you build composite
+The third test is the one most often missed. In **M2.1.6** you build composite
 scorers with explicit, tunable weights, and tuning them is a legitimate act. In
 **M2.2.3** an instance counts as `resolved` only when every `FAIL_TO_PASS` test
 passes and no `PASS_TO_PASS` test regresses. Re-weight that and your number
@@ -105,7 +105,7 @@ registered judge is the one instrument both modes consume, scoring a curated
 dataset offline in M2.2.1 and live sampled traces online in M2.3.1. Registration
 is what makes that possible: an inline `@scorer` is `DECORATOR` kind, cannot be
 registered against a local tracking server, and therefore can never run online.
-That is the practical reason M2.1.2 spends a whole lesson on the difference
+That is the practical reason M2.1.5 spends a whole lesson on the difference
 between inline and registered judges, and why datasets, judges and metrics live
 in **Instruments** rather than under either mode.
 
@@ -113,11 +113,16 @@ in **Instruments** rather than under either mode.
 
 ```text
 M1  Agent Frameworks          build the thing, and make it observable
+    M1.1  Turn                  one task in, one answer out
+    M1.2  Conversation          many turns, one session, state carried
 M2  Agent Evaluation          measure it
     M2.1  Instruments           the materials both modes consume
-      M2.1.1  agent testing       the dataset
-      M2.1.2  judges              the graders
-      M2.1.3  quality metrics     the dimensions
+      M2.1.1  hand-written tests  cases a person writes, and their ceiling
+      M2.1.2  simulation          goals and personas, over several turns
+      M2.1.3  generation          cases nobody had to imagine
+      M2.1.4  datasets            all three, versioned and reusable
+      M2.1.5  judges              the graders
+      M2.1.6  quality metrics     the dimensions
     M2.2  Offline                 "good enough to ship?"
       M2.2.1  comparison          against your own bar: which architecture wins
       M2.2.2  offline gates       against your own bar: CI, thresholds, regressions

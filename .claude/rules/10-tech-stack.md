@@ -10,16 +10,16 @@ description: "Reference: Technology stack — Python 3.10+/uv, MLflow 3.x, LangC
 - **Framework**: none — lessons are plain scripts with a `main()`, not a service
 - **Package manager**: `uv`. One project, one `.venv`, one `uv.lock` per leaf.
   No workspace, deliberately — every lesson must run standalone.
-- **MLflow**: 3.x. Lessons pin `mlflow>=3.0`; the server image is
-  `ghcr.io/mlflow/mlflow:latest`.
-- **LLM provider**: LMStudio — local, no API cost, OpenAI-compatible at
-  `http://localhost:1234/v1/`. Runs natively rather than in a container so it can
-  reach the Apple Silicon GPU.
+- **MLflow**: 3.x. Every lesson pins `mlflow>=3.15` and locks 3.15.2; the server
+  image is `ghcr.io/mlflow/mlflow:latest`.
+- **LLM provider**: Unsloth Studio — local, no API cost, OpenAI-compatible at
+  `http://127.0.0.1:8888/v1/`. Runs natively rather than in a container so it can
+  reach the Apple Silicon GPU. Needs a key on every route, and holds ONE model at
+  a time — `Settings → API → Model auto-switch` must be ON.
 - **Models**:
-  - `google/gemma-4-e4b` — small 4B, simple/fast tasks (Level 1)
-  - `google/gemma-4-26b-a4b` — 26B MoE, complex tasks, evaluation judges, agents
-    (Levels 2–3)
-  - `text-embedding-nomic-embed-text-v1.5` — embeddings for RAG / vector DB
+  - `unsloth/gemma-4-26B-A4B-it-qat-GGUF` — 26B MoE, the default for every level
+  - `unsloth/gemma-4-31B-it-qat-GGUF` — the denser model, behind `gemma-31b-local`
+  - `second-state/Nomic-embed-text-v1.5-Embedding-GGUF` — embeddings for RAG / vector DB
 - **Agent frameworks**: LangChain v1.0+, LangGraph, Claude Agent SDK, DeepAgents
 - **Data**: PostgreSQL 16 (MLflow + Temporal backing store), Qdrant (vectors),
   Elasticsearch 7.17 (Temporal visibility)
