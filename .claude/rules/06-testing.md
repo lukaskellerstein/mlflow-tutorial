@@ -130,9 +130,15 @@ shows `Evaluating traces: OFF`.
 2. Snapshot the specific element — don't assert the page loaded.
 3. **Close the browser when done.**
 
-> The browser opens on its own desktop/space and is closed automatically at
-> session end by `.claude/hooks/`. That is a safety net, not a substitute for
-> closing it yourself when the test is finished.
+The browser is placed on its own desktop space by the shared Playwright hooks
+(`.claude/hooks/`) — never switch to it, focus it, or move it. Session-end
+cleanup is a safety net, not a substitute for closing it yourself.
+
+**A headed browser your own script launches goes through the launch script
+too** — `.claude/hooks/playwright-launch.sh npx tsx <script>` — so its window
+is born on the scratch space like every other agent browser. Never launch a
+headed browser bare: macOS creates new windows on whatever space the user is
+looking at. A headless browser needs no placement — run that script directly.
 
 > [!tip]
 > The API sometimes sees more than the UI. `mlflow.genai.list_scorers()` returns

@@ -17,9 +17,35 @@ history, and does not depend on a key staying safe. Prefer this every time.
 | Per-project runtime config | `.env` / `.envrc` — **gitignored**, with a committed `.env.example` carrying the *names* and empty values |
 | CI credentials | the CI provider's own secret store |
 | Cloud / cluster credentials | the provider's keychain, `~/.kube/config`, `~/.aws/` — never copied in |
+| Agent access tokens (identity-gated apps) | minted on demand by `scripts/agent-token.sh` into a gitignored, mode-600 `.agent-token`; the client secret is SOPS-only. See § You have your own identity below |
 
 If a repo has no `.gitignore` entry for `.env`, `.envrc` and `*.key`, add one
 before writing anything that could land there.
+
+## You have your own identity — never borrow the user's
+
+Where this repo's apps sit behind an identity gate (Keycloak, OAuth2-Proxy,
+Cloudflare Access), you authenticate as **yourself**, with a service-account
+client and a short-lived Bearer token. `scripts/agent-token.sh` mints it.
+
+Three things are forbidden, and no memory, plan or deadline changes them:
+
+- **Never fill in a login form.** A sign-in page is not a puzzle to solve. It
+  means you took a path meant for a human.
+- **Never ask the user for a password**, and never accept one if offered.
+- **Never decrypt a person's password** out of SOPS, a keychain or a `.env` —
+  not to type it, not to serve it to a browser, not "kept out of the transcript".
+  A user password is not yours to read, encrypted or not.
+
+Redirect the script's stdout (`./scripts/agent-token.sh >/dev/null`) and read
+`.agent-token`; the script prints the token as well as saving it, and a bare run
+puts a live JWT in the transcript.
+
+**When your own identity is not enough, stop and say so.** A service account
+deliberately has fewer roles than the operator. A `403` is the control working,
+not an obstacle: report which route refused you and hand the user the click.
+Working around your own permissions is the same defect as reading their
+password.
 
 ## 2. Exception — when a secret genuinely must be versioned with the code
 
@@ -87,6 +113,12 @@ under a heading, and use `-d --extract` for structured files.
   paste one into a chat, an issue or a log.
 - **Never print a decrypted secret** into terminal output, a commit message, a
   log line or a test fixture. Report *that* a value was read, not the value.
+- **Never keep a plaintext credential file, gitignored or not.** A
+  `claude_tokens.md`-style file at the repo root dodges every control above —
+  every session and tool can read it, and it never expires. Mint short-lived
+  tokens on demand instead (`scripts/agent-token.sh` → `.agent-token`), and
+  treat an existing plaintext credential file as a found secret: report it,
+  move the value into SOPS, delete the file, recommend rotation.
 - **Never invent an alternative** — no `openssl enc`, no git-crypt, no committed
   encrypted zip. One scheme per machine is what makes it reviewable.
 
